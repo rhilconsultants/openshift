@@ -1,24 +1,20 @@
-#
-OCS 4.3 on OCP 4.3 Deployment
+# H1
+**_OCS 4.3 on OCP 4.3 Deployment_**
 
 This document follows the video 
 
-```
 [All Things Data: State of Container Storage, Deeper Dive Part 1](https://youtu.be/QTcliv9GLNg)
-```  
 or
-
-```
 [Using Local Disks on VMware with OpenShift Container Storage](https://youtu.be/Eko2ZBYLkNM)
-```
-##
+
+## H2
 1. Add Local storage to workers machines
 
 Go to properties of Virtual machines that will host OCS 4.3 (mainly workers VMs, at least 3 Machines will be part of OCS 4.3) and add additional disks
 	1 x 200-500GB per each VM, depending on your needs) for block storage
 	1 x 10GB disk for mon services
 
-##
+## H2
 2. Create storage and allow access to OpenShift
 
 Create project local-storage
@@ -120,7 +116,7 @@ persistentvolume/local-pv-562a9834        10Gi  	 RWO         	Delete       	Ava
 persistentvolume/local-pv-6fc3545s        10Gi           RWO         	Delete       	Available       	localfile           	7m53s
 persistentvolume/local-pv-6dee446g        10Gi    	 RWO        	Delete       	Available       	localfile           	8m14s
 ```
-##
+## H2
 3. Create OpenShift Container Storage
 
 Projects: Openshift-storage
@@ -273,7 +269,7 @@ route.route.openshift.io/noobaa-mgmt   noobaa-mgmt-openshift-storage.apps.ocp43-
 route.route.openshift.io/s3            s3-openshift-storage.apps.ocp43-test.sales.lab.tlv.redhat.com                   s3            s3-https     reencrypt     None
 ```
 
-##
+## H2
 How to change default Storage class from thin to RBD
 ```
 # oc patch storageclass ocs-storagecluster-ceph-rbd -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
@@ -292,7 +288,7 @@ thin                                    kubernetes.io/vsphere-volume            
 
 That’s all. Enjoy your OCS 4.3 Cluster
 
-##
+## H2
 Tests to check your RBD and FileFS
 
 Go to projects →  Create project stg-tests
@@ -398,7 +394,7 @@ EOF
 # oc rsh csicephfs-demo-pod-b df -h | grep /var/lib/www/html
 # oc rsh csicephfs-demo-pod-b df -h | grep /var/lib/www/html
 ```
-##
+## H2
 Troubleshooting tools and tips
 
 Sometimes you need to repeat the deployment of LSO and OCS4.3 operators. One of best practices is to remove all resources from local-storage and openshift-storage projects and projects itself. If your project will remain in “Terminating” status after deleting it we created some script that can help to overcome this issue.
