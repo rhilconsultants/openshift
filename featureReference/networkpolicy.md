@@ -55,3 +55,6 @@ labels:
   network.openshift.io/policy-group: ingress
   ...
 ```
+
+For more information please see the official documentation:
+https://docs.openshift.com/container-platform/4.3/networking/configuring-networkpolicy.html
