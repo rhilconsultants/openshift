@@ -13,6 +13,11 @@ openshift\featureReference
 openshift\tools
 ```
 
+## Upload Guidlines
+1. Any directories uploaded should include a README.md regarding the contents
+2. Links to external documents and git repos are encouraged
+3. Information regarding features or external tools should be concise and include a link to the tool/repo/blog etc.
+
 ## How to add items
 
 The following is the procedure on how to add items to the repo.  This is based on git practicies in order to colloborate correctly on documents etc
