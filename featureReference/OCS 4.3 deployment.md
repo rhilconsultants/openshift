@@ -4,12 +4,12 @@ OCS 4.3 on OCP 4.3 Deployment
 This document follows the video 
 
 ```
-"https://youtu.be/QTcliv9GLNg"
+[All Things Data: State of Container Storage, Deeper Dive Part 1](https://youtu.be/QTcliv9GLNg)
 ```  
 or
 
 ```
-"https://youtu.be/Eko2ZBYLkNM"
+[Using Local Disks on VMware with OpenShift Container Storage](https://youtu.be/Eko2ZBYLkNM)
 ```
 ##
 1. Add Local storage to workers machines
