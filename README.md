@@ -18,11 +18,15 @@ openshift\tools
 The following is the procedure on how to add items to the repo.  This is based on git practicies in order to colloborate correctly on documents etc
 
 ```
-1. Create a fork of the repo
+1. Create a branch of the repo
 2. Make the changes/additions that you want
 3. Commit the changes to your fork
 4. Enter a Pull request
 ```
+
+To follow best practicies, I believe that we can maintain the approach where no one merges there own pull request.  Therefore, once you have put in a pull request you can contact another team member to review and perform the merge.
+
+Once the update is merged, i recommend either deleting the branch or making sure to update the branch from the master before making additional changes/additions that you would like to merge.
 
 ##
 
