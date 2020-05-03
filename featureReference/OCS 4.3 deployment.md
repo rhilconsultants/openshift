@@ -4,22 +4,22 @@ OCS 4.3 on OCP 4.3 Deployment
 This document follows the video 
 
 ```
-https://youtu.be/QTcliv9GLNg
+"https://youtu.be/QTcliv9GLNg"
 ```  
 or
 
 ```
-https://youtu.be/Eko2ZBYLkNM
+"https://youtu.be/Eko2ZBYLkNM"
 ```
 ##
-1) Add Local storage to workers machines
+1. Add Local storage to workers machines
 
 Go to properties of Virtual machines that will host OCS 4.3 (mainly workers VMs, at least 3 Machines will be part of OCS 4.3) and add additional disks
-1 x 200-500GB per each VM, depending on your needs) for block storage
-1 x 10GB disk for mon services
+	1 x 200-500GB per each VM, depending on your needs) for block storage
+	1 x 10GB disk for mon services
 
 ##
-2) Create storage and allow access to OpenShift
+2. Create storage and allow access to OpenShift
 
 Create project local-storage
 Go to Administration -> Namespace openshift-storage (see DEPLOYING OPENSHIFT CONTAINER STORAGE). 
@@ -32,7 +32,7 @@ Clone the Git project https://github.com/dmoessne/ocs-disk-gather
 OUTPUT
 ```
 
- Install local-storage operator 
+Install local-storage operator 
  
 Create file local-storage-block-byid.yaml using in the disk names received from the logs command (here you need to put IDs of big disks for block usage):
 
@@ -63,7 +63,8 @@ spec:
 ```
 Create file mon-local-storage-byid.yaml using in the disk names received from the logs command 
 (here you need to put IDs of 10G disks for mon usage):
-“```bash# vi mon-local-storage-byid.yaml
+```
+# vi mon-local-storage-byid.yaml
 apiVersion: local.storage.openshift.io/v1
 kind: LocalVolume
 metadata:
@@ -85,51 +86,61 @@ spec:
         - /dev/disk/by-id/scsi-36000c29f91efeedbac478f32b48f25e5
         - /dev/disk/by-id/scsi-36000c2924b744720965fc190ff34aa8f
    	 
-# oc create -f mon-local-storage-byid.yaml```”
-   
-“```bash# oc project local-storage```”
-“```bash# oc get sc
+# oc create -f mon-local-storage-byid.yaml
+```
+```
+# oc project local-storage
+# oc get sc
 NAME         	PROVISIONER                	AGE
-localblock   	kubernetes.io/no-provisioner   8m19s
-localfile      kubernetes.io/no-provisioner   8m15s
-thin (default)   kubernetes.io/vsphere-volume   3d10h```”
-“```bash# oc get csv
+localblock   	kubernetes.io/no-provisioner    8m19s
+localfile      kubernetes.io/no-provisioner     8m15s
+thin (default)   kubernetes.io/vsphere-volume   3d10h
+```
+```
+# oc get csv
 NAME                                     	DISPLAY     	VERSION           	REPLACES   PHASE
-local-storage-operator.4.3.10-202003311428   Local Storage   4.3.10-202003311428          	Succeeded```”
-“```bash# oc get pods,pv
+local-storage-operator.4.3.10-202003311428   Local Storage   4.3.10-202003311428          	Succeeded
+```
+```
+# oc get pods,pv
 NAME                                      	 READY   STATUS	RESTARTS   AGE
 pod/local-block-local-diskmaker-4f9vq       	1/1 	Running   0      	8m27s
 pod/local-block-local-diskmaker-cshtb       	1/1 	Running   0      	8m27s
 pod/local-block-local-diskmaker-mssgb       	1/1 	Running   0      	8m27s
 pod/local-block-local-provisioner-2krss     	1/1 	Running   0      	8m27s
-pod/local-block-local-provisioner-8zlv5   	  1/1 	Running   0      	8m27s
+pod/local-block-local-provisioner-8zlv5         1/1 	Running   0      	8m27s
 pod/local-block-local-provisioner-tqhzt     	1/1 	Running   0      	8m27s
-pod/local-storage-operator-566ff7dcc5-6xpvk   1/1 	Running   0      	8m40s
+pod/local-storage-operator-566ff7dcc5-6xpvk     1/1 	Running   0      	8m40s
  
-NAME                             	CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS  	CLAIM   STORAGECLASS   REASON   AGE
-persistentvolume/local-pv-382a9822   400Gi  	 RWO          	Delete       	Available       	localblock          	7m53s
-persistentvolume/local-pv-56c3545d   400Gi  	 RWO          	Delete       	Available       	localblock          	7m53s
-persistentvolume/local-pv-6fee4458   400Gi     RWO          	Delete       	Available       	localblock          	8m14s
-persistentvolume/local-pv-562a9834   10Gi  	   RWO         	  Delete       	Available       	localfile           	7m53s
-persistentvolume/local-pv-6fc3545s   10Gi      RWO         	  Delete       	Available       	localfile           	7m53s
-persistentvolume/local-pv-6dee446g   10Gi    	 RWO        	  Delete       	Available       	localfile           	8m14s```”
-“##3) Create OpenShift Container Storage"
+NAME                             	CAPACITY   ACCESS MODES   RECLAIM POLICY        STATUS  	CLAIM   STORAGECLASS   REASON   AGE
+persistentvolume/local-pv-382a9822       400Gi  	 RWO          	Delete       	Available       	localblock          	7m53s
+persistentvolume/local-pv-56c3545d       400Gi  	 RWO          	Delete       	Available       	localblock          	7m53s
+persistentvolume/local-pv-6fee4458       400Gi           RWO          	Delete       	Available       	localblock          	8m14s
+persistentvolume/local-pv-562a9834        10Gi  	 RWO         	Delete       	Available       	localfile           	7m53s
+persistentvolume/local-pv-6fc3545s        10Gi           RWO         	Delete       	Available       	localfile           	7m53s
+persistentvolume/local-pv-6dee446g        10Gi    	 RWO        	Delete       	Available       	localfile           	8m14s
+```
+##
+3. Create OpenShift Container Storage
+
 Projects: Openshift-storage
-    - install OpenShift Container Storage operator
+- install OpenShift Container Storage operator
     
-“```bash# watch oc get csv
+```
+# watch oc get csv
     
 # oc project openshift-storage
 # oc get pods
-NAME                                  	 READY   STATUS	RESTARTS   AGE
-lib-bucket-provisioner-69cc6f86dd-t65jr   1/1 	Running   0      	4m1s
-noobaa-operator-6666bdf4d7-4bh24      	  1/1 	Running   0      	3m57s
+NAME                                    	 READY  STATUS	RESTARTS        AGE
+lib-bucket-provisioner-69cc6f86dd-t65jr         1/1 	Running   0      	4m1s
+noobaa-operator-6666bdf4d7-4bh24      	        1/1 	Running   0      	3m57s
 ocs-operator-565b5449b-dc4cg            	1/1 	Running   0      	3m57s
-rook-ceph-operator-86944dbc94-df8pf     	1/1 	Running   0      	3m57s```”
+rook-ceph-operator-86944dbc94-df8pf     	1/1 	Running   0      	3m57s
+```
+- create storage cluster via CLI
     
-    - create storage cluster via CLI
-    
-“```bash# vi cluster-service-VMware.yaml
+```
+# vi cluster-service-VMware.yaml
 apiVersion: ocs.openshift.io/v1
 kind: StorageCluster
 metadata:
@@ -163,35 +174,41 @@ spec:
     replica: 3
     resources: {}
 
-# oc create -f cluster-service-VMware.yaml```”
+# oc create -f cluster-service-VMware.yaml
+```
     
-“```bash# oc get pods
-NAME                                            	READY  STATUS RESTARTS   AGE
+```
+# oc get pods
+NAME                                            	READY  STATUS RESTARTS          AGE
 csi-cephfsplugin-7gxjw                           	3/3 	Running   0      	4m53s
 csi-cephfsplugin-h4nnw                          	3/3 	Running   0      	4m53s
-csi-cephfsplugin-provisioner-5f59d5c66c-5m7xx     5/5 	Running   0      	4m52s
-csi-cephfsplugin-provisioner-5f59d5c66c-grtfj     5/5 	Running   0      	4m53s
-csi-cephfsplugin-sd7pn                      	    3/3 	Running   0      	4m54s
-csi-rbdplugin-k9d5r                         	    3/3 	Running   0      	4m54s
-csi-rbdplugin-pbdc8                         	    3/3 	Running   0      	4m54s
-csi-rbdplugin-provisioner-8455c459bb-22nhm  	    5/5 	Running   0      	4m52s
-csi-rbdplugin-provisioner-8455c459bb-9xrs7  	    5/5 	Running   0      	4m54s
-csi-rbdplugin-zfnd2                         	    3/3 	Running   0      	4m54s
-lib-bucket-provisioner-69cc6f86dd-t65jr     	    1/1 	Running   0      	26m
+csi-cephfsplugin-provisioner-5f59d5c66c-5m7xx           5/5 	Running   0      	4m52s
+csi-cephfsplugin-provisioner-5f59d5c66c-grtfj           5/5 	Running   0      	4m53s
+csi-cephfsplugin-sd7pn                      	        3/3 	Running   0      	4m54s
+csi-rbdplugin-k9d5r                         	        3/3 	Running   0      	4m54s
+csi-rbdplugin-pbdc8                         	        3/3 	Running   0      	4m54s
+csi-rbdplugin-provisioner-8455c459bb-22nhm  	        5/5 	Running   0      	4m52s
+csi-rbdplugin-provisioner-8455c459bb-9xrs7  	        5/5 	Running   0      	4m54s
+csi-rbdplugin-zfnd2                         	        3/3 	Running   0      	4m54s
+lib-bucket-provisioner-69cc6f86dd-t65jr     	        1/1 	Running   0      	26m
 noobaa-operator-6666bdf4d7-4bh24                	1/1 	Running   0      	26m
-ocs-operator-565b5449b-dc4cg                	    0/1 	Running   0      	26m
-rook-ceph-mon-a-canary-8b446db96-vdbzb      	    0/1 	Pending   0      	46s
-rook-ceph-operator-86944dbc94-df8pf         	    1/1 	Running   0      	26m```”
+ocs-operator-565b5449b-dc4cg                	        0/1 	Running   0      	26m
+rook-ceph-mon-a-canary-8b446db96-vdbzb      	        0/1 	Pending   0      	46s
+rook-ceph-operator-86944dbc94-df8pf         	        1/1 	Running   0      	26m
+```
 
 In this stage some pods may be in pending status. You can check by several ways what is the cause of issue:
-“```bash# oc describe pod < name of pending pod >
-# oc logs < name of pending pod >```”
+```
+# oc describe pod < name of pending pod >
+# oc logs < name of pending pod >
+```
 Go to console→ projects→ openshift-storage, go to workloads → pods, find the problematic pod and look for the reason. 
 Mostly the reason will be Unschedulable and it means that you are short in resources, some additional resources increasing for VMs 
 hosting OCS 4.3 will help to overcome the issue. Rule of thumb can be between 10 and 12 vCPU per VM hosting OCS4.3, and between 20 and 24 GB of Memory.
 At the end of the process you should see the next output:
 
-“```bash# oc get pods,pv,svc,route
+```
+# oc get pods,pv,svc,route
 NAME                                                                  READY   STATUS    RESTARTS   AGE
 pod/csi-cephfsplugin-lsf55                                            3/3     Running     6        23h
 pod/csi-cephfsplugin-pmh6q                                            3/3     Running     6        23h
@@ -229,7 +246,7 @@ pod/rook-ceph-osd-prepare-ocs-deviceset-0-0-gf49v-22lkm               0/1     Co
 pod/rook-ceph-osd-prepare-ocs-deviceset-2-0-xst9j-8ttkn               0/1     Completed   0        23h
 pod/rook-ceph-rgw-ocs-storagecluster-cephobjectstore-a-5d669b949lvd   1/1     Running     2        23h
  
-NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                       STORAGECLASS                  REASON   AGE
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                       STORAGECLASS                  REASON     AGE
 persistentvolume/local-pv-382a9822                          400Gi      RWO            Delete           Bound    openshift-storage/ocs-deviceset-2-0-xst9j   localblock                             23h
 persistentvolume/local-pv-56c3545d                          400Gi      RWO            Delete           Bound    openshift-storage/ocs-deviceset-1-0-x4qjj   localblock                             23h
 persistentvolume/local-pv-5922bc                            10Gi       RWO            Delete           Bound    openshift-storage/rook-ceph-mon-b           localfile                              23h
@@ -253,10 +270,13 @@ service/s3                                                 LoadBalancer   172.30
  
 NAME                                   HOST/PORT                                                                PATH   SERVICES      PORT         TERMINATION   WILDCARD
 route.route.openshift.io/noobaa-mgmt   noobaa-mgmt-openshift-storage.apps.ocp43-test.sales.lab.tlv.redhat.com          noobaa-mgmt   mgmt-https   reencrypt     None
-route.route.openshift.io/s3            s3-openshift-storage.apps.ocp43-test.sales.lab.tlv.redhat.com                   s3            s3-https     reencrypt     None```”
+route.route.openshift.io/s3            s3-openshift-storage.apps.ocp43-test.sales.lab.tlv.redhat.com                   s3            s3-https     reencrypt     None
+```
 
-"##How to change default Storage class from thin to RBD"
-“```bash# oc patch storageclass ocs-storagecluster-ceph-rbd -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+##
+How to change default Storage class from thin to RBD
+```
+# oc patch storageclass ocs-storagecluster-ceph-rbd -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
  
 # oc patch storageclass thin -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
  
@@ -267,14 +287,17 @@ localfile                               kubernetes.io/no-provisioner            
 ocs-storagecluster-ceph-rbd (default)   openshift-storage.rbd.csi.ceph.com      24h
 ocs-storagecluster-cephfs               openshift-storage.cephfs.csi.ceph.com   24h
 openshift-storage.noobaa.io             openshift-storage.noobaa.io/obc         24h
-thin                                    kubernetes.io/vsphere-volume            5d16h```”
+thin                                    kubernetes.io/vsphere-volume            5d16h
+```
 
 That’s all. Enjoy your OCS 4.3 Cluster
 
-"##Tests to check your RBD and FileFS"
+##
+Tests to check your RBD and FileFS
 
 Go to projects →  Create project stg-tests
-“```bash# oc project stg-tests
+```
+# oc project stg-tests
 # oc patch storageclass ocs-storagecluster-ceph-rbd -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
  
 #oc create -f - <<EOF
@@ -290,9 +313,10 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: ocs-storagecluster-ceph-rbd
-EOF```”
- 
-“```bash# oc create -f - <<EOF
+EOF
+```
+```
+# oc create -f - <<EOF
 ---
 apiVersion: v1
 kind: Pod
@@ -310,11 +334,13 @@ spec:
      persistentVolumeClaim:
        claimName: rbd-pvc
        readOnly: false
-EOF```”
- 
-“```bash# oc rsh csirbd-demo-pod lsblk -l | grep rbd1```”
-
-“```bash# oc create -f - <<EOF
+EOF
+```
+```
+# oc rsh csirbd-demo-pod lsblk -l | grep rbd1
+```
+```
+# oc create -f - <<EOF
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -327,9 +353,10 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: ocs-storagecluster-cephfs
-EOF```”
- 
-“```bash# oc create -f - <<EOF 
+EOF
+```
+```
+# oc create -f - <<EOF 
 ---
 apiVersion: v1
 kind: Pod
@@ -364,18 +391,20 @@ spec:
      persistentVolumeClaim:
        claimName: cephfs-pvc
        readOnly: false
-EOF```”
- 
-“```bash# oc rsh csicephfs-demo-pod-a df -h | grep /var/lib/www/html
+EOF
+```
+```
+# oc rsh csicephfs-demo-pod-a df -h | grep /var/lib/www/html
 # oc rsh csicephfs-demo-pod-b df -h | grep /var/lib/www/html
-# oc rsh csicephfs-demo-pod-b df -h | grep /var/lib/www/html```”
-
-"##Troubleshooting tools and tips".
+# oc rsh csicephfs-demo-pod-b df -h | grep /var/lib/www/html
+```
+##
+Troubleshooting tools and tips
 
 Sometimes you need to repeat the deployment of LSO and OCS4.3 operators. One of best practices is to remove all resources from local-storage and openshift-storage projects and projects itself. If your project will remain in “Terminating” status after deleting it we created some script that can help to overcome this issue.
 
-
-“```bash# vim terminating.sh
+```
+# vim terminating.sh
 #run this before running the script
 ##
 kubectl proxy --port=8080 &
@@ -392,15 +421,17 @@ kubectl proxy http://127.0.0.1:8080 &&
 filename='mylist'
 while read p; do
     curl -k -H "Content-Type: application/json" -X PUT --data-binary @$p.json localhost:8080/api/v1/namespaces/$p/finalize;
-done < $filename```”
-
-“```bash# chmod 755 terminating.sh
-./terminating.sh
-# oc projects```”
-
+done < $filename
+```
+```
+# chmod 755 terminating.sh
+# ./terminating.sh
+# oc projects
+```
 If your PVs will remain in “Terminating” status after deleting it we created some script that can help to overcome this issue.
 
-“```bash# vim pvterminating.sh
+```
+# vim pvterminating.sh
 #run this before running the script
 ##
 kubectl proxy --port=8080 &
@@ -417,22 +448,31 @@ kubectl proxy http://127.0.0.1:8080 &&
 filename='mylist'
 while read p; do
     kubectl patch pvc $p -p '{"metadata":{"finalizers":null}}';
-done < $filename```”
-
-“```bash# chmod 755 pvterminating.sh
-./pvterminating.sh
-# oc get pv```”
+done < $filename
+```
+```
+# chmod 755 pvterminating.sh
+# ./pvterminating.sh
+# oc get pv
+```
 
 Additional way to detect devices IDs that will be in usage by OCS 4.3 from the server itself by running the next command:
-“```bash# ls -l /dev/disk/by-id/ | grep scsi | grep sd[b,c]```”
+
+```
+# ls -l /dev/disk/by-id/ | grep scsi | grep sd[b,c]
+```
 
 How to check if your Worker node has a relevant role: (OCS4.3 doing this labeling, but sometimes it not functioning properly):
 
-“```bash# oc  get nodes 
+```
+# oc  get nodes 
 # oc describe node <NodeName> | grep storage
-                    cluster.ocs.openshift.io/openshift-storage=```”
+                    cluster.ocs.openshift.io/openshift-storage=''
+```
 
 If you didn’t received this label for the node that hosting OCS 4.3 you can run the next command:
 
-“```bash# oc label node <NodeName> cluster.ocs.openshift.io/openshift-storage=''```”
+```
+# oc label node <NodeName> cluster.ocs.openshift.io/openshift-storage=''
+```
  
