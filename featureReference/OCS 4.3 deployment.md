@@ -2,29 +2,42 @@
 OCS 4.3 on OCP 4.3 Deployment
 
 This document follows the video 
+
 ```
-All Things Data: State of Container Storage, Deeper Dive Part 1
-```  or
+https://youtu.be/QTcliv9GLNg
+```  
+or
+
 ```
-Using Local Disks on VMware with OpenShift Container Storage
+https://youtu.be/Eko2ZBYLkNM
 ```
 ##
-1) Add Local storage to workers machines״
+1) Add Local storage to workers machines
+
 Go to properties of Virtual machines that will host OCS 4.3 (mainly workers VMs, at least 3 Machines will be part of OCS 4.3) and add additional disks
 1 x 200-500GB per each VM, depending on your needs) for block storage
 1 x 10GB disk for mon services
-“##2) Create storage and allow access to OpenShift״
+
+##
+2) Create storage and allow access to OpenShift
+
 Create project local-storage
 Go to Administration -> Namespace openshift-storage (see DEPLOYING OPENSHIFT CONTAINER STORAGE). 
 Label is set to 'openshift.io/cluster-monitoring=true'
 Clone the Git project https://github.com/dmoessne/ocs-disk-gather
- “```bash# oc create -f ocs-disk-gatherer.yaml```”
- “```bash# oc get po -o wide```”
- “```bash# oc logs ocs-disk-gatherer-NAME```”
+ ```
+ # oc create -f ocs-disk-gatherer.yaml
+ # oc get po -o wide
+ # oc logs ocs-disk-gatherer-NAME
 OUTPUT
+```
+
  Install local-storage operator 
+ 
 Create file local-storage-block-byid.yaml using in the disk names received from the logs command (here you need to put IDs of big disks for block usage):
-“```bash# vi local-storage-block-byid.yaml
+
+```
+# vi local-storage-block-byid.yaml
 apiVersion: local.storage.openshift.io/v1
 kind: LocalVolume
 metadata:
@@ -46,7 +59,8 @@ spec:
       - /dev/disk/by-id/scsi-36000c29ad2be38b4b9f8165938122198
       - /dev/disk/by-id/scsi-36000c29f31a150858d09b15dcc8a3c67
    	 
-# oc create -f local-storage-block-byid.yaml```”
+# oc create -f local-storage-block-byid.yaml
+```
 Create file mon-local-storage-byid.yaml using in the disk names received from the logs command 
 (here you need to put IDs of 10G disks for mon usage):
 “```bash# vi mon-local-storage-byid.yaml
