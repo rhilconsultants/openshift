@@ -1,7 +1,15 @@
-״#OCS 4.3 on OCP 4.3 Deployment״
-״This document follows the video ```All Things Data: State of Container Storage, Deeper Dive Part 1```  or
-```Using Local Disks on VMware with OpenShift Container Storage```.״
-“##1) Add Local storage to workers machines״
+#
+OCS 4.3 on OCP 4.3 Deployment
+
+This document follows the video 
+```
+All Things Data: State of Container Storage, Deeper Dive Part 1
+```  or
+```
+Using Local Disks on VMware with OpenShift Container Storage
+```
+##
+1) Add Local storage to workers machines״
 Go to properties of Virtual machines that will host OCS 4.3 (mainly workers VMs, at least 3 Machines will be part of OCS 4.3) and add additional disks
 1 x 200-500GB per each VM, depending on your needs) for block storage
 1 x 10GB disk for mon services
