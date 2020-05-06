@@ -192,16 +192,15 @@ First login to the registry
 
 If we want it to be consistent through this session (change user01 and the password from the file) :
 
-```bash
-# REG_SECRET=`echo -n 'myuser:mypassword' | base64 -w0`
-```
+     # REG_SECRET=`echo -n 'myuser:mypassword' | base64 -w0`
 
 And now create and update the ~/.docker/config.json file :
 
-```bash
-# mkdir ~/.docker
-# echo '{ "auths": {}}' | jq '.auths += {"registry.infra.local:5000": {"auth": "REG_SECRET","email": "me@working.me"}}' | sed "s/REG_SECRET/$REG_SECRET/" | jq . > ~/.docker/config.json
-```
+     # mkdir ~/.docker
+     # echo '{ "auths": {}}' | jq '.auths += {"registry.infra.local:5000": \
+     {"auth": "REG_SECRET","email": "me@working.me"}}' | \
+     sed "s/REG_SECRET/$REG_SECRET/" | jq . > ~/.docker/config.json
+
 Hello Go isn’t very useful if you can only run it locally on your workstation. This app is stateless, it logs to stdout, and it fulfills a single purpose, so it is a perfect fit to containerize for a cloud-native deployment!
 
 Building Go apps in Docker containers is easy. Go maintains a number of images on Docker Hub containing all the necessary tooling to build your app, and all you need to do is copy in the source and run go build.
@@ -248,58 +247,49 @@ process in the container when running it with all the default settings.
 Now we can build the container image. Run the following command inside the same
 directory as the Dockerfile:
 
-```bash
-# buildah bud -f Dockerfile -t hello-go .
-```
+     # buildah bud -f Dockerfile -t hello-go .
+
 
 After a couple minutes (or less if you already had the base images downloaded!), you should be able to see the hello-go container image when you run docker images :
 
-```bash
-# podman image list
-REPOSITORY                                    TAG      IMAGE ID       CREATED       SIZE
-localhost/${USER}-hello-go                            latest   92310a101177   4 days ago    116 MB
-```
+     # podman image list
+     REPOSITORY                                    TAG      IMAGE ID       CREATED       SIZE
+     localhost/${USER}-hello-go                            latest   92310a101177   4 days ago    116 MB
 
 Now we’ll run the container image to make sure Hello Go operates in the container identically to how it operated when run directly.
 Running the container
 To run the container and expose the internal port 8180 to your host, run the command:
 
-```bash
-# podman run --name hello-go --rm -p ${GO_PORT}:${GO_PORT} hello-go
-```
+     # podman run --name hello-go --rm -p ${GO_PORT}:${GO_PORT} hello-go
 
 After a second or two, the web server should be operational. In another terminal, run:
-```bash
-# curl localhost:${GO_PORT}/testing
-```
+
+     # curl localhost:${GO_PORT}/testing
+
 
 And you should see the “Hello, you’ve requested: /testing” response in that window, as well as the logged request in the window where docker/podman run was executed.
 
-```bash
-# podman run -d --name hello-go --rm -p ${GO_PORT}:${GO_PORT} hello-go
-2025/11/12 22:31:07 Received request for path: /testing
-```
+     # podman run -d --name hello-go --rm -p ${GO_PORT}:${GO_PORT} hello-go
+     2025/11/12 22:31:07 Received request for path: /testing
 
 To stop and terminate the container, press Ctrl-C in the terminal where you ran
 docker/podman run .
 
 Clean you work :
-```bash
-# podman stop hello-go 
-# podmain rm hello-go
-```
 
+     # podman stop hello-go 
+     # podmain rm hello-go
 
 Push to the Registry
 Only 2 more steps remaining , re tag our application :
-# podman tag localhost/hello-go registry.infra.local:5000/${USER}/hello-go 
+     # podman tag localhost/hello-go registry.infra.local:5000/${USER}/hello-go 
 
 Verify you image was successfully tagged :
-```bash
-# podman image list 
-REPOSITORY                                   TAG      IMAGE ID       CREATED         SIZE
-registry.infra.local:5000/userxx/hello-go    latest   376409b93b2c   3 minutes ago   116 MB
-```
+
+     # podman image list 
+     REPOSITORY                                   TAG      IMAGE ID       CREATED         SIZE
+     registry.infra.local:5000/userxx/hello-go    latest   376409b93b2c   3 minutes ago   116 MB
+
 And push it to the registry :
 
      # podman push  registry.infra.local:5000/${USER}/hello-go
