@@ -1,6 +1,4 @@
----
-title: Exercise 1 - Building a GO application
----
+# Exercise 1 - Building a GO application
 ## Content :
 
   - Installing GO LANG (SKIP…)
@@ -303,9 +301,8 @@ REPOSITORY                                   TAG      IMAGE ID       CREATED    
 registry.infra.local:5000/userxx/hello-go    latest   376409b93b2c   3 minutes ago   116 MB
 ```
 And push it to the registry :
-```bash
-# podman push  registry.infra.local:5000/${USER}/hello-go
-```
+
+     # podman push  registry.infra.local:5000/${USER}/hello-go
 
 Hello Go app summary
 Many tools in the Kubernetes ecosystem are written in Go. You might not be a master of the Go language after building and running this app in a container, but you at least know the basics, and could even put ‘Go programmer’ on your resumé now (just kidding!).
