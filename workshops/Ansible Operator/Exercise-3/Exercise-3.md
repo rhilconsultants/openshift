@@ -210,7 +210,7 @@ Now we can add a service with the matching label :
         - protocol: TCP
           port: ${GO_PORT}
           targetPort: ${GO_PORT}
-EOF
+    EOF
 
 And now the route yaml :
 
