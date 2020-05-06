@@ -83,7 +83,7 @@ So far, your entire playbook should look like this:
         - name: Print the Current date.
           debug:
           msg: "{{ current_date.stdout }}"
-EOF
+    EOF
 
 It may not look like this now but if you Copy/Paste the playbook to your terminal , you will see that the indentations are correct.
 
@@ -144,7 +144,7 @@ Now we will create a Playbook.yaml file.
       hosts: localhost
       roles:
       - Hello-go-role
-EOF
+    EOF
 
 First let’s make sure we are login to the cluster (login credentials placed in the sheets file under ocp user and ocp password):
 
