@@ -1,4 +1,4 @@
-# Exercise 3 - Ansible K8S module
+#Exercise 3 - Ansible K8S module
 
 ## Contents
   - Running the Container
