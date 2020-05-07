@@ -172,8 +172,9 @@ First let’s take the templates  file from our previous exercise:And change the
 
 Now we can copy the tasks main.yml from our previous exercise and remove the ‘state’s section sense we will always want it as present and change the namespace to be read from the metadata and not pre defined  :
 
-    # cat ~/ose-openshift/roles/Hello-go-role/tasks/main.yml | sed "s/project-${USER}/\'\{\{\ meta\.namespace\ \}\}\'/"\
-     | grep -v 'state:' > roles/${USER}hellogo/tasks/main.yml
+    # cat ~/ose-openshift/roles/Hello-go-role/tasks/main.yml \
+    | sed "s/project-${USER}/\'\{\{\ meta\.namespace\ \}\}\'/" \
+    | grep -v 'state:' > roles/${USER}hellogo/tasks/main.yml
 
 Update the defaults main.yml file :
 
@@ -216,7 +217,7 @@ Now let’s make sure that the task main is reading from those templates as well
 Before running the Operator, Kubernetes needs to know about the new custom resource definition 
 the Operator will be watching, by running the following command 
 
-#### Stage 1 ** ( As a Cluster Admin ) **
+#### Stage 1 **(As A Cluster Admin)**
 
     # oc create -f deploy/crds/hellogo.example.com_${USER}hellogos_crd.yaml
 
@@ -321,7 +322,7 @@ Create OpenShift Role Binding assigning Permissions to Service Account
 
     # oc create -f deploy/role_binding.yaml -n project-${USER} (change user to the requesting user)
 
-(As the working USER)
+#### Stage 3 **(As A normal USER)**
 
 Add a service account permissions:
 
