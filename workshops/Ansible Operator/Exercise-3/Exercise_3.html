@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Exercise 3 - Ansible K8S module</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="style.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css?family=Cormorant+Garamond|
+  Crimson+Text" rel=stylesheet>
+  <link herf="https://responsive.style/src/style.css" rel=stylesheet>
+</head>
+<body>
+<header>
+<h1 class="title">Exercise 3 - Ansible K8S module</h1>
+</header>
+<h2 id="contents">Contents</h2>
+<ul>
+<li>Running the Container
+<ul>
+<li>Exposing the application:</li>
+<li>Final Task</li>
+</ul></li>
+<li>Advanced - Generate kubeconfig</li>
+</ul>
+<h2 id="ansible-container">Ansible Container</h2>
+<p>Now that we know that we need to update our image we need to provide the proper RPMs which provide the K8S module and add them to our image .</p>
+<h3 id="create-the-ose-openshift-container">Create the ose-openshift container</h3>
+<p>The RPMs you need are in /usr/share/workshop/RPMS</p>
+<p>First go to your ose-openshift directory:</p>
+<pre><code># cd ~/ose-openshift</code></pre>
+<p>Now Copy the RPMs from the share Directory:</p>
+<pre><code># cp /usr/share/workshop/RPMs/* .</code></pre>
+<p>And let’s create a new Dockerfile and edit it :</p>
+<pre><code># cat &gt; Dockerfile &lt;&lt; EOF
+FROM registry.infra.local:5000/openshift3/ose-ansible
+MAINTAINER  Meemail me@comefind.me # not a real email
+
+USER root
+WORKDIR /opt/app-root/
+COPY python* .
+RUN yum install -y python* &amp;&amp; rm -f python*
+EOF</code></pre>
+<p>Build the container :</p>
+<pre><code># buildah bud -f Dockerfile -t ose-openshift .</code></pre>
+<p>If Everything went well , you should see the new image on the Server</p>
+<pre><code># podman image list</code></pre>
+<p><strong>(What do you See wrong with this image and method ???)</strong></p>
+<h3 id="clean-up">Clean up</h3>
+<p>Remove the RPMs from the folder</p>
+<pre><code># rm -f ~/ose-openshift/*.rpm</code></pre>
+<h2 id="running-the-container">Running the Container</h2>
+<p><strong>Make sure you are running the container with the variable of “K8S_AUTH_KUBECONFIG” after you added a map to your ${HOME}/.kube/config file</strong></p>
+<pre><code># podman run ...</code></pre>
+<p>** (HINT: create a new file named run.sh and copy/paste the content of the command</p>
+<p>to it. This will make it easier for you to run the command several times ) **</p>
+<p>Now that we created a ConfigMap we can continue.</p>
+<p>Next, we’ll use the Ansible k8s module to leverage existing Kubernetes and</p>
+<p>OpenShift Resource files. Let’s take the hello-go deployment example.</p>
+<p><strong>Note</strong>: We’ve modified the resource file slightly as we will be deploying on OpenShift.</p>
+<pre><code># cat &gt; roles/Hello-go-role/templates/hello-go-deployment.yml.j2 &lt;&lt; EOF
+kind: Deployment
+apiVersion: v1
+metadata:
+  name: hellogo-pod
+spec:
+  template:
+    metadata:
+      labels:
+        app: hellogo
+    spec:
+      containers:
+        - name: hello-go
+          image: registry.infra.local:5000/${USER}/hello-go
+          ports:
+          - containerPort: ${GO_PORT}
+  replicas: {{ size }}
+  selector:
+    matchLabels:
+      app: hellogo
+EOF</code></pre>
+<p>Update tasks file Hello-go-role/tasks/main.yml to create the hello-go deployment using the k8s module</p>
+<pre><code># cat &gt; roles/Hello-go-role/tasks/main.yml &lt;&lt;EOF
+---
+- name: set hello-go deployment to {{ state }}
+  k8s:
+   state: &quot;{{ state }}&quot;
+   definition: &quot;{{ lookup(&#39;template&#39;, &#39;hello-go-deployment.yml.j2&#39;) | from_yaml }}&quot;
+   namespace: project-${USER}
+EOF</code></pre>
+<p>Modify vars file Hello-go-role/defaults/main.yml, setting state: present by default.</p>
+<pre><code># cat &gt;&gt; roles/Hello-go-role/defaults/main.yml &lt;&lt;EOF
+---
+state: present
+size: 1
+EOF</code></pre>
+<p>Note that we are working with an internal registry with authentication required.</p>
+<p>Until now we used our config.json file (which we generated in the first exercise )</p>
+<p>but OpenShift doesn’t know about that file. For that we need to create a secret for</p>
+<p>the registry and then link it to our OpenShift pull request.</p>
+<p>Let’s generate a secret specific for docker-registry :</p>
+<p><strong>(change the USER to your user):</strong></p>
+<pre><code># oc create secret generic --from-file=.dockerconfigjson=/home/$USER/.docker/config.json \
+--type=kubernetes.io/dockerconfigjson pullsecret</code></pre>
+<p>And link it to our namespace pull request :</p>
+<pre><code># oc secrets link default pullsecret --for=pull</code></pre>
+<p>Now we can run the Playbook to deploy your hello-go on to OpenShift</p>
+<pre><code># podman run --name ose-openshift ...</code></pre>
+<p>And remove leftovers :</p>
+<pre><code># podman rm ose-openshift</code></pre>
+<p>You can see the hello-go deployment created in your namespace.</p>
+<pre><code># oc get all -n project-${USER}</code></pre>
+<p>Next, let’s make it possible to customize the replica count for our hello-go deployment by</p>
+<p>adding an hellogo_replicas variable to the DeploymentConfig template and filling</p>
+<p>the variable value dynamically with Ansible.</p>
+<p>Modify vars file Hello-go-role/defaults/main.yml, setting size: 2</p>
+<pre><code>---
+state: present
+size: 2</code></pre>
+<p>Modify the hello-go deployment definition to read replicas from the hellogo_replicas variable</p>
+<pre><code>kind: Deployment
+apiVersion: v1
+metadata:
+  name: hellogo-pod
+spec:
+  template:
+    metadata:
+      labels:
+        app: hellogo
+    spec:
+      containers:
+        - name: hello-go
+          image: registry.infra.local:5000/${USER}/hello-go
+          ports:
+          - containerPort: ${GO_PORT}
+  replicas: {{ size }}
+  selector:
+    matchLabels:
+      app: hellogo</code></pre>
+<p>Running the Playbook again will read the variable hellogo_replicas and use the provided value</p>
+<p>to customize the hello-go DeploymentConfig.</p>
+<pre><code># podman run --name ose-openshift ...</code></pre>
+<p>Clean it up.</p>
+<pre><code># podman rm ose-openshift</code></pre>
+<p>After running the Playbook, the cluster will scale down one of the hello-go pods to meet the new requested replica count of 2.</p>
+<pre><code># oc get all -n project-${USER}</code></pre>
+<h4 id="exposing-the-application">Exposing the application</h4>
+<p>In order to expose our application we first need to create a service with a matching</p>
+<p>label of the application label and then a route for that service.</p>
+<p>Now we can add a service with the matching label :</p>
+<pre><code># cat &gt; hello-go-service.yaml &lt;&lt; EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: hellogo-service-${USER}
+spec:
+  selector:
+    app: hellogo
+  ports:
+    - protocol: TCP
+      port: ${GO_PORT}
+      targetPort: ${GO_PORT}
+EOF</code></pre>
+<p>And now the route yaml :</p>
+<pre><code># cat &gt; hello-go-route.yaml &lt;&lt; EOF
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    openshift.io/host.generated: &quot;true&quot;
+  name: hellogo-service-${USER}
+  namespace: project-${USER}
+spec:
+  host: hellogo-service-${USER}-project-${USER}.apps.ocp4.infra.local
+  port:
+    targetPort: ${GO_PORT}
+  to:
+    kind: Service
+    name: hellogo-service-${USER}
+    weight: 100
+  wildcardPolicy: None
+status:
+  ingress:
+  - conditions:
+    host: hellogo-service-${USER}-project-${USER}.apps.ocp4.infra.local
+    routerCanonicalHostname: apps.ocp4.infra.local
+    routerName: default
+    wildcardPolicy: None
+EOF</code></pre>
+<p>And create them :</p>
+<pre><code># oc create -f hello-go-service.yaml -f hello-go-route.yaml</code></pre>
+<p>Now test your deployment :</p>
+<pre><code># curl http://hellogo-service-${USER}-project-${USER}.apps.ocp4.infra.local/testing
+Hello, you requested: /testing</code></pre>
+<p>If everything works as expected then remove the service and the route.</p>
+<pre><code># oc delete -f hello-go-route.yaml -f hello-go-service.yaml</code></pre>
+<h4 id="final-task">Final Task</h4>
+<p>If everything is running as expected we can delete it by changing the ‘state’</p>
+<p>var in the defaults.yaml file from present to absent.</p>
+<p>After changing it, run the playbook again and verify you have no pods with <code>oc get pods</code>.</p>
+</body>
+</html>
