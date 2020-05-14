@@ -3,3 +3,6 @@ https://github.com/rockocoop/ocpsanitytests.git
 
 Playbooks for Automating OCP Deployments
 https://github.com/rockocoop/ocpprep.git
+
+Playbooks for Automating OCP 4.x Deployments
+https://gitlab.consulting.redhat.com/ayakoubo/ocp4-automation
