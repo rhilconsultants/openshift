@@ -411,8 +411,11 @@ This is equivalent to how — extra-vars can be passed into the ansible-playbook
 The CR snippet below shows two ‘extra vars’ (message and newParamater) being passed in via spec. 
 
 Passing 'extra vars' through the CR allows for customization of Ansible logic based on the contents of each CR instance.
-# Sample CR definition where some
-# 'extra vars' are passed via the spec
+## Sample CR definition where some
+
+In most cases you would like to extend your CRD in order to allow customers to add more custom values to there request.
+
+#### 'extra vars' are passed via the spec
 
     apiVersion: "app.example.com/v1alpha1"
     kind: "Database"
