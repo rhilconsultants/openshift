@@ -218,12 +218,9 @@ And now the route yaml :
     apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      annotations:
-        openshift.io/host.generated: "true"
       name: hellogo-service-${USER}
       namespace: project-${USER}
     spec:
-      host: hellogo-service-${USER}-project-${USER}.apps.ocp4.infra.local
       port:
         targetPort: ${GO_PORT}
       to:
@@ -231,13 +228,6 @@ And now the route yaml :
         name: hellogo-service-${USER}
         weight: 100
       wildcardPolicy: None
-    status:
-      ingress:
-      - conditions:
-        host: hellogo-service-${USER}-project-${USER}.apps.ocp4.infra.local
-        routerCanonicalHostname: apps.ocp4.infra.local
-        routerName: default
-        wildcardPolicy: None
     EOF
 
 And create them :
