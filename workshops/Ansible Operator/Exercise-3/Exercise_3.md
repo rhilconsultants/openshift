@@ -86,7 +86,7 @@ OpenShift Resource files. Let's take the hello-go deployment example.
               image: registry.infra.local:5000/${USER}/hello-go
               ports:
               - containerPort: ${GO_PORT}
-      replicas: {{ size }}
+      replicas: 1
       selector:
         matchLabels:
           app: hellogo
