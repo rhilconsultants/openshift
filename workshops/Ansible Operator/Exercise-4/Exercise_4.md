@@ -360,7 +360,7 @@ Once the operator is running your are good to go and you can continue with testi
 Now that we have deployed our Operator, let’s create a CR and 3 instances of our hellogo application with our client user.
 First login to openshift with the ${USER}-client :
 
-    # oc login --username=${USER}-client --password=OcpPa$$w0rd
+    # oc login --username ${USER}-client --password 'OcpPa$$w0rd'
 
 There is a sample CR in the scaffolding created as part of the Operator SDK:
 
