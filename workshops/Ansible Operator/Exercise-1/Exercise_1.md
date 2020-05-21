@@ -158,7 +158,7 @@ the following:
      # curl localhost:${GO_PORT}
      Hello, you requested: /
 
-And if you curl another path, like curl localhost:81{user number}/test, you’ll see:
+And if you curl another path, like curl localhost:80${user number}/test, you’ll see:
 
      # curl localhost:${GO_PORT}/test
      Hello, you requested: /test
@@ -196,10 +196,10 @@ If we want it to be consistent through this session (change user01 and the passw
 
 And now create and update the ~/.docker/config.json file :
 
-     # mkdir ~/.docker
-     # echo '{ "auths": {}}' | jq '.auths += {"registry.infra.local:5000": \
-     {"auth": "REG_SECRET","email": "me@working.me"}}' | \
-     sed "s/REG_SECRET/$REG_SECRET/" | jq . > ~/.docker/config.json
+    # mkdir ~/.docker
+    # echo '{ "auths": {}}' | jq '.auths += {"registry.infra.local:5000": \
+    {"auth": "REG_SECRET","email": "me@working.me"}}' | \
+    sed "s/REG_SECRET/$REG_SECRET/" | jq . > ~/.docker/config.json
 
 Hello Go isn’t very useful if you can only run it locally on your workstation. This app is stateless, it logs to stdout, and it fulfills a single purpose, so it is a perfect fit to containerize for a cloud-native deployment!
 
@@ -207,13 +207,13 @@ Building Go apps in Docker containers is easy. Go maintains a number of images o
 It’s time to create a Dockerfile to instruct Docker how to build our Hello Go app container image.
 Create a Dockerfile in the hello-go project’s root directory, and add the following:
 
-     # cat > Dockerfile << EOF
-     FROM ubi8/go-toolset as build
+    # cat > Dockerfile << EOF
+    FROM ubi8/go-toolset as build
 
-     WORKDIR /opt/app-root
-     COPY cmd cmd
-     RUN go build cmd/hello/hello.go
-     EOF
+    WORKDIR /opt/app-root
+    COPY cmd cmd
+    RUN go build cmd/hello/hello.go
+    EOF
 
 If you’ve worked with Docker before, you might be wondering about the syntax of the first line.
 The first line of a Dockerfile should define the base image for the Docker container. Here, we’re building from the golang library image using the ubi8/go-toolset  tag, which will give us the latest version in the Go 1.x series of images, based on Red Hat  Linux. But what about as build ? This portion of the FROM line allows a multi-stage build. If we just built our app inside the ubi8/go-toolset  image, we would end up with at least a 1.21 GB Docker image. For a tiny HTTP server app like Hello Go, that’s a lot of overhead!
@@ -221,15 +221,15 @@ Using a multi-stage build, we can build Hello Go in one container (named build u
 Add the following to the same Dockerfile to complete the multi-stage build:
 
 
-      # cat >> Dockerfile << EOF
-      FROM ubi8/ubi-minimal
+    # cat >> Dockerfile << EOF
+    FROM ubi8/ubi-minimal
 
-      WORKDIR /opt/app-root
-      COPY --from=build /opt/app-root/hello /opt/app-root/hello
+    WORKDIR /opt/app-root
+    COPY --from=build /opt/app-root/hello /opt/app-root/hello
 
-      EXPOSE ${GO_PORT}
-      ENTRYPOINT ["./hello"]
-      EOF
+    EXPOSE ${GO_PORT}
+    ENTRYPOINT ["./hello"]
+    EOF
 
 Building on the ubi8/ubi-minimal image will give us a final container image that’s only a 108 megabytes, which means it will be faster to upload into a container registry, and faster to pull when running it in Kubernetes.
 
@@ -278,10 +278,11 @@ docker/podman run .
 Clean you work :
 
      # podman stop hello-go 
-     # podmain rm hello-go
+     # podman rm hello-go
 
 Push to the Registry
 Only 2 more steps remaining , re tag our application :
+
      # podman tag localhost/hello-go registry.infra.local:5000/${USER}/hello-go 
 
 Verify you image was successfully tagged :
