@@ -236,7 +236,7 @@ And create them :
 
 Now test your deployment :
 
-    # curl http://hellogo-service-${USER}-project-${USER}.apps.ocp4.infra.local/testing
+    # curl http://hellogo-route-${USER}-project-${USER}.apps.ocp4.infra.local/testing
     Hello, you requested: /testing
 
 If everything works as expected then remove the service and the route.
