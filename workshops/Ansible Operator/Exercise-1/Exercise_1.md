@@ -92,7 +92,7 @@ And make sure we set the right variables we need :
 
 ```bash
 # export USER_NUMBER=`echo $USER | sed 's/user//'`
-# export GO_PORT=”80${USER_NUMBER}”
+# export GO_PORT="80${USER_NUMBER}"
 # echo $GO_PORT
 ```
 
