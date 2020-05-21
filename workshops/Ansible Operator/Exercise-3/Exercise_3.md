@@ -218,7 +218,7 @@ And now the route yaml :
     apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: hellogo-service-${USER}
+      name: hellogo-route-${USER}
       namespace: project-${USER}
     spec:
       port:
