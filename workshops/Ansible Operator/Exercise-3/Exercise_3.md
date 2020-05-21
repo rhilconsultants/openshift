@@ -86,7 +86,7 @@ OpenShift Resource files. Let's take the hello-go deployment example.
               image: registry.infra.local:5000/${USER}/hello-go
               ports:
               - containerPort: ${GO_PORT}
-      replicas: {{ size }}
+      replicas: 1
       selector:
         matchLabels:
           app: hellogo
@@ -136,7 +136,7 @@ Now we can run the Playbook to deploy your hello-go on to OpenShift
 
 And remove leftovers :
 
-    # podman rm ose-openshift
+    # podman rm ose-openshif (may not be necessary)
 
 You can see the hello-go deployment created in your namespace.
 
@@ -184,7 +184,7 @@ to customize the hello-go DeploymentConfig.
 
 Clean it up.
 
-    # podman rm ose-openshift
+    # podman rm ose-openshift (may not be necessary)
 
 After running the Playbook, the cluster will scale down one of the hello-go pods to meet the new requested replica count of 2. 
 
@@ -218,7 +218,7 @@ And now the route yaml :
     apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: hellogo-service-${USER}
+      name: hellogo-route-${USER}
       namespace: project-${USER}
     spec:
       port:
