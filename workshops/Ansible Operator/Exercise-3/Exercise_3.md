@@ -136,7 +136,7 @@ Now we can run the Playbook to deploy your hello-go on to OpenShift
 
 And remove leftovers :
 
-    # podman rm ose-openshift
+    # podman rm ose-openshif (may not be necessary)
 
 You can see the hello-go deployment created in your namespace.
 
@@ -184,7 +184,7 @@ to customize the hello-go DeploymentConfig.
 
 Clean it up.
 
-    # podman rm ose-openshift
+    # podman rm ose-openshift (may not be necessary)
 
 After running the Playbook, the cluster will scale down one of the hello-go pods to meet the new requested replica count of 2. 
 
