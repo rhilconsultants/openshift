@@ -197,8 +197,8 @@ If we want it to be consistent through this session (change user01 and the passw
 And now create and update the ~/.docker/config.json file :
 
     # mkdir ~/.docker
-    # echo '{ "auths": {}}' | jq '.auths += {"registry.infra.local:5000": \
-    {"auth": "REG_SECRET","email": "me@working.me"}}' | \
+    # echo '{ "auths": {}}' | \
+    jq '.auths += {"registry.infra.local:5000": {"auth": "REG_SECRET","email": "me@working.me"}}' | \
     sed "s/REG_SECRET/$REG_SECRET/" | jq . > ~/.docker/config.json
 
 Hello Go isn’t very useful if you can only run it locally on your workstation. This app is stateless, it logs to stdout, and it fulfills a single purpose, so it is a perfect fit to containerize for a cloud-native deployment!
