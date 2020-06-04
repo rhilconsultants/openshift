@@ -151,7 +151,8 @@ Now let’s look at the TREE of our new object :
     │       ├── templates
     │       └── vars
     │           └── main.yml
-    └── watches.yaml17 directories, 25 files
+    └── watches.yaml
+17 directories, 25 files
 
 Now let’s change the directory :
 
@@ -392,7 +393,7 @@ Ensure that the hellogo-operator creates the deployment for the CR:
     NAME                 DESIRED CURRENT UP-TO-DATE AVAILABLE AGE
     example-${USER}-hellogo    3       3       3          3         1m
 
-STOP !!!
+#### STOP !!!
 nothing is happying right ?
 
 well this could be a result of us not configuration the watches.yaml file correctly.
@@ -404,12 +405,13 @@ go back to your old user
 Let's edit the watches.yaml again with the option of 'watchClusterScopedResources' set the true "False by default"
 
     # vi watches.yaml
+    ---
     - version: v1alpha1
       group: hellogo.example.com
       kind: ${USER^}hellogo
       role: ${USER}hellogo
       watchClusterScopedResources: true
-      reconcilePeriod: 5s
+      reconcilePeriod: 5m
 
 once you have updated the watches.yaml file rebuild the operator :
 
