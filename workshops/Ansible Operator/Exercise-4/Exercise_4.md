@@ -392,6 +392,51 @@ Ensure that the hellogo-operator creates the deployment for the CR:
     NAME                 DESIRED CURRENT UP-TO-DATE AVAILABLE AGE
     example-${USER}-hellogo    3       3       3          3         1m
 
+STOP !!!
+nothing is happying right ?
+
+well this could be a result of us not configuration the watches.yaml file correctly.
+
+go back to your old user 
+
+    # oc login --username ${USER} --password 'OcpPa$$w0rd'
+
+Let's edit the watches.yaml again with the option of 'watchClusterScopedResources' set the true "False by default"
+
+    # vi watches.yaml
+    - version: v1alpha1
+      group: hellogo.example.com
+      kind: ${USER^}hellogo
+      role: ${USER}hellogo
+      watchClusterScopedResources: true
+      reconcilePeriod: 5s
+
+once you have updated the watches.yaml file rebuild the operator :
+
+    # operator-sdk build ${USER}-hellogo-operator:v0.0.1 --image-builder buildah
+
+Tag amd push the new image :
+
+    # podman tag  localhost/${USER}-hellogo-operator:v0.0.1 \
+    registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+
+    # podman push registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+
+for best practice , delete and recreate the deploymnet.yaml
+
+    # oc delete -f deploy/operator.yaml
+
+And
+
+    # oc create -f deploy/operator.yaml
+
+Switch back to the ${USER}-client
+
+    # oc login --username ${USER}-client --password 'OcpPa$$w0rd'
+
+and run check the pods to see if they are now been created (we have not delete the CR which means it is still active
+and waiting for actions from the cluster
+
 Once the deployment is completed we can move on to the testing part
 
 ### TESTING
@@ -461,8 +506,15 @@ Then, delete the memcached-operator deployment.
     # oc delete -f deploy/operator.yaml
 
 Finally, verify that the memcached-operator is no longer running.
-
+    
     # oc get deployment
+
+Ask the Cluster Admin to run :
+
+    # oc delete -f deploy/role_binding.yaml
+    # oc delete -f deploy/role.yaml
+    # oc delete -f deploy/service_account.yaml
+    # oc delete -f deploy/crds/cache_v1alpha1_memcached_crd.yaml
 
 ### Extra Tasts 
 
