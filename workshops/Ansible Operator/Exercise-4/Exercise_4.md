@@ -394,9 +394,10 @@ Ensure that the hellogo-operator creates the deployment for the CR:
     example-${USER}-hellogo    3       3       3          3         1m
 
 #### STOP !!!
-nothing is happying right ?
 
-well this could be a result of us not configuration the watches.yaml file correctly.
+Nothing is happening right ?
+
+Well this could be a result of us not configuration the watches.yaml file correctly.
 
 go back to your old user 
 
