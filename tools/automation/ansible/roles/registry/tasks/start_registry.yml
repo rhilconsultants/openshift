@@ -1,6 +1,6 @@
-- name: Start registry container using Podman 
-  shell: | 
-    podman run --name mirror-registry -p 443:5000 \ 
+- name: Start registry container using Podman
+  shell: |
+    podman run --name mirror-registry -p 443:5000 \
      -v /opt/registry/data:/var/lib/registry:z \
      -v /opt/registry/auth:/auth:z \
      -e "REGISTRY_AUTH=htpasswd" \

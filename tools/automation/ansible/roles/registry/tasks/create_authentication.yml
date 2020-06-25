@@ -23,6 +23,6 @@
     path: /opt/registry/auth/htpasswd
     crypt_scheme: bcrypt
     name: admin
-    password: admin 
+    password: admin
 
 

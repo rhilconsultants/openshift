@@ -1,22 +1,22 @@
-- name: Copy self-signed certificate to pki directory 
-  copy: 
+- name: Copy self-signed certificate to pki directory
+  copy:
     src: /opt/registry/certs/registry.crt
     dest: /etc/pki/ca-trust/source/anchors/registry.crt
 
-- name: Update certificate for validation 
+- name: Update certificate for validation
   command: update-ca-trust extract
 
-- name: Test registry access 
-  uri: 
-    user: admin 
-    password: admin 
-    method: GET 
+- name: Test registry access
+  uri:
+    user: admin
+    password: admin
+    method: GET
     url: "https://{{ registry_full_fqdn }}/v2/_catalog"
     validate_certs: no
   register: result
 
-- name: Print test result if OK 
-  debug: 
+- name: Print test result if OK
+  debug:
     msg: "Registry status for URL {{ result.url }} is OK!"
   when: result.status|int == 200
 
