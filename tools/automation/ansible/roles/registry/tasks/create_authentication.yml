@@ -3,11 +3,6 @@
     path: /opt/registry/certs/registry.key
   become: true
 
-  #- name: Create answer file to generate certificate 
-  #  template: 
-  #    src: registry/templates/csr_answerfile.j2
-  #    dest: /opt/registry/certs/csr_answer.txt
-  #
 - name: Generate CSR
   openssl_csr:
     path: /opt/registry/certs/csr_answer.csr
