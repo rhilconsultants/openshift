@@ -1,0 +1,18 @@
+---
+# tasks file for registry
+
+- name: Import Prerequisites Tasks 
+  include_tasks: install_prerequisites.yml
+
+- name: Import Authentication Tasks 
+  include_tasks: create_authentication.yml
+
+- name: Configure Firewall Access 
+  include_tasks: configure_firewall.yml
+
+- name: Start Registry Container
+  include_tasks: start_registry.yml
+
+- name: Validate Registry Configuration 
+  include_tasks: validate_registry.yml
+

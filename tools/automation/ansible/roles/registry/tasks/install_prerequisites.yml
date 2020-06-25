@@ -1,0 +1,19 @@
+- name: Install yum prerequisites 
+  yum: 
+    name: ['httpd-tools','podman'] 
+    state: present 
+
+- name: Install pip prerequisites 
+  pip: 
+    name: ['passlib','bcrypt']
+    state: present 
+
+- name: Create directory tree 
+  file:
+    state: directory 
+    path: "/opt/registry/{{ item }}"
+    recurse: yes
+  with_items: 
+  - "certs"
+  - "auth"
+  - "data"

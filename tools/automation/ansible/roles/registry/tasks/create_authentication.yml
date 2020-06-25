@@ -1,0 +1,33 @@
+- name: Generate a Private Key
+  openssl_privatekey:
+    path: /opt/registry/certs/registry.key
+  become: true
+
+  #- name: Create answer file to generate certificate 
+  #  template: 
+  #    src: registry/templates/csr_answerfile.j2
+  #    dest: /opt/registry/certs/csr_answer.txt
+  #
+- name: Generate CSR
+  openssl_csr:
+    path: /opt/registry/certs/csr_answer.csr
+    privatekey_path: /opt/registry/certs/registry.key
+    digest: sha256
+    common_name: "{{ registry_full_fqdn }}"
+  become: true
+
+- name: Generate the registry certificate using the provided answerfile
+  openssl_certificate:
+    path: /opt/registry/certs/registry.crt
+    privatekey_path: /opt/registry/certs/registry.key
+    csr_path: /opt/registry/certs/csr_answer.csr
+    provider: selfsigned
+
+- name: Create login credentaisl using htpasswd
+  htpasswd:
+    path: /opt/registry/auth/htpasswd
+    crypt_scheme: bcrypt
+    name: admin
+    password: admin 
+
+

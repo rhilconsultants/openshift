@@ -1,0 +1,13 @@
+[req]
+default_bits = 4096
+prompt = no
+default_md = sha256
+distinguished_name = dn
+[ dn ]
+C=US
+ST=New York
+L=New York
+O=MyOrg
+OU=MyOU
+emailAddress=me@working.me
+CN = {{ registry_full_fqdn }}
