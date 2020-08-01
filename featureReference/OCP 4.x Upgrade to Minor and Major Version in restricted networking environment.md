@@ -65,19 +65,19 @@ cat pull-secret2.json | jq
   "auths": {
     "cloud.openshift.com": {
       "auth": "<your pull secret>",
-      "email": "matan.carmeli7@gmail.com"
+      "email": "<your email address>"
     },
     "quay.io": {
       "auth": "<your pull secret>",
-      "email": "matan.carmeli7@gmail.com"
+      "email": "<your email address>"
     },
     "registry.connect.redhat.com": {
       "auth": "<your pull secret>",
-      "email": "matan.carmeli7@gmail.com"
+      "email": "<your email address>"
     },
     "registry.redhat.io": {
       "auth": "<your pull secret>",
-      "email": "matan.carmeli7@gmail.com"
+      "email": "<your email address>"
     },
     "registry.ocp43-prod.sales.lab.tlv.redhat.com:5000": {
       "auth": "<your base64-encoded credentials>"
