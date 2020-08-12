@@ -41,14 +41,14 @@ A Trigger captures an external event, such as a Git pull request and processes t
 A Condition refers to a validation or check, which is executed before a Task is run in your Pipeline. Conditions are like if statements which perform logical tests, with a return value of True or False. A Task is executed if all Conditions return True, but if any of the Conditions fail, the Task and all subsequent Tasks are skipped. You can use Conditions in your Pipeline to create complex workflows covering multiple scenarios.
 
 
-# Using the Pipes (Basics)
+## Using the Pipes (Basics)
 Now that we understand (or at the very least familiarized ) with all the concepts we can start by making sure that pipeline is install on our system.  
 we can do that by quering for service accounts and look for pipeline among them :
 
     # oc get sa | grep pipeline
     pipeline   2         5d17h
 
-
+### Basic usage 
 Now that we see the pipeline service account we can start by creating a simple task :
 
     # cat > task-hello-world.yaml << EOF
@@ -103,6 +103,7 @@ to view the output of the task run we can use our tkn tool :
 
     # tkn taskrun logs echo-hello-world-task-run 
 
+### params
 Now that we created a Task and a Task Run we can go ahead and expend our task by adding params to ou task  
 "params" enable us to use the same task for more then one resources which can be both the input and the output of a task  
 An example of params are as follow :
@@ -188,7 +189,7 @@ Now we can look at the logs and see the output we wanted :
 
 if you see "Hello Foo" then we are good to go 
 
-#### Extra
+## Extra task
 
 try sending the param using the tkn command ...  
 
