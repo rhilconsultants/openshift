@@ -58,8 +58,8 @@ Now that we see the pipeline service account we can start by creating a simple t
     spec:
       steps:
         - name: echo
-          image: registry.redhat.io/rhel7:latest
-          # image: centos:centos7 - works as well
+          image: registry.redhat.io/ubi8/ubi-minimal
+          # image: docker.io/library/ubuntu - works as well
           command:
             - echo
           args:
@@ -109,14 +109,30 @@ An example of params are as follow :
         params:
           - name: person
             description: Person to greet
-            default: There
+            default: bob
       steps:
         - name: echo
-          image: registry.redhat.io/rhel7:latest
-          # image: centos:centos7 - works as well
+          image: registry.redhat.io/ubi8/ubi-minimal
+          # image: docker.io/library/ubuntu - works as well
           command:
             - echo
           args:
             - "Hello $(inputs.params.person)"
     EOF
+
+In our example we have configured the param person and added it as one of our arguments.  
+
+Let's go ahead and run it :
+
+    #oc create -f task-params.yaml
+
+Now that the task is set we would create a task run:
+
+    #tkn task start echo-hello-person
+
+And see the results by grabing the taskrun and following the logs :
+
+    #tkn taskrun list | grep echo-hello-person
+
+    #tkn taskrun logs -f echo-hello-person
 
