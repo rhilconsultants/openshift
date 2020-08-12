@@ -1,0 +1,24 @@
+
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: echo-hello-person
+spec:
+  inputs:
+    params:
+      - name: person
+        description: Person to greet
+        default: There
+  steps:
+    - name: echo
+      image: registry.redhat.io/rhel7:latest
+      # image: centos:centos7 - works as well
+
+
+
+
+
+      command:
+        - echo
+      args:
+        - "Hello $(inputs.params.person)"
