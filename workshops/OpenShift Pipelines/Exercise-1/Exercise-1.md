@@ -51,6 +51,7 @@ we can do that by quering for service accounts and look for pipeline among them 
 
 Now that we see the pipeline service account we can start by creating a simple task :
 
+    # cat > task-hello-world.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: Task
     metadata:
@@ -58,24 +59,31 @@ Now that we see the pipeline service account we can start by creating a simple t
     spec:
       steps:
         - name: echo
-          image: registry.redhat.io/ubi8/ubi-minimal
-          # image: docker.io/library/ubuntu - works as well
+          # image: registry.redhat.io/ubi8/ubi-minimal
+          image: docker.io/library/ubuntu - works as well
           command:
             - echo
           args:
             - "Hello World"
+    EOF
 
 Take a few seconds to view the task. It is pretty straightforward when we look at it ...  
-All we are asking the task to do is to obtain our image module (YES , the images that the task is using are actually the modules for our pipeline) and then it runs the echo command with the "Hello World" arguments
+All we are asking the task to do is to obtain our image module (YES , the images that the task is using are actually the modules for our pipeline) and then it runs the echo command with the "Hello World" arguments  
+  
+Sense it is a Kubernetes Object , we will go ahead and use the oc command to create it :
+
+    # oc create -f task-hello-world.yaml
 
 We can also use the command to list the task :
 
     # tkn task list
+    NAME               DESCRIPTION   AGE
+    echo-hello-world                 X seconds ago
 
 Now , In order to run the command we need to create a runtask (we can create it with a YAML or using the tkn command)  
 For YAML :
 
-    # cat > taskrun.yaml << EOF
+    # cat > taskrun-hello-world.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: TaskRun
     metadata:
@@ -85,7 +93,7 @@ For YAML :
         name: echo-hello-world
     EOF
 
-    # oc create -f taskrun.yaml
+    # oc create -f taskrun-hello-world.yaml
 
 Now that we created a Run for our task we can view it using the CLI :
 
@@ -93,13 +101,13 @@ Now that we created a Run for our task we can view it using the CLI :
 
 to view the output of the task run we can use our tkn tool :
 
-    # tkn taskrun logs -f echo-hello-world-task-run
+    # tkn taskrun logs echo-hello-world-task-run 
 
 Now that we created a Task and a Task Run we can go ahead and expend our task by adding params to ou task  
 "params" enable us to use the same task for more then one resources which can be both the input and the output of a task  
 An example of params are as follow :
 
-    # cat > task-params.yaml << EOF
+    # echo '
     apiVersion: tekton.dev/v1alpha1
     kind: Task
     metadata:
@@ -112,27 +120,77 @@ An example of params are as follow :
             default: bob
       steps:
         - name: echo
-          image: registry.redhat.io/ubi8/ubi-minimal
-          # image: docker.io/library/ubuntu - works as well
+          #image: registry.redhat.io/ubi8/ubi-minimal - I recommend using this image
+          image: docker.io/library/ubuntu
           command:
             - echo
           args:
-            - "Hello $(inputs.params.person)"
-    EOF
+            - "Hello $(inputs.params.person)"' > task-hello-params.yaml
 
 In our example we have configured the param person and added it as one of our arguments.  
 
 Let's go ahead and run it :
 
-    #oc create -f task-params.yaml
+    # oc create -f task-hello-params.yaml
 
 Now that the task is set we would create a task run:
 
-    #tkn task start echo-hello-person
+    # tkn task start echo-hello-person
 
-And see the results by grabing the taskrun and following the logs :
+When we ran the command the last line of the output is the command we need to view the logs and make sure it is running as we wanted.  
+go Ahead and run the logs command ...  
+what do you see ?  
 
-    #tkn taskrun list | grep echo-hello-person
+Now let's change bob to foo ...
+there are several ways to do it:
 
-    #tkn taskrun logs -f echo-hello-person
+1. update the YAML file and apply the changes
+2. edit the current task using the oc command
+3. send a new param to another run
 
+The first option is pretty simple , just edit the file and change the name "bob" to "foo" and then apply the changes :
+
+    # vi task-hello-params.yaml
+
+and
+
+    # oc apply -f task-hello-params.yaml
+
+The second is even more simple , just edit the name of the task :
+
+    # oc get tasks -o name | grep person | xargs oc edit
+
+Once you save and exit the changes will take effect...
+
+The last one is the one we want , we are going to create a task run where we will define the param's new value in it :
+
+    # cat > taskrun-hello-person-param-override.yaml << EOF
+    apiVersion: tekton.dev/v1alpha1
+    kind: TaskRun
+    metadata:
+      name: echo-hello-person-task-run-override
+    spec:
+      taskRef:
+        name: echo-hello-person
+      inputs:
+        params:
+          - name: person
+            value: Foo
+    EOF
+
+And create the task run 
+
+    # oc create -f taskrun-hello-person-param-override.yaml
+
+Now we can look at the logs and see the output we wanted :
+
+    # tkn taskrun logs echo-hello-person-task-run-override -f
+
+if you see "Hello Foo" then we are good to go 
+
+#### Extra
+
+try sending the param using the tkn command ...  
+
+
+We will wait for the rest of the Class to complete the exercise and move on to Exercise number 2
