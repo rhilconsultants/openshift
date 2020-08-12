@@ -131,11 +131,11 @@ In our example we have configured the param person and added it as one of our ar
 
 Let's go ahead and run it :
 
-    #oc create -f task-hello-params.yaml
+    # oc create -f task-hello-params.yaml
 
 Now that the task is set we would create a task run:
 
-    #tkn task start echo-hello-person
+    # tkn task start echo-hello-person
 
 When we ran the command the last line of the output is the command we need to view the logs and make sure it is running as we wanted.  
 go Ahead and run the logs command ...  
@@ -154,7 +154,7 @@ The first option is pretty simple , just edit the file and change the name "bob"
 
 and
 
-    #oc apply -f task-hello-params.yaml
+    # oc apply -f task-hello-params.yaml
 
 The second is even more simple , just edit the name of the task :
 
@@ -184,7 +184,7 @@ And create the task run
 
 Now we can look at the logs and see the output we wanted :
 
-    #tkn taskrun logs echo-hello-person-task-run-override -f
+    # tkn taskrun logs echo-hello-person-task-run-override -f
 
 if you see "Hello Foo" then we are good to go 
 
