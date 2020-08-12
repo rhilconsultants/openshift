@@ -8,13 +8,15 @@ The 2 tools are
 ## Downloads
   to download oc all we need to do is to download the latest oc binary with the following command :
 
-    # export OCP_RELEASE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt | grep 'Name:' | awk '{print $NF}')
+    # export OCP_RELEASE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt \
+    | grep 'Name:' | awk '{print $NF}')
     # wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-${OCP_RELEASE}.tar.gz
     # tar -xzf openshift-client-linux-${OCP_RELEASE}.tar.gz -C ~/bin/
 
 Now to download the tkn tool we can do it in the same matter
 
-    # TKN_VERSION=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/latest/sha256sum.txt | grep tkn-linux | awk -F \- '{print $4}' | sed 's/.tar.gz//g')
+    # TKN_VERSION=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/latest/sha256sum.txt \
+    | grep tkn-linux | awk -F \- '{print $4}' | sed 's/.tar.gz//g')
     # wget https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/latest/tkn-linux-amd64-${TKN_VERSION}.tar.gz
     # tar -zxvf tkn-linux-amd64-${TKN_VERSION}.tar.gz -C ~/bin/
 
@@ -34,7 +36,6 @@ Now we will craete a simple endless command to run in the background so the imag
 
     # cat > run.sh << EOF
     #!/bin/bash
-
     tail -f /dev/null
     EOF
 
@@ -55,7 +56,7 @@ Now create a Dockerfile and copy the binaries to the new image
 
 Once we've done that we can go ahead and create our image :
 
-    # buildah -f Dockerfile -t ubi-pipeline .
+    # buildah bud -f Dockerfile -t ubi-pipeline .
 
 set your OpenShift cluster Prefix and you current namespace:
 
@@ -95,4 +96,8 @@ And deploy it :
 
     # oc create -f deployment.yaml
 
-We are ready to Start :)
+After the deployment we can use the web console to login or use the oc command to get the pod terminal access
+
+    # oc get pods -n $NAMESPACE -o name | grep ubi-pipeline | xargs oc rsh -n $NAMESPACE
+
+Once we are in the Terminal We are ready to Start :)
