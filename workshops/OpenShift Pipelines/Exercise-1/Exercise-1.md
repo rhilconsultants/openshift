@@ -59,8 +59,8 @@ Now that we see the pipeline service account we can start by creating a simple t
     spec:
       steps:
         - name: echo
-          # image: registry.redhat.io/ubi8/ubi-minimal
-          image: docker.io/library/ubuntu - works as well
+          # image: registry.redhat.io/ubi8/ubi-minimal - is preferred
+          image: docker.io/library/ubuntu 
           command:
             - echo
           args:
@@ -71,7 +71,7 @@ Take a few seconds to view the task. It is pretty straightforward when we look a
 All we are asking the task to do is to obtain our image module (YES , the images that the task is using are actually the modules for our pipeline) and then it runs the echo command with the "Hello World" arguments  
   
 Sense it is a Kubernetes Object , we will go ahead and use the oc command to create it :
-
+echo-hello-world
     # oc create -f task-hello-world.yaml
 
 We can also use the command to list the task :
@@ -93,6 +93,8 @@ For YAML :
         name: echo-hello-world
     EOF
 
+And Create it 
+
     # oc create -f taskrun-hello-world.yaml
 
 Now that we created a Run for our task we can view it using the CLI :
@@ -102,6 +104,7 @@ Now that we created a Run for our task we can view it using the CLI :
 to view the output of the task run we can use our tkn tool :
 
     # tkn taskrun logs echo-hello-world-task-run 
+    [echo] Hello World
 
 ### params
 Now that we created a Task and a Task Run we can go ahead and expend our task by adding params to ou task  
@@ -176,7 +179,7 @@ The last one is the one we want , we are going to create a task run where we wil
       inputs:
         params:
           - name: person
-            value: Foo
+            value: bar
     EOF
 
 And create the task run 
