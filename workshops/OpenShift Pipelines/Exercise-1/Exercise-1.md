@@ -59,8 +59,8 @@ Now that we see the pipeline service account we can start by creating a simple t
     spec:
       steps:
         - name: echo
-          # image: registry.redhat.io/ubi8/ubi-minimal - is preferred
-          image: docker.io/library/ubuntu 
+          image: registry.redhat.io/ubi8/ubi-minimal
+          # image: docker.io/library/ubuntu - less preferred 
           command:
             - echo
           args:
@@ -105,6 +105,39 @@ to view the output of the task run we can use our tkn tool :
 
     # tkn taskrun logs echo-hello-world-task-run 
     [echo] Hello World
+
+In case the Task takes a long time to finish (it it simple task , this should take to long , does it ?) we better look at the pods and their status :
+
+    # oc get pods 
+    NAME                                  READY   STATUS      RESTARTS   AGE
+    echo-hello-world-task-run-pod-wr68k   0/1     Completed   0          4m59s
+
+In case you are getting an ImagePullErr in the status then that could be 1 of 2 reasons
+
+  1. we are using a wrong image path (change it to your local registry)
+  2. we didn't configure a pull secret to work with our registry
+
+In case we need to solve reason number 2 then this is how to do it :
+
+First we will generate a config.json file under our "$HOME/.docker" directory
+
+    # REG_SECRET=`echo -n 'myuser:mypassword' | base64 -w0`
+    # MY_REGISTRY="enter your registry here"
+    # mkdir ~/.docker
+    # echo '{ "auths": {}}' | \
+    jq '.auths += {"MY_REGISTRY": {"auth": "REG_SECRET","email": "me@working.me"}}' | \
+    sed "s/REG_SECRET/$REG_SECRET/" | sed "s/MY_REGISTRY/$MY_REGISTRY/" | jq . > ~/.docker/config.json
+
+Next we will create a secret and add the file to our namespace 
+
+    # oc create secret generic --from-file=.dockerconfigjson=/home/$USER/.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson pullsecret
+
+and then attach it to the pull operation :
+
+    # oc secrets link default pullsecret --for=pull
+
+Delete the taskrun and recreate it , that should solve the issue.  
 
 ### params
 Now that we created a Task and a Task Run we can go ahead and expend our task by adding params to ou task  
