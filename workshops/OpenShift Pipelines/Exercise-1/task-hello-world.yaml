@@ -5,8 +5,8 @@ metadata:
 spec:
   steps:
     - name: echo
-      # image: registry.redhat.io/ubi8/ubi-minimal
-      image: docker.io/library/ubuntu
+      image: registry.redhat.io/ubi8/ubi-minimal
+      # image: docker.io/library/ubuntu - less preferred
       command:
         - echo
       args:
