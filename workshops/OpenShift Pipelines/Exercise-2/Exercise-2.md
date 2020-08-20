@@ -84,7 +84,9 @@ For that we are going to create our PVC as follow :
 
 Once we have created all our Resources files we can create then on OpenShift 
 
-    #oc create -f pipelineResource-git.yaml -f pipelineResouce-image.yaml -f pipeline-pvc.yaml
+    # oc create -f pipelineResource-git.yaml -f pipelineResource-image.yaml -f pipeline-pvc.yaml
+
+Make sure that the PVC is in status "Bound" before we continue...  
 
 Now we can start with the FUN part which is the build process
 
@@ -131,7 +133,7 @@ our task should look like :
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud -f Dockerfile -t $(resources.outputs.image) .
+              buildah bud -f Dockerfile -t image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest .
       volumes:
       - name: varlibcontainers
         persistentVolumeClaim:
@@ -148,18 +150,18 @@ For the last part use can see that we are defining our PVC as our mount director
 
 Now let's create the task :
 
-    #oc create -f task-build-image.yaml
+    # oc create -f task-build-image.yaml
 
 ### The Pipeline (sequential) 
 
 now that we have 3 tasks in place we can start and build the pipeline :
 
-    #cat > pipeline-build-monkey.yaml << EOF
+    # cat > pipeline-build-monkey.yaml << EOF
     apiVersion: tekton.dev/v1beta1
     kind: Pipeline
     metadata:
     ##################### the pipeline information ###################
-      name: build-monkey
+      name: pipeline-build-monkey
     spec:
       resources:
     ##################### the pipeline resource definition ###################
@@ -172,7 +174,7 @@ now that we have 3 tasks in place we can start and build the pipeline :
       - name: hello-world
         taskRef:
           name: echo-hello-world
-      - name: build-image
+      - name: monkey-build-task
         taskRef:
           name: monkey-build-task
         runAfter: 
@@ -210,37 +212,41 @@ At the beginning of this part we are defining the resources we want to use. In t
 #### the Tasks
 
 In the last section we are defining the task (in a sequential order ) and if the task requires a resource then we are defining the resource to that particular task.  
-  
+
+After going over the file and understanding it , we can create it :
+
+    # oc create -f pipeline-build-monkey.yaml
+
 All that is left right now is to create a pipeline run with a reference to the pipeline resources we define at the beginning of the chapter :
 
     # cat > pipeline-run-build-monkey.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
-      name: build-pipeline
+      name: pipeline-run-build-monkey
     spec:
       # serviceAccountName: pipeline
       pipelineRef:
         name: pipeline-run-build-monkey
-      inputs:
-        resources:
-          - name: source
-            resourceRef:
-              name: monkey-app-git
-      outputs:
-        resources:
-          - name: image
-            resourceRef:
-              name: monkey-app
+      resources:
+      - name: source
+        resourceRef:
+          name: monkey-app-git
+      - name: image
+        resourceRef:
+          name: monkey-app
     EOF
 
 And create the object with oc
 
     #oc create -f pipeline-run-build-monkey.yaml
     (or)
-    #tkn pipeline start build-pipeline
+    #tkn pipeline start pipeline-build-monkey
 
 Follow the logs and see the magic happens...  
+
+    # tkn pipelinerun logs pipeline-run-build-monkey -f -n ns-user01
+
 
 ### WorkSpace
 

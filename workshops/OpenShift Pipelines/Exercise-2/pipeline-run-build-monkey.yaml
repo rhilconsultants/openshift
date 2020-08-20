@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: pipeline-run-build-monkey
+spec:
+spec:
+  pipelineRef:
+    name: build-monkey
+  resources:
+  - name: image
+    resourceRef:
+      name: monkey-app
+  - name: source
+    resourceRef:
+      name: monkey-app-git
