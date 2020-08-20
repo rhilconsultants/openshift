@@ -6,8 +6,9 @@ Pipelines are consistent of several parts :
 
   1. pipeline resources
   2. pipeline pvc
-  3. pipeline (metadata definition)
-  4. pipeline Run 
+  3. workspace
+  4. pipeline (metadata definition)
+  5. pipeline Run 
 
   In this part we will go over each of the components and understand how they all work together to create a healthy pipeline.
 
@@ -51,7 +52,7 @@ First export your namespace :
 
 Now we will create the pipeline resource YAML file.
 
-    # cat > pipelineResouce-image.yaml << EOF
+    # cat > pipelineResource-image.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
     metadata:
@@ -61,6 +62,7 @@ Now we will create the pipeline resource YAML file.
       params:
       - name: url
         value: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest
+    EOF
 
 Another resource that we are going to use in our case is a PVC to store our image after it is build.  
 For that we are going to create our PVC as follow :
@@ -73,15 +75,18 @@ For that we are going to create our PVC as follow :
       namespace: $NAMESPACE
     spec:
       accessModes:
-        - ReadWriteMany
+        - ReadWriteOnce
       resources:
         requests:
           storage: 5Gi
-      storageClassName: managed-nfs-storage
-      EOF
+      volumeMode: Filesystem
+    EOF
 
-Now that we have created all our Resources we can start with the FUN part which is the build process
+Once we have created all our Resources files we can create then on OpenShift 
 
+    #oc create -f pipelineResource-git.yaml -f pipelineResouce-image.yaml -f pipeline-pvc.yaml
+
+Now we can start with the FUN part which is the build process
 
 ### Pipeline Tasks
 
@@ -98,8 +103,7 @@ So to make our job easier we basically need to :
 
 our task should look like :
 
-    #cat > task-build-image.yaml << EOF
-    apiVersion: tekton.dev/v1beta1
+    #echo 'apiVersion: tekton.dev/v1beta1
     kind: Task
     metadata:
       name: monkey-build-task
@@ -127,12 +131,12 @@ our task should look like :
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud -f Dockerfile -t image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/$(inputs.params.image-name):latest .
+              buildah bud -f Dockerfile -t $(resources.outputs.image) .
       volumes:
       - name: varlibcontainers
         persistentVolumeClaim:
           claimName: container-build
-    ##################### New content ###################
+    ##################### New content ###################' > task-build-image.yaml
 
 As you can see we added a few more components we haven't used so far.  
 
@@ -142,3 +146,187 @@ That is enabling us to use our pipeline resource (which we defined earlier) in o
 Next we are using a param option to define our application name.  
 For the last part use can see that we are defining our PVC as our mount directory and then we are running our buildah application.
 
+Now let's create the task :
+
+    #oc create -f task-build-image.yaml
+
+### The Pipeline (sequential) 
+
+now that we have 3 tasks in place we can start and build the pipeline :
+
+    #cat > pipeline-build-monkey.yaml << EOF
+    apiVersion: tekton.dev/v1beta1
+    kind: Pipeline
+    metadata:
+    ##################### the pipeline information ###################
+      name: build-monkey
+    spec:
+      resources:
+    ##################### the pipeline resource definition ###################
+      - name: source
+        type: git
+      - name: image
+        type: image
+      tasks:
+    ##################### the tasks reference ###################
+      - name: hello-world
+        taskRef:
+          name: echo-hello-world
+      - name: build-image
+        taskRef:
+          name: monkey-build-task
+        runAfter: 
+          - hello-world
+        resources:
+          inputs:
+          - name: source
+            resource: source
+          outputs:
+          - name: image
+            resource: image
+      - name: hello-person
+        taskRef:
+          name: echo-hello-person
+        runAfter:
+          - monkey-build-task
+    EOF
+
+I know for the first time looking at the task it can look very complex but believe me , it isn't.  
+
+when we look at the YAML file we can see there is actually just 3 parts
+
+  1. the Pipeline information
+  2. the resources
+  3. the tasks (in a sequential order)
+
+#### Pipeline information
+
+As you can see the pipeline information (at this point) is very small and simple. All we need to give here is the name of the task we want to run.  
+
+#### the Pipeline Resource
+
+At the beginning of this part we are defining the resources we want to use. In this example we are using a GIT resource named "source" and a IMAGE resource named image (the names must match between the pipeline and the task)
+
+#### the Tasks
+
+In the last section we are defining the task (in a sequential order ) and if the task requires a resource then we are defining the resource to that particular task.  
+  
+All that is left right now is to create a pipeline run with a reference to the pipeline resources we define at the beginning of the chapter :
+
+    # cat > pipeline-run-build-monkey.yaml << EOF
+    apiVersion: tekton.dev/v1alpha1
+    kind: PipelineRun
+    metadata:
+      name: build-pipeline
+    spec:
+      # serviceAccountName: pipeline
+      pipelineRef:
+        name: pipeline-run-build-monkey
+      inputs:
+        resources:
+          - name: source
+            resourceRef:
+              name: monkey-app-git
+      outputs:
+        resources:
+          - name: image
+            resourceRef:
+              name: monkey-app
+    EOF
+
+And create the object with oc
+
+    #oc create -f pipeline-run-build-monkey.yaml
+    (or)
+    #tkn pipeline start build-pipeline
+
+Follow the logs and see the magic happens...  
+
+### WorkSpace
+
+A Pipeline can use Workspaces to show how storage will be shared through its Tasks. For example, Task A might   clone a source repository onto a Workspace and Task B might compile the code that it finds in that Workspace.   It’s the Pipeline's job to ensure that the Workspace these two Tasks use is the same, and more importantly, that  the order in which they access the Workspace is correct.  
+  
+PipelineRuns perform mostly the same duties as TaskRuns - they provide the specific Volume information to use   for the Workspaces used by each Pipeline.PipelineRuns have the added responsibility of ensuring that whatever   Volume type they provide can be safely and correctly shared across multiple Tasks.  
+  
+
+In order to configure the Workspace we will add the definition :
+
+
+    #cat > pipeline-build-monkey-ws.yaml << EOF
+    apiVersion: tekton.dev/v1beta1
+    kind: Pipeline
+    metadata:
+      name: build-monkey
+    spec:
+      resources:
+      - name: source
+        type: git
+      - name: image
+        type: image
+      tasks:
+      - name: hello-world
+        taskRef:
+          name: echo-hello-world
+      - name: build-image
+        taskRef:
+          name: monkey-build-task
+        runAfter: 
+          - hello-world
+################### Workspace Definition ##########
+        workspaces:
+        - name: src
+          workspace: pipeline-ws1
+################### Workspace Definition Ends #####
+        resources:
+          inputs:
+          - name: source
+            resource: source
+          outputs:
+          - name: image
+            resource: image
+      - name: hello-person
+        taskRef:
+          name: echo-hello-person
+        runAfter: 
+          - monkey-build-task
+    EOF
+
+And we will add a reference for a pipeline run
+
+    # cat > pipeline-run-build-monkey.yaml << EOF
+    apiVersion: tekton.dev/v1alpha1
+    kind: PipelineRun
+    metadata:
+      name: build-pipeline
+    spec:
+      workspaces:
+      - name: pipeline-ws1
+        persistentVolumeClaim:
+          claimName: container-build
+      # serviceAccountName: pipeline
+      pipelineRef:
+        name: pipeline-run-build-monkey
+      inputs:
+        resources:
+          - name: source
+            resourceRef:
+              name: monkey-app-git
+      outputs:
+        resources:
+          - name: image
+            resourceRef:
+              name: monkey-app
+    EOF
+
+
+#### Open task
+
+Build your own task that will push the image to the registry  
+(Hint: you can use the "quay.io/buildah/stable:v1.11.0" Image)
+
+### The Pipeline (parallel)
+
+The Only Difference between sequential and parallel is the "runAfter" section.
+recreate the task without the runAfter, create a pipeline run and let me know what you notice
+
+We will wait for the rest of the Class to complete the exercise and move on to [Exercise 3](../Exercise-3/Exercise-3.md)

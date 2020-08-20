@@ -1,0 +1,10 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: monkey-app
+spec:
+  type: image
+  params:
+  - name: url
+    value: registry:5000/ns-user01/monkey-app:latest
+

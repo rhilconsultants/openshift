@@ -229,5 +229,8 @@ if you see "Hello Foo" then we are good to go
 
 try sending the param using the tkn command ...  
 
+once you complete all the task it is time for a cleanup
 
-We will wait for the rest of the Class to complete the exercise and move on to Exercise number 2
+    #oc get taskrun -o name | xargs oc delete
+
+We will wait for the rest of the Class to complete the exercise and move on to [Exercise 2](../Exercise-2/Exercise-2.md)

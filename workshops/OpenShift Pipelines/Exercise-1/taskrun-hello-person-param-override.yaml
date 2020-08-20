@@ -8,4 +8,4 @@ spec:
   inputs:
     params:
       - name: person
-        value: Foo
+        value: bar

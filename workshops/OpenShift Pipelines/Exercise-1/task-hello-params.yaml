@@ -1,3 +1,4 @@
+
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
@@ -7,10 +8,10 @@ spec:
     params:
       - name: person
         description: Person to greet
-        default: There
+        default: foo
   steps:
     - name: echo
-      # image: registry.redhat.io/rhel7:latest
+      #image: registry.redhat.io/ubi8/ubi-minimal - I recommend using this image
       image: docker.io/library/ubuntu
       command:
         - echo
