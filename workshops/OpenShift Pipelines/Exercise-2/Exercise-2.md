@@ -30,7 +30,7 @@ run a task that will build a simple go application , save it to a pvc and will c
 As mentioned we will start by configuring the pipeline resource git which will be used for our Source Resource.  
 In order to configure it we will apply the following YAML:  
 
-    #cat > pipelineResource-git.yaml << EOF
+    # cat > pipelineResource-git.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
     metadata:
@@ -48,7 +48,7 @@ Now we can create another resource which will be our output resource , In our ca
 
 First export your namespace :
 
-    #export NAMESPACE=`oc project -q`
+    # export NAMESPACE=`oc project -q`
 
 Now we will create the pipeline resource YAML file.
 
@@ -67,7 +67,7 @@ Now we will create the pipeline resource YAML file.
 Another resource that we are going to use in our case is a PVC to store our image after it is build.  
 For that we are going to create our PVC as follow :
 
-    #cat > pipeline-pvc.yaml << EOF
+    # cat > pipeline-pvc.yaml << EOF
     kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
@@ -105,7 +105,7 @@ So to make our job easier we basically need to :
 
 our task should look like :
 
-    #echo 'apiVersion: tekton.dev/v1beta1
+    # echo 'apiVersion: tekton.dev/v1beta1
     kind: Task
     metadata:
       name: monkey-build-task
@@ -239,9 +239,9 @@ All that is left right now is to create a pipeline run with a reference to the p
 
 And create the object with oc
 
-    #oc create -f pipeline-run-build-monkey.yaml
+    # oc create -f pipeline-run-build-monkey.yaml
     (or)
-    #tkn pipeline start pipeline-build-monkey
+    # tkn pipeline start pipeline-build-monkey
 
 Follow the logs and see the magic happens...  
 
@@ -258,7 +258,7 @@ PipelineRuns perform mostly the same duties as TaskRuns - they provide the speci
 In order to configure the Workspace we will add the definition :
 
 
-    #cat > pipeline-build-monkey-ws.yaml << EOF
+    # cat > pipeline-build-monkey-ws.yaml << EOF
     apiVersion: tekton.dev/v1beta1
     kind: Pipeline
     metadata:
@@ -278,11 +278,11 @@ In order to configure the Workspace we will add the definition :
           name: monkey-build-task
         runAfter: 
           - hello-world
-################### Workspace Definition ##########
+     ################### Workspace Definition ##########
         workspaces:
         - name: src
           workspace: pipeline-ws1
-################### Workspace Definition Ends #####
+     ################### Workspace Definition Ends #####
         resources:
           inputs:
           - name: source
