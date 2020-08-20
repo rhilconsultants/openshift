@@ -1,5 +1,7 @@
 # prerequisites
 
+In order to start working with OpenShift pipeline 
+
 Before we start we need to download the right tools in order to work with Tekton  
 The 2 tools are
   - oc - in order to login to the cluster
@@ -67,7 +69,7 @@ Now that we have our image we need to TAG it and push it to our registry
 
     # podman tag localhost/ubi-pipeline default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
 
-    # podman push default-route-openshift-image-registry.apps.${CLUSTER}
+    # podman push default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
     (You may need to login before you can push)
 
 All that is left is to create a deployment for our image :
