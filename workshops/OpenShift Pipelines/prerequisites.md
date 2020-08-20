@@ -1,6 +1,11 @@
 # prerequisites
 
-In order to start working with OpenShift pipeline 
+In order to start working with OpenShift pipeline you Need to have the following basic skills :
+
+  1. understanding of the English language.
+  2. ability to view/edit YAML files
+  3. basic understanding of OpenShift and OpenShift Objects
+   
 
 Before we start we need to download the right tools in order to work with Tekton  
 The 2 tools are

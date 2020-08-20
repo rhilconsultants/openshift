@@ -17,3 +17,6 @@ spec:
   - name: pipeline-ws1
     persistentVolumeClaim:
       claimName: pipeline-workspace-pvc
+  - name: pipeline-ws2
+    persistentVolumeClaim:
+      claimName: pipeline-workspace-pvc-2
