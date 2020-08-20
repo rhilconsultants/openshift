@@ -41,7 +41,7 @@ In order to configure it we will apply the following YAML:
         - name: revision
           value: master
         - name: url
-          value: https://github.com/ooichman/pipeline-tutorial.git
+          value: https://github.com/ooichman/monkey-app.git
     EOF
 
 Now we can create another resource which will be our output resource , In our case we will create an output resource which will be our application Image.
@@ -113,9 +113,10 @@ our task should look like :
     ##################### New content ###################
       resources:
         inputs:
-          - {type: git, name: source}
-        outputs:
-          - {type: image , name: image}
+          - name: source
+            type: git
+          - name: image
+            type: image
     ##################### New content ###################
       params:
         - name: image-name
@@ -133,12 +134,12 @@ our task should look like :
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud -f Dockerfile -t image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest .
+              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.inputs.image.name) .
       volumes:
       - name: varlibcontainers
         persistentVolumeClaim:
           claimName: container-build
-    ##################### New content ###################' > task-build-image.yaml
+    ##################### New content ###################' > monkey-build-task.yaml
 
 As you can see we added a few more components we haven't used so far.  
 
@@ -150,7 +151,7 @@ For the last part use can see that we are defining our PVC as our mount director
 
 Now let's create the task :
 
-    # oc create -f task-build-image.yaml
+    # oc create -f monkey-build-task.yaml
 
 ### The Pipeline (sequential) 
 
@@ -183,7 +184,6 @@ now that we have 3 tasks in place we can start and build the pipeline :
           inputs:
           - name: source
             resource: source
-          outputs:
           - name: image
             resource: image
       - name: hello-person
@@ -252,8 +252,30 @@ Follow the logs and see the magic happens...
 
 A Pipeline can use Workspaces to show how storage will be shared through its Tasks. For example, Task A might   clone a source repository onto a Workspace and Task B might compile the code that it finds in that Workspace.   It’s the Pipeline's job to ensure that the Workspace these two Tasks use is the same, and more importantly, that  the order in which they access the Workspace is correct.  
   
-PipelineRuns perform mostly the same duties as TaskRuns - they provide the specific Volume information to use   for the Workspaces used by each Pipeline.PipelineRuns have the added responsibility of ensuring that whatever   Volume type they provide can be safely and correctly shared across multiple Tasks.  
+PipelineRuns perform mostly the same duties as TaskRuns - they provide the specific Volume information to use   for the Workspaces used by each Pipeline.  
+PipelineRuns have the added responsibility of ensuring that whatever Volume type they provide can be safely and correctly shared across multiple Tasks.  
   
+First let's create a PVC (prefer of RWX) so that we can share our outputs between several tasks.  
+The PVC should look as follow :
+
+    # cat > pipeline-workspace-pvc.yaml << EOF
+    kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: container-build-ws
+      namespace: ${NAMESPACE}
+    spec:
+      accessModes:
+        - ReadWriteMany
+      resources:
+        requests:
+          storage: 5Gi
+      volumeMode: Filesystem
+    EOF
+
+And create it:
+
+    # oc create -f pipeline-workspace-pvc.yaml
 
 In order to configure the Workspace we will add the definition :
 
@@ -262,8 +284,10 @@ In order to configure the Workspace we will add the definition :
     apiVersion: tekton.dev/v1beta1
     kind: Pipeline
     metadata:
-      name: build-monkey
+      name: pipeline-build-monkey-ws
     spec:
+      workspaces:
+        - name: pipeline-ws1
       resources:
       - name: source
         type: git
@@ -273,14 +297,14 @@ In order to configure the Workspace we will add the definition :
       - name: hello-world
         taskRef:
           name: echo-hello-world
-      - name: build-image
+      - name: monkey-build-task
         taskRef:
-          name: monkey-build-task
+          name: monkey-build-task-ws
         runAfter: 
           - hello-world
      ################### Workspace Definition ##########
         workspaces:
-        - name: src
+        - name: pipeline-ws1
           workspace: pipeline-ws1
      ################### Workspace Definition Ends #####
         resources:
@@ -297,6 +321,10 @@ In order to configure the Workspace we will add the definition :
           - monkey-build-task
     EOF
 
+Create it :
+
+    # oc create -f pipeline-build-monkey-ws.yaml
+
 And we will add a reference for a pipeline run
 
     # cat > pipeline-run-build-monkey.yaml << EOF
@@ -308,7 +336,7 @@ And we will add a reference for a pipeline run
       workspaces:
       - name: pipeline-ws1
         persistentVolumeClaim:
-          claimName: container-build
+          claimName: pipeline-workspace-pvc
       # serviceAccountName: pipeline
       pipelineRef:
         name: pipeline-run-build-monkey
@@ -323,12 +351,60 @@ And we will add a reference for a pipeline run
             resourceRef:
               name: monkey-app
     EOF
+  
+  
+Before we are creating the pipeline run we do need to update (in our case we will create a new task) our task so it will work with our newly created workspace :
+
+    # echo 'apiVersion: tekton.dev/v1beta1
+    kind: Task
+    metadata:
+      name: monkey-build-task-ws
+    spec:
+      resources:
+        inputs:
+          - name: source
+            type: git
+          - name: image
+            type: image
+      params:
+        - name: image-name
+          description: The Name of the Image we want to use
+          type: string
+          default: "monkey-app"
+      steps:
+        - name: build
+          image: quay.io/buildah/stable:v1.11.0
+          workingDir: /workspace/source/
+          volumeMounts:
+          - name: varlibcontainers
+              mountPath: /var/lib/containers
+          command: ["/bin/bash" ,"-c"]
+          args:
+            - |-
+              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.inputs.image.name) .
+      volumes:
+      - name: varlibcontainers
+        persistentVolumeClaim:
+          claimName: container-build
+    ##################### Workspace Definition ##################
+      workspaces:
+      - name: pipeline-ws1
+        description: the location of the docker/config.json file
+        mountPath: /opt/root-app/docker' > monkey-build-task-ws.yaml
+  
+And create the new task :
+
+    # oc create -f monkey-build-task-ws.yaml
+
+Now create the run :
+
+    # oc create -f pipeline-run-build-monkey.yaml
 
 
 #### Open task
 
-Build your own task that will push the image to the registry  
-(Hint: you can use the "quay.io/buildah/stable:v1.11.0" Image)
+Please update the pipeline (and the task) so we will be able to push the image to our registry  
+(Hint: create a new task for the authfile and use buildah push)
 
 ### The Pipeline (parallel)
 
