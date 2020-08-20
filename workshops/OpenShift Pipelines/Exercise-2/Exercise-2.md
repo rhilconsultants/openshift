@@ -41,7 +41,7 @@ In order to configure it we will apply the following YAML:
         - name: revision
           value: master
         - name: url
-          value: https://github.com/ooichman/pipeline-tutorial.git
+          value: https://github.com/ooichman/monkey-app.git
     EOF
 
 Now we can create another resource which will be our output resource , In our case we will create an output resource which will be our application Image.
@@ -113,9 +113,10 @@ our task should look like :
     ##################### New content ###################
       resources:
         inputs:
-          - {type: git, name: source}
-        outputs:
-          - {type: image , name: image}
+          - name: source
+            type: git
+          - name: image
+            type: image
     ##################### New content ###################
       params:
         - name: image-name
@@ -133,7 +134,7 @@ our task should look like :
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud -f Dockerfile -t image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest .
+              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.inputs.image.name) .
       volumes:
       - name: varlibcontainers
         persistentVolumeClaim:
@@ -183,7 +184,6 @@ now that we have 3 tasks in place we can start and build the pipeline :
           inputs:
           - name: source
             resource: source
-          outputs:
           - name: image
             resource: image
       - name: hello-person
@@ -254,6 +254,24 @@ A Pipeline can use Workspaces to show how storage will be shared through its Tas
   
 PipelineRuns perform mostly the same duties as TaskRuns - they provide the specific Volume information to use   for the Workspaces used by each Pipeline.PipelineRuns have the added responsibility of ensuring that whatever   Volume type they provide can be safely and correctly shared across multiple Tasks.  
   
+First let's create a PVC (prefer of RWX) so that we can share our outputs between several tasks.  
+The PVC should look as follow :
+
+    # cat > pipeline-workspace-pvc.yaml << EOF
+    kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: container-build-ws
+      namespace: ${NAMESPACE}
+    spec:
+      accessModes:
+        - ReadWriteMany
+      resources:
+        requests:
+          storage: 5Gi
+      volumeMode: Filesystem
+    EOF
+
 
 In order to configure the Workspace we will add the definition :
 
@@ -262,8 +280,10 @@ In order to configure the Workspace we will add the definition :
     apiVersion: tekton.dev/v1beta1
     kind: Pipeline
     metadata:
-      name: build-monkey
+      name: pipeline-build-monkey-ws
     spec:
+      workspaces:
+        - name: pipeline-ws1
       resources:
       - name: source
         type: git
@@ -273,14 +293,14 @@ In order to configure the Workspace we will add the definition :
       - name: hello-world
         taskRef:
           name: echo-hello-world
-      - name: build-image
+      - name: monkey-build-task
         taskRef:
           name: monkey-build-task
         runAfter: 
           - hello-world
      ################### Workspace Definition ##########
         workspaces:
-        - name: src
+        - name: output
           workspace: pipeline-ws1
      ################### Workspace Definition Ends #####
         resources:
@@ -308,7 +328,7 @@ And we will add a reference for a pipeline run
       workspaces:
       - name: pipeline-ws1
         persistentVolumeClaim:
-          claimName: container-build
+          claimName: pipeline-workspace-pvc
       # serviceAccountName: pipeline
       pipelineRef:
         name: pipeline-run-build-monkey
@@ -327,8 +347,8 @@ And we will add a reference for a pipeline run
 
 #### Open task
 
-Build your own task that will push the image to the registry  
-(Hint: you can use the "quay.io/buildah/stable:v1.11.0" Image)
+Please update the pipeline (and the task) so we will be able to push the image to our registry  
+(Hint: create a new task for the authfile and use buildah push)
 
 ### The Pipeline (parallel)
 
