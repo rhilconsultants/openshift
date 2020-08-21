@@ -311,7 +311,6 @@ In order to configure the Workspace we will add the definition :
           inputs:
           - name: source
             resource: source
-          outputs:
           - name: image
             resource: image
       - name: hello-person
@@ -331,25 +330,21 @@ And we will add a reference for a pipeline run
     apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
-      name: build-pipeline
+      name: pipeline-run-build-monkey
     spec:
+      pipelineRef:
+        name: pipeline-build-monkey-ws
+      resources:
+      - name: image
+        resourceRef:
+          name: monkey-app
+      - name: source
+        resourceRef:
+          name: monkey-app-git
       workspaces:
       - name: pipeline-ws1
         persistentVolumeClaim:
           claimName: pipeline-workspace-pvc
-      # serviceAccountName: pipeline
-      pipelineRef:
-        name: pipeline-run-build-monkey
-      inputs:
-        resources:
-          - name: source
-            resourceRef:
-              name: monkey-app-git
-      outputs:
-        resources:
-          - name: image
-            resourceRef:
-              name: monkey-app
     EOF
   
   
@@ -375,22 +370,15 @@ Before we are creating the pipeline run we do need to update (in our case we wil
         - name: build
           image: quay.io/buildah/stable:v1.11.0
           workingDir: /workspace/source/
-          volumeMounts:
-          - name: varlibcontainers
-              mountPath: /var/lib/containers
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
               buildah bud --storage-driver vfs -f Dockerfile -t $(resources.inputs.image.name) .
-      volumes:
-      - name: varlibcontainers
-        persistentVolumeClaim:
-          claimName: container-build
     ##################### Workspace Definition ##################
       workspaces:
       - name: pipeline-ws1
-        description: the location of the docker/config.json file
-        mountPath: /opt/root-app/docker' > monkey-build-task-ws.yaml
+        description: the location of the containers
+        mountPath: /var/lib/containers' > monkey-build-task-ws.yaml
   
 And create the new task :
 
