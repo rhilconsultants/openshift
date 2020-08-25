@@ -49,7 +49,13 @@ we can do that by quering for service accounts and look for pipeline among them 
     pipeline   2         5d17h
 
 ### Basic usage 
-Now that we see the pipeline service account we can start by creating a simple task :
+Now that we see the pipeline service account we can start by creating a simple task :  
+Create a Directory and Navigate to it :
+
+    #mkdir Tekton
+    # cd Tekton
+
+Now let's create our first Task:
 
     # cat > task-hello-world.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
@@ -72,6 +78,7 @@ All we are asking the task to do is to obtain our image module (YES , the images
   
 Sense it is a Kubernetes Object , we will go ahead and use the oc command to create it :
 echo-hello-world
+
     # oc create -f task-hello-world.yaml
 
 We can also use the command to list the task :
@@ -119,23 +126,49 @@ In case you are getting an ImagePullErr in the status then that could be 1 of 2 
 
 In case we need to solve reason number 2 then this is how to do it :
 
+#### Generating config.json (registry authentication)
 First we will generate a config.json file under our "$HOME/.docker" directory
 
-    # REG_SECRET=`echo -n 'myuser:mypassword' | base64 -w0`
-    # MY_REGISTRY="enter your registry here"
     # mkdir ~/.docker
+
+Next we need to take our token and use it as a password:
+
+    #oc whoami -t
+
+Take the output and put in where the trienge brakets are :
+
+    # REG_SECRET=`echo -n 'myuser:<the token here>' | base64 -w0`
+
+Now we will setup a few variable:
+
+    # export OCP_DOMAIN="infra.local"
+    # export OCP_CLUSTER="ocp4"
+    # MY_REGISTRY="default-route-openshift-image-registry.apps.${OCP_CLUSTER}.${OCP_DOMAIN}"
+
+And create the File
+
     # echo '{ "auths": {}}' | \
     jq '.auths += {"MY_REGISTRY": {"auth": "REG_SECRET","email": "me@working.me"}}' | \
     sed "s/REG_SECRET/$REG_SECRET/" | sed "s/MY_REGISTRY/$MY_REGISTRY/" | jq . > ~/.docker/config.json
 
+To make sure we did o.k. just run the podman login command :
+
+    #podman login ${MY_REGISTRY}
+    Authenticating with existing credentials...
+Existing credentials are valid. Already logged in to default-route-openshift-image-registry.apps.ocp4.infra.local
+
+Now we will set our namespace into a variable :
+
+    # export NAMESPACE=$(oc project -q)
+
 Next we will create a secret and add the file to our namespace 
 
     # oc create secret generic --from-file=.dockerconfigjson=/home/$USER/.docker/config.json \
-    --type=kubernetes.io/dockerconfigjson pullsecret
+    --type=kubernetes.io/dockerconfigjson pullsecret -n $NAMESPACE
 
 and then attach it to the pull operation :
 
-    # oc secrets link default pullsecret --for=pull
+    # oc secrets link default pullsecret --for=pull -n $NAMESPACE
 
 Delete the taskrun and recreate it , that should solve the issue.  
 
