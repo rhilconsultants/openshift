@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: gogs-ingress
+  namespace: gogs-app
+spec:
+  rules:
+  - host: gogs.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: app-gogs
+          servicePort: 3000
