@@ -75,10 +75,10 @@ For that we are going to create our PVC as follow :
       namespace: $NAMESPACE
     spec:
       accessModes:
-        - ReadWriteOnce
+        - ReadWriteMany
       resources:
         requests:
-          storage: 5Gi
+          storage: 3Gi
       volumeMode: Filesystem
     EOF
 
@@ -227,7 +227,7 @@ All that is left right now is to create a pipeline run with a reference to the p
     spec:
       # serviceAccountName: pipeline
       pipelineRef:
-        name: pipeline-run-build-monkey
+        name: pipeline-build-monkey
       resources:
       - name: source
         resourceRef:
@@ -245,8 +245,20 @@ And create the object with oc
 
 Follow the logs and see the magic happens...  
 
-    # tkn pipelinerun logs pipeline-run-build-monkey -f -n ns-user01
+    # tkn pipelinerun logs pipeline-run-build-monkey -f -n ${NAMESPACE}
+    (or the tkn outout )
 
+#### NOTE
+
+I most mention in this point that you will need to do a debugging for our pipeline ...  
+for that you will need to use "oc describe pod..."  
+more so you will need to add the follow :
+
+    workingDir: /workspace/source/
+    securityContext:
+        privileged: true
+
+This part is intended to show you how to debug the pipeline , not just use it !!!
 
 ### WorkSpace
 
@@ -262,7 +274,7 @@ The PVC should look as follow :
     kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
-      name: container-build-ws
+      name: container-build-ws-pvc
       namespace: ${NAMESPACE}
     spec:
       accessModes:
@@ -326,11 +338,11 @@ Create it :
 
 And we will add a reference for a pipeline run
 
-    # cat > pipeline-run-build-monkey.yaml << EOF
+    # cat > pipeline-run-build-monkey-ws.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
-      name: pipeline-run-build-monkey
+      name: pipeline-run-build-monkey-ws
     spec:
       pipelineRef:
         name: pipeline-build-monkey-ws
@@ -344,7 +356,7 @@ And we will add a reference for a pipeline run
       workspaces:
       - name: pipeline-ws1
         persistentVolumeClaim:
-          claimName: pipeline-workspace-pvc
+          claimName: container-build-ws-pvc
     EOF
   
   
@@ -370,6 +382,8 @@ Before we are creating the pipeline run we do need to update (in our case we wil
         - name: build
           image: quay.io/buildah/stable:v1.11.0
           workingDir: /workspace/source/
+          securityContext:
+            privileged: true
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
@@ -386,8 +400,11 @@ And create the new task :
 
 Now create the run :
 
-    # oc create -f pipeline-run-build-monkey.yaml
+    # oc create -f pipeline-run-build-monkey-ws.yaml
 
+And follow the logs :
+
+    # tkn pipelinerun logs pipeline-run-build-monkey-ws -f -n $NAMESPACE
 
 #### Open task
 

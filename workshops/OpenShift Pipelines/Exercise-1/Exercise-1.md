@@ -155,7 +155,7 @@ To make sure we did o.k. just run the podman login command :
 
     #podman login ${MY_REGISTRY}
     Authenticating with existing credentials...
-Existing credentials are valid. Already logged in to default-route-openshift-image-registry.apps.ocp4.infra.local
+    Existing credentials are valid. Already logged in to default-route-openshift-image-registry.apps.ocp4.infra.local
 
 Now we will set our namespace into a variable :
 
@@ -190,8 +190,7 @@ An example of params are as follow :
             default: bob
       steps:
         - name: echo
-          #image: registry.redhat.io/ubi8/ubi-minimal - I recommend using this image
-          image: docker.io/library/ubuntu
+          image: registry.redhat.io/ubi8/ubi-minimal
           command:
             - echo
           args:
@@ -225,6 +224,7 @@ The first option is pretty simple , just edit the file and change the name "bob"
 and
 
     # oc apply -f task-hello-params.yaml
+    (there is YAML trick you need to notice...)
 
 The second is even more simple , just edit the name of the task :
 
@@ -256,7 +256,7 @@ Now we can look at the logs and see the output we wanted :
 
     # tkn taskrun logs echo-hello-person-task-run-override -f
 
-if you see "Hello Foo" then we are good to go 
+if you see "Hello bar" then we are good to go 
 
 ## Extra task
 
@@ -264,6 +264,6 @@ try sending the param using the tkn command ...
 
 once you complete all the task it is time for a cleanup
 
-    #oc get taskrun -o name | xargs oc delete
+    # oc get taskrun -o name | xargs oc delete
 
 We will wait for the rest of the Class to complete the exercise and move on to [Exercise 2](../Exercise-2/Exercise-2.md)
