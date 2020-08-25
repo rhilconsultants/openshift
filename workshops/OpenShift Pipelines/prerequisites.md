@@ -40,12 +40,25 @@ In order to utilize the bash auto completion in our environment we need to run a
 
 to generate it just run the following command :
 
-    # mkdir ~/.bash_completion
-    # oc completion bash > ~/.bash_completion/oc
-    # tkn completion bash > ~/.bash_completion/oc
-
-And let's make sure we can use it after we login :
-
-    # echo 'source ~/.bash_completion/*' > ~/.bashrc
+    # oc completion bash > ~/.bash_completion
+    # tkn completion bash >> ~/.bash_completion
 
 Now logout , login and test the command with the TAB key
+
+### tmux
+
+for those of you who don't know tmux in a very powerful tool which allows us to run terminal manipulation in various forms. In our case we would want to slip the screen to 3 parts (vertical middle and 2 horizontal on the top side) to enable us better monitoring on all the process.
+
+Here is how we do it :
+
+first start a tmux session :
+
+    #tmux new-session -s tkn
+
+next we will split the screen by clicking on CTRL+b then '"'.  
+Now we will Navigate to the top bar by CTRL+b then up  
+and create another slip horizontally by running CTRL+b then "%"  
+To navigate between them you can run CTRL+b and the arrows.  
+
+now you are ready for work :)  
+
