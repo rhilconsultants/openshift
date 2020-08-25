@@ -1,34 +1,19 @@
-# prerequisites
+# Exercise 4
 
-In order to start working with OpenShift pipeline you Need to have the following basic skills :
+## Before we Begin
 
-  1. understanding of the English language.
-  2. ability to view/edit YAML files
-  3. basic understanding of OpenShift and OpenShift Objects
-   
+In this Exercise we will create a Custom Image module and use it in a pipeline(Task).
+The Object of the Exercise is to show how simple it is to create a new image module and start using within the pipeline so we will have a good showcase to our customers how easy it is to create a new module.  
 
-Before we start we need to download the right tools in order to work with Tekton  
-The 2 tools are
-  - oc - in order to login to the cluster
-  - tkn - the tekton cli tool which is been used to easy create objects related to Openshift pipeline
+### The Exercise use case 
 
-## Downloads
-  to download oc all we need to do is to download the latest oc binary with the following command :
+In this case we will create a Custom image which we will use as our module image. In our case we will use the tools we had downloaded in our prerequisites section in order to create and deploy a simple application (the monkey-app) with a listener to our Monkey git repository which we will eventually are creating a full CI/CD for our Monkey application 
 
-    # export OCP_RELEASE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt \
-    | grep 'Name:' | awk '{print $NF}')
-    # wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-${OCP_RELEASE}.tar.gz
-    # tar -xzf openshift-client-linux-${OCP_RELEASE}.tar.gz -C ~/bin/
+## building an Image
+  
+Let's build a container image which holds the 2 tools and we are going to use the container to run a pod and connect to is so we will be able to use the tools from it 
 
-Now to download the tkn tool we can do it in the same matter
-
-    # TKN_VERSION=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/latest/sha256sum.txt \
-    | grep tkn-linux | awk -F \- '{print $4}' | sed 's/.tar.gz//g')
-    # wget https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/latest/tkn-linux-amd64-${TKN_VERSION}.tar.gz
-    # tar -zxvf tkn-linux-amd64-${TKN_VERSION}.tar.gz -C ~/bin/
-
-Now that we have the 2 tools we need we start using them or ....  
-Let's build a container which holds the 2 tools and we are going to use the container to run a pod and connect to is so we will be able to use the tools from it 
+### the Dockerfile
 
 First let's create the directory
 
@@ -54,16 +39,20 @@ Now create a Dockerfile and copy the binaries to the new image
 
     # cat > Dockerfile << EOF
     FROM ubi8/ubi-minimal
-    USER ROOT
+    USER root
     COPY run.sh /opt/root-app/
     COPY tkn oc /usr/bin
     USER 1001
     ENTRYPOINT ["/opt/root-app/run.sh"]
     EOF
 
+### Creating the Image
+
 Once we've done that we can go ahead and create our image :
 
     # buildah bud -f Dockerfile -t ubi-pipeline .
+
+### Pushing to the Registry
 
 set your OpenShift cluster Prefix and you current namespace:
 
@@ -76,6 +65,8 @@ Now that we have our image we need to TAG it and push it to our registry
 
     # podman push default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
     (You may need to login before you can push)
+
+### Deploying on Openshift (Optional)
 
 All that is left is to create a deployment for our image :
 
@@ -107,4 +98,37 @@ After the deployment we can use the web console to login or use the oc command t
 
     # oc get pods -n $NAMESPACE -o name | grep ubi-pipeline | xargs oc rsh -n $NAMESPACE
 
-Once we are in the Terminal We are ready to Start :)
+## Creating a Service Account and kubeconfig
+
+In order to provide the right permissions for our automation in Openshift we need to create a service account for authentication provide it the expected permissions and create an authentication file (kubeconfig).
+
+### Service account
+
+### Permissions 
+
+### Generate Kubeconfig
+
+### YAML Files
+
+## The IAC Pipeline
+
+Now that we have everything ready we can build the pipeline with the following tasks :
+
+  1. PipelineResource : our git Repository
+  2. task for deploying all of the YAML files in the deployment directory (App + Service)
+  3. create a task for TDD 
+  3. creating the listener
+
+Now create the route YAML file and push it to git 
+
+    # cat > deployment/route.yaml << EOF
+    EOF
+
+Create a Task that will Test the application route availability.
+
+    # cat > route-tdd.yaml << EOF
+    EOF
+
+Watch for new pipeline runs and monitor their logs.
+
+If every went as expected your IAC process is set.
