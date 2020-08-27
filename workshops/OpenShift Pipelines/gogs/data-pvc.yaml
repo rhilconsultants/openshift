@@ -2,7 +2,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: pvc-data
-  namespace: gogs-app
+  namespace: gogs
 spec:
   accessModes:
     - ReadWriteMany

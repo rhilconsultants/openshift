@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: app-gogs
-  namespace: gogs-app
+  namespace: gogs
 spec:
   selector:
     matchLabels:
@@ -23,8 +23,6 @@ spec:
           name: pvc-data
         - mountPath: "/backup"
           name: pvc-backup
-        - mountPath: "/app/gogs"
-          name: pvc-appgogs
       volumes:
       - name: pvc-data
         persistentVolumeClaim:
@@ -32,6 +30,3 @@ spec:
       - name: pvc-backup
         persistentVolumeClaim:
           claimName: pvc-backup
-      - name: pvc-appgogs
-        persistentVolumeClaim:
-          claimName: pvc-appgogs
