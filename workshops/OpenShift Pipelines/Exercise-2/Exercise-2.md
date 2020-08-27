@@ -128,6 +128,8 @@ our task should look like :
         - name: build
           image: quay.io/buildah/stable:v1.11.0
           workingDir: /workspace/source/
+          securityContext:
+            privileged: true
           volumeMounts:
           - name: varlibcontainers
             mountPath: /var/lib/containers
@@ -253,10 +255,6 @@ Follow the logs and see the magic happens...
 I most mention in this point that you will need to do a debugging for our pipeline ...  
 for that you will need to use "oc describe pod..."  
 more so you will need to add the follow :
-
-    workingDir: /workspace/source/
-    securityContext:
-        privileged: true
 
 This part is intended to show you how to debug the pipeline , not just use it !!!
 

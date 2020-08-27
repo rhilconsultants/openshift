@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: gogs-ingress
-  namespace: gogs-app
+  namespace: gogs
 spec:
   rules:
   - host: gogs.example.com

@@ -57,7 +57,7 @@ Create a Directory and Navigate to it :
 
 Now let's create our first Task:
 
-    # cat > task-hello-world.yaml << EOF
+    # cat > echo-hello-world.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: Task
     metadata:
@@ -90,11 +90,11 @@ We can also use the command to list the task :
 Now , In order to run the command we need to create a runtask (we can create it with a YAML or using the tkn command)  
 For YAML :
 
-    # cat > taskrun-hello-world.yaml << EOF
+    # cat > taskrun-echo-hello-world.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: TaskRun
     metadata:
-      name: echo-hello-world-task-run
+      name: taskrun-echo-hello-world
     spec:
       taskRef:
         name: echo-hello-world

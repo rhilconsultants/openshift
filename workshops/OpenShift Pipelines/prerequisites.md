@@ -18,7 +18,12 @@ The 2 tools are
 
 
 ### Downloads
-  to download oc all we need to do is to download the latest oc binary with the following command :
+
+First create the ${HOME}/bin Directory
+
+    #mkdir ${HOME}/bin
+
+To download oc all we need to do is to download the latest oc binary with the following command :
 
     # export OCP_RELEASE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt \
     | grep 'Name:' | awk '{print $NF}')
@@ -43,7 +48,11 @@ to generate it just run the following command :
     # oc completion bash > ~/.bash_completion
     # tkn completion bash >> ~/.bash_completion
 
-Now logout , login and test the command with the TAB key
+** Now logout , login and test the command with the TAB key **
+
+### cluster login
+
+    #oc login api.<cluster>.<domain>:6443
 
 ### tmux
 
