@@ -34,6 +34,22 @@ While building an Application we are getting:
 
 ### API 
 
+An application programming interface (API) is a computing interface which defines interactions between multiple software intermediaries. It defines the kinds of calls or requests that can be made, how to make them, the data formats that should be used, the conventions to follow, etc.  
+It can also provide extension mechanisms so that users can extend existing functionality in various ways and to varying degrees.[1] An API can be entirely custom, specific to a component, or it can be designed based on an industry-standard to ensure interoperability. Through information hiding, APIs enable modular programming, which allows users to use the interface independently of the implementation.  
+
 ### WebHook
 
+A webhook in web development is a method of augmenting or altering the behavior of a web page or web application with custom callbacks. These callbacks may be maintained, modified, and managed by third-party users and developers who may not necessarily be affiliated with the originating website or application. The term "webhook" was coined by Jeff Lindsay in 2007 from the computer programming term hook.[1]
+
+The format is usually JSON. The request is done as an HTTP POST request. 
+
 ### TDD
+
+Test-driven development (TDD) is a software development process that relies on the repetition of a very short development cycle: requirements are turned into very specific test cases, then the code is improved so that the tests pass. This is opposed to software development that allows code to be added that is not proven to meet requirements.  
+
+When working with the TDD process the main focus is on the testing and then on the software build , which makes the CI process to much more reliable.  
+
+## Getting dirty
+
+Now that we are failure with the important concepts , let's create a trigger that will listen on a GIT webhook and start a deployment once there is a change in the git master branch.  
+
