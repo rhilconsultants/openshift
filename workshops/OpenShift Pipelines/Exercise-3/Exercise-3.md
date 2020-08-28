@@ -54,7 +54,7 @@ When working with the TDD process the main focus is on the testing and then on t
 
 ## Tekton Triggers
 
-<img alt="Tekton-triggers" src="tekton-triggers.png" width="100%" height="100%">
+<img alt="Tekton-triggers" src="tekton-triggers.png" width="25%" height="25%">
 
 Up until this point we talked about concepts and methods. Now we will get down to business and talk about how Tekton can help use utilize those concepts in a CI/CD process.  
 Before getting started, let’s discuss some of the features of Tekton Triggers. In a nutshell, Tekton Triggers allows users to create resource templates that get instantiated when an event is received. Additionally, fields from event payloads can be injected into these resource templates as runtime information. This enables users to automatically create template PipelineRun or TaskRun resources when an event is received.
