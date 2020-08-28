@@ -54,7 +54,7 @@ When working with the TDD process the main focus is on the testing and then on t
 
 ## Tekton Triggers
 
-<img alt="Tekton-triggers" src="tekton-triggers.png" width="25%" height="25%">
+<img align="center" alt="Tekton-triggers" src="tekton-triggers.png" width="25%" height="25%">
 
 Up until this point we talked about concepts and methods. Now we will get down to business and talk about how Tekton can help use utilize those concepts in a CI/CD process.  
 Before getting started, let’s discuss some of the features of Tekton Triggers. In a nutshell, Tekton Triggers allows users to create resource templates that get instantiated when an event is received. Additionally, fields from event payloads can be injected into these resource templates as runtime information. This enables users to automatically create template PipelineRun or TaskRun resources when an event is received.
@@ -79,5 +79,151 @@ An EventListener creates a Deployment and Service that listen for events. When t
 
 ## Getting dirty
 
-Now that we are failure with the important concepts , let's create a trigger that will listen on a GIT webhook and start a deployment once there is a change in the git master branch.  
+Now that we are failure with the important concepts , let's create a trigger that will start the monkey build pipeline once there is a change in the git master branch.  
 We will use our pipelines and tasks that we used up until this point and create a trigger for them.
+
+  
+A good place to start is the Trigger Template which holds what we already have created.
+
+
+    # cat > monkey-trigger-template.yaml << EOF
+    apiVersion: triggers.tekton.dev/v1alpha1
+    kind: TriggerTemplate
+    metadata:
+      name: monkey-trigger-template
+    spec:
+      params:
+      - name: SERVICE_ACCOUNT
+        description: The ServiceAccount under which to run the Pipeline.
+    ############################### Resource Section ################
+      resourceTemplates:
+      - apiVersion: tekton.dev/v1alpha1
+        kind: PipelineResource
+        metadata:
+          name: monkey-app-git
+        spec:
+          type: git
+          params:
+            - name: revision
+              value: master
+            - name: url
+              value: https://github.com/ooichman/monkey-app.git
+      - apiVersion: tekton.dev/v1alpha1
+        kind: PipelineResource
+        metadata:
+          name: monkey-app
+        spec:
+         type: image
+          params:
+          - name: url
+            value: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest
+      - apiVersion: tekton.dev/v1alpha1
+        kind: PipelineRun
+        metadata:
+          name: pipeline-run-build-monkey-ws
+        spec:
+          serviceAccountName: $(params.SERVICE_ACCOUNT)
+          pipelineRef:
+            name: pipeline-build-monkey-ws
+          resources:
+          - name: image
+            resourceRef:
+              name: monkey-app
+          - name: source
+            resourceRef:
+              name: monkey-app-git
+          workspaces:
+          - name: pipeline-ws1
+            persistentVolumeClaim:
+              claimName: container-build-ws-pvc
+    EOF
+
+As you can see all we did was adding the pipeline resources and the pipelineRun to the trigger template.
+
+Next we will create a simple trigger binding which will set all the params :
+
+    # cat > monkey-trigger-binding.yaml << EOF
+    apiVersion: triggers.tekton.dev/v1alpha1
+    kind: TriggerBinding
+    metadata:
+      name: monkey-trigger-binding
+    spec:
+      params:
+      - name: SERVICE_ACCOUNT
+        value: pipeline
+    EOF
+
+Our Event Listener needs a service account with the right permissions in order to execute our pipeline. For that we are going to create a service account , create a role and create a role binding for that service account :
+
+Let's start with the service account :
+
+    # cat > service-account.yaml << EOF
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: monkey
+    EOF
+
+next we will craete the role :
+
+    # cat > monkey-role.yaml << EOF
+    kind: Role
+    apiVersion: rbac.authorization.k8s.io/v1
+    metadata:
+      name: monkey
+    rules:
+    # Permissions for every EventListener deployment to function
+    - apiGroups: ["triggers.tekton.dev"]
+      resources: ["eventlisteners", "triggerbindings", "triggertemplates"]
+      verbs: ["get"]
+    - apiGroups: [""]
+      resources: ["configmaps"]
+      verbs: ["get", "list", "watch"]
+    # Permissions to create resources in associated TriggerTemplates
+    - apiGroups: ["tekton.dev"]
+      resources: ["pipelineruns"]
+      verbs: ["create"]
+    EOF
+
+Once we have the service account and the role we can create the role binding :
+
+    #cat > monkey-rolebinding.yaml << EOF
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: monkey
+    subjects:
+    - kind: ServiceAccount
+      name: monkey
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: monkey
+    EOF
+
+and Now we will create the event Listener and a route to make sure our git webhook can send a an HTTP POST command to out event Listener in order to trigger the pipeline
+
+create the event listener :
+
+    # cat > monkey-eventlistener.yaml << EOF
+    apiVersion: triggers.tekton.dev/v1alpha1
+    kind: EventListener
+    metadata:
+      name: monkey-eventlistener
+    spec:
+      serviceAccountName: monkey
+      triggers:
+        - name: monkey-source-to-image
+          interceptors:
+            - cel:
+                filter: >-
+                  body.repository.full_name == '${USER}/monkey-app' &&
+                  body.ref.startsWith('refs/heads/master')
+          bindings:
+          - name: monkey-trigger-binding
+          template:
+            name: monkey-trigger-template
+    EOF
+
+And Finally we will add the route :
+
