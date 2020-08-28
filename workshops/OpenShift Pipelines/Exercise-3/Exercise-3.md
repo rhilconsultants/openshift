@@ -3,9 +3,10 @@ Exercise-3.md
 # Exercise 3
 
 Welcome to Exercise 3 in our workshop. In this part we will talk about Infrastructure As Code and how can we utilizes it within a pipeline.  
-Once we understand all the concepts (and play with them a little bit) we will build a Lister and a Web hook to monitor for changes in our GIT server and deploy an new changes that may be (after commit)
 
 ## Concepts
+
+First we will go over a few very important concepts that will help us understand the process much better.  Once we understand all the concepts  we will build a Lister and a Web hook to monitor for changes in our GIT server and deploy an new changes that may be (after commit)
 
 ### IAC
 
@@ -33,6 +34,7 @@ While building an Application we are getting:
   - reduce the complexity
   - collaboration
 
+#### to work in a complete automation way we need to work with API/Webhook
 
 ### API 
 
@@ -53,11 +55,13 @@ When working with the TDD process the main focus is on the testing and then on t
 
 ### Tekton Triggers
 
+<img alt="workflow" src="Tekton-triggers.png" width="100%" height="100%">
+
 Before getting started, let’s discuss some of the features of Tekton Triggers. In a nutshell, Tekton Triggers allows users to create resource templates that get instantiated when an event is received. Additionally, fields from event payloads can be injected into these resource templates as runtime information. This enables users to automatically create template PipelineRun or TaskRun resources when an event is received.
 
-  1. ** Trigger Template **
-  2. ** Trigger Binding **
-  3. ** Event Listener **
+  1. **Trigger Template**
+  2. **Trigger Binding**
+  3. **Event Listener**
 
 #### Trigger Template
 
