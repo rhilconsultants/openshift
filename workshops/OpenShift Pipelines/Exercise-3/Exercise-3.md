@@ -1,4 +1,3 @@
-Exercise-3.md
 
 # Exercise 3
 
@@ -10,7 +9,7 @@ First we will go over a few very important concepts that will help us understand
 
 ### IAC
 
-BY Definition :
+BY Definition :  
 "Infrastructure as code (IaC) is the process of managing and provisioning computer data centers through   machine-readable definition files, rather than physical hardware configuration or interactive configuration tools. The IT infrastructure managed by this process comprises both physical equipment, such as  bare-metal servers, as well as virtual machines, and associated configuration resources. The definitions may be in a version control system (GIT). It can use either scripts or declarative definitions, rather than manual processes, but the term is more often used to promote declarative approaches."  
 
 #### We can't talk about IAC without DevOps
@@ -53,25 +52,26 @@ Test-driven development (TDD) is a software development process that relies on t
 
 When working with the TDD process the main focus is on the testing and then on the software build , which makes the CI process to much more reliable.  
 
-### Tekton Triggers
+## Tekton Triggers
 
-<img alt="workflow" src="Tekton-triggers.png" width="100%" height="100%">
+<img alt="Tekton-triggers" src="tekton-triggers.png" width="100%" height="100%">
 
+Up until this point we talked about concepts and methods. Now we will get down to business and talk about how Tekton can help use utilize those concepts in a CI/CD process.  
 Before getting started, let’s discuss some of the features of Tekton Triggers. In a nutshell, Tekton Triggers allows users to create resource templates that get instantiated when an event is received. Additionally, fields from event payloads can be injected into these resource templates as runtime information. This enables users to automatically create template PipelineRun or TaskRun resources when an event is received.
 
   1. **Trigger Template**
   2. **Trigger Binding**
   3. **Event Listener**
 
-#### Trigger Template
+### Trigger Template
 
 A TriggerTemplate declares a blueprint for each Kubernetes resource you want to create when an event is received. Each TriggerTemplate has parameters that can be substituted anywhere within the blueprint you define. In general, you will have one TriggerTemplate for each of your Tekton Pipelines. In this tutorial, you create a TriggerTemplate for your build-and-deploy PipelineRun because you want to create a build-and-deploy PipelineRun every time you receive a pull request event.
 
-#### Trigger Binding
+### Trigger Binding
 
 A TriggerBinding describes what information you want to extract from an event to pass to your TriggerTemplate. Each TriggerBinding essentially declares the parameters that get passed to the TriggerTemplate at runtime (when an event is received). In general, you will have one TriggerBinding for each type of event that you receive. In this tutorial, you will create a TriggerBinding for the GitHub pull request event in order to build and deploy the code in the pull request.
 
-#### Event Listener
+### Event Listener
 
 An EventListener creates a Deployment and Service that listen for events. When the EventListener receives an event, it executes a specified TriggerBinding and TriggerTemplate. In this tutorial, the EventListener will receive pull request events from GitHub and execute the TriggerBinding and TriggerTemplate to create a build-and-deploy PipelineRun.
 
