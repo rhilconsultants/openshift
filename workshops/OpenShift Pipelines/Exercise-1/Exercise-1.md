@@ -74,12 +74,12 @@ Now let's create our first Task:
     EOF
 
 Take a few seconds to view the task. It is pretty straightforward when we look at it ...  
-All we are asking the task to do is to obtain our image module (YES , the images that the task is using are actually the modules for our pipeline) and then it runs the echo command with the "Hello World" arguments  
+All we are asking the task to do is to obtain our image CI/CD module (YES , the images that the task is using are actually the CI/CD modules for our pipeline) and then it runs the echo command with the "Hello World" arguments  
   
 Sense it is a Kubernetes Object , we will go ahead and use the oc command to create it :
 echo-hello-world
 
-    # oc create -f task-hello-world.yaml
+    # oc create -f echo-hello-world.yaml
 
 We can also use the command to list the task :
 
@@ -102,7 +102,7 @@ For YAML :
 
 And Create it 
 
-    # oc create -f taskrun-hello-world.yaml
+    # oc create -f taskrun-echo-hello-world.yaml
 
 Now that we created a Run for our task we can view it using the CLI :
 
@@ -110,7 +110,7 @@ Now that we created a Run for our task we can view it using the CLI :
 
 to view the output of the task run we can use our tkn tool :
 
-    # tkn taskrun logs echo-hello-world-task-run 
+    # tkn taskrun logs taskrun-echo-hello-world 
     [echo] Hello World
 
 In case the Task takes a long time to finish (it it simple task , this should take to long , does it ?) we better look at the pods and their status :
@@ -260,7 +260,7 @@ if you see "Hello bar" then we are good to go
 
 ## Extra task
 
-try sending the param using the tkn command ...  
+try sending the param using the tkn command ...  (tkn task start echo-hello-person -p person=lol)
 
 once you complete all the task it is time for a cleanup
 

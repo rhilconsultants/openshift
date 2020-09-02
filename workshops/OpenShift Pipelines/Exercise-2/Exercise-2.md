@@ -92,6 +92,11 @@ Now we can start with the FUN part which is the build process
 
 ### Pipeline Tasks
 
+******************************* need to delete this task and give an explanation on "ClusterTasks" that already has high priviliges to 
+******************************* in our case (can be seen in the pipeline itself i used the buildha task, which builds & deploys the app automaticly once the input & output resources are configured properly
+******************************* tkn clustertask list
+******************************* oc get clustertask -n openshift-pipelines
+
 Our pipeline needs tasks so it will know what to do.  
 In our pipeline we need to stop and think about what it needs to do , taking into pieces and build a task from each piece.  
 
@@ -173,27 +178,32 @@ now that we have 3 tasks in place we can start and build the pipeline :
       - name: image
         type: image
       tasks:
-    ##################### the tasks reference ###################
+      ##################### the tasks reference ###################
       - name: hello-world
         taskRef:
           name: echo-hello-world
-      - name: monkey-build-task
+      - name: monkey-app-build-task
+      #################### This specific ClusterTask is responsiable for the build from "inputs" and save in "output" ####################
         taskRef:
-          name: monkey-build-task
-        runAfter: 
-          - hello-world
+          name: buildah
+          kind: ClusterTask
         resources:
           inputs:
           - name: source
             resource: source
+          outputs:
           - name: image
             resource: image
+        params:
+        - name: TLSVERIFY
+          value: "false" 
+        runAfter: 
+          - hello-world
       - name: hello-person
         taskRef:
           name: echo-hello-person
         runAfter:
-          - monkey-build-task
-    EOF
+          - monkey-app-build-task
 
 I know for the first time looking at the task it can look very complex but believe me , it isn't.  
 
