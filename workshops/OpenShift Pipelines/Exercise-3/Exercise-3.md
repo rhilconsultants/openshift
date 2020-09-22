@@ -82,6 +82,9 @@ An EventListener creates a Deployment and Service that listen for events. When t
 Now that we are failure with the important concepts , let's create a trigger that will start the monkey build pipeline once there is a change in the git master branch.  
 We will use our pipelines and tasks that we used up until this point and create a trigger for them.
 
+First let's make sure we are on the right directory
+
+    # mkdir -p ~/Tekton/Ex3 && cd ~/Tekton/Ex3
   
 A good place to start is the Trigger Template which holds what we already have created.
 
@@ -238,7 +241,7 @@ create the event listener :
                   body.repository.full_name == '${USER}/monkey-app' &&
                   body.ref.startsWith('refs/heads/master')
           bindings:
-          - ref: monkey-trigger-binding
+            - name: monkey-trigger-binding
           template:
             name: monkey-trigger-template
     EOF
@@ -250,6 +253,7 @@ Add it to our Cluster :
 And Finally we will add the route :
 
     # cat > monkey-eventlistener-route.yaml << EOF
+    apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
       labels:
@@ -262,7 +266,8 @@ And Finally we will add the route :
         targetPort: http-listener
       to:
         kind: Service
-        name: el-monkey
+        name: el-monkey-eventlistener
+    EOF
         
 
 Add it to our Cluster :
@@ -276,3 +281,28 @@ Now we will configure the gogs webhook :
 ### Testing the webhook
 
 Now that everything is in place let's go to gogs and update the webhook to send a POST massage to our listener :
+
+in Your favorite browser open the gogs link :  
+https://gogs.rhil-workshop.duckdns.org/
+
+Now Register with your given username and password.
+
+<img alt="workflow" src="gogs-register.png" width="100%" height="100%">
+
+In the following screen enter your username , email and password ( Your email is username@infra.local)  
+
+<img alt="workflow" src="gogs-register-info.png" width="100%" height="100%">
+
+Once you completed the registration you can go ahead and sign in.  
+
+In your main page click on the "+" sign next to "My Repositories" 
+
+<img alt="workflow" src="gogs-main-page.png" width="100%" height="100%">
+
+Follow the Image bellow to complete the "new repository" forum 
+
+<img alt="workflow" src="gogs-new-repository.png" width="100%" height="100%">
+
+And click on the Create button.
+
+
