@@ -86,8 +86,7 @@ We will use our pipelines and tasks that we used up until this point and create 
 A good place to start is the Trigger Template which holds what we already have created.
 
 
-    # cat > monkey-trigger-template.yaml << EOF
-    apiVersion: triggers.tekton.dev/v1alpha1
+    # echo 'apiVersion: triggers.tekton.dev/v1alpha1
     kind: TriggerTemplate
     metadata:
       name: monkey-trigger-template
@@ -113,10 +112,10 @@ A good place to start is the Trigger Template which holds what we already have c
         metadata:
           name: monkey-app
         spec:
-         type: image
+          type: image
           params:
-          - name: url
-            value: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest
+            - name: url
+              value: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest
       - apiVersion: tekton.dev/v1alpha1
         kind: PipelineRun
         metadata:
@@ -135,10 +134,13 @@ A good place to start is the Trigger Template which holds what we already have c
           workspaces:
           - name: pipeline-ws1
             persistentVolumeClaim:
-              claimName: container-build-ws-pvc
-    EOF
+              claimName: container-build-ws-pvc' > monkey-trigger-template.yaml
 
-As you can see all we did was adding the pipeline resources and the pipelineRun to the trigger template.
+As you can see, the TriggerTemplate, is very similar to the PipelineRun resource you created in the previous step. The only difference is that instead of hardcoding everything, there are a few parameters defined that specify information by a TriggerBinding at runtime. You can create multiple resources from the TriggerTemplate, but you only need to create one PipelineRun for your Monkey pipeline.
+
+Now we will create the template :
+
+    # oc create -f monkey-trigger-template.yaml
 
 Next we will create a simple trigger binding which will set all the params :
 
@@ -153,6 +155,10 @@ Next we will create a simple trigger binding which will set all the params :
         value: pipeline
     EOF
 
+create it :
+
+    # oc create -f monkey-trigger-binding.yaml
+
 Our Event Listener needs a service account with the right permissions in order to execute our pipeline. For that we are going to create a service account , create a role and create a role binding for that service account :
 
 Let's start with the service account :
@@ -163,6 +169,10 @@ Let's start with the service account :
     metadata:
       name: monkey
     EOF
+
+Create the service account :
+
+    # oc create -f service-account.yaml
 
 next we will craete the role :
 
@@ -185,9 +195,13 @@ next we will craete the role :
       verbs: ["create"]
     EOF
 
+And add it to the cluster
+
+    # oc create -f monkey-role.yaml
+
 Once we have the service account and the role we can create the role binding :
 
-    #cat > monkey-rolebinding.yaml << EOF
+    # cat > monkey-rolebinding.yaml << EOF
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
     metadata:
@@ -200,6 +214,10 @@ Once we have the service account and the role we can create the role binding :
       kind: Role
       name: monkey
     EOF
+
+Add it to the cluster :
+
+    # oc create -f monkey-rolebinding.yaml
 
 and Now we will create the event Listener and a route to make sure our git webhook can send a an HTTP POST command to out event Listener in order to trigger the pipeline
 
@@ -220,10 +238,14 @@ create the event listener :
                   body.repository.full_name == '${USER}/monkey-app' &&
                   body.ref.startsWith('refs/heads/master')
           bindings:
-          - name: monkey-trigger-binding
+          - ref: monkey-trigger-binding
           template:
             name: monkey-trigger-template
     EOF
+
+Add it to our Cluster :
+
+    # oc create -f monkey-eventlistener.yaml
 
 And Finally we will add the route :
 
@@ -231,6 +253,8 @@ And Finally we will add the route :
     kind: Route
     metadata:
       labels:
+        app.kubernetes.io/managed-by: EventListener
+        app.kubernetes.io/part-of: Triggers
         eventlistener: monkey-eventlistener
       name: el-monkey
     spec:
@@ -239,8 +263,16 @@ And Finally we will add the route :
       to:
         kind: Service
         name: el-monkey
+        
+
+Add it to our Cluster :
+
+    # oc create -f monkey-eventlistener-route.yaml
+
 
 Now we will configure the gogs webhook :
 
 
 ### Testing the webhook
+
+Now that everything is in place let's go to gogs and update the webhook to send a POST massage to our listener :
