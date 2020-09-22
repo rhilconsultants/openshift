@@ -297,7 +297,7 @@ Once you completed the registration you can go ahead and sign in.
 
 In your main page click on the "+" sign next to "My Repositories" 
 
-<img alt="workflow" src="gogs-main-page.png" width="100%" height="100%">
+<img alt="workflow" src="gogs-main-page1.png" width="100%" height="100%">
 
 Follow the Image bellow to complete the "new repository" forum 
 
