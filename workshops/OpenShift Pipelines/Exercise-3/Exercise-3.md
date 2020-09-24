@@ -305,4 +305,69 @@ Follow the Image bellow to complete the "new repository" forum
 
 And click on the Create button.
 
+Congrads !!! you have a new repository in our gogs application  
+The main repository page should look like : 
 
+<img alt="workflow" src="gogs-monkey-repository.png" width="100%" height="100%">
+
+Now we can copy the source code from our git repository to our gogs repository.
+
+First let's clone it to our Home directory :
+
+    # cd ~/Tekton
+    # git clone https://github.com/ooichman/monkey-app.git
+
+Now we will change the directory name to "old" 
+
+    # mv monkey-app to monkey-app-old
+
+And clone our new repository
+(take a few second an think about why we are doing this)
+
+    # cd monkey-app-old/
+    # cp -R src/ ../monkey-app/
+
+Now let's update our new repository over the gogs server
+
+    # git add -A
+
+and run an initial commit 
+
+    # git commit -a -m "init 0"
+
+for convenience sake we will add our username and password to our git configuration (not recommended in Production environment )
+
+    # export PASS='OcpPa$$w0rd' (also not recommended)
+    # sed -i "s/http:\/\/gogs/http:\/\/${USER}:${PASS}\@gogs/" .git/config
+
+Now run the push to make sure our code is update 2 date :
+
+    # git push origin master
+    Counting objects: 4, done.
+    Delta compression using up to 2 threads.
+    Compressing objects: 100% (2/2), done.
+    Writing objects: 100% (3/3), 250 bytes | 0 bytes/s, done.
+    Total 3 (delta 1), reused 0 (delta 0)
+    To http://user01:OcpPa$$w0rd@gogs.rhil-workshop.duckdns.org/user01/monkey-app.git
+       92ff6dc..02c7955  master -> master
+
+Now that our repository is up 2 date we can change the pipeline source named image :
+
+    # cat > pipelineResource-git.yaml << EOF
+    apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
+      name: monkey-app-git
+    spec:
+      type: git
+      params:
+        - name: revision
+          value: master
+        - name: url
+          value: http://gogs.rhil-workshop.duckdns.org/user01/monkey-app.git
+    EOF
+
+And apply the changes :
+
+    # oc apply -f pipelineResource-git.yaml
+    
