@@ -115,6 +115,7 @@ our task should look like :
         inputs:
           - name: source
             type: git
+        outputs:
           - name: image
             type: image
     ##################### New content ###################
@@ -136,7 +137,7 @@ our task should look like :
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.inputs.image.name) .
+              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.outputs.image.name) .
       volumes:
       - name: varlibcontainers
         persistentVolumeClaim:
@@ -186,6 +187,7 @@ now that we have 3 tasks in place we can start and build the pipeline :
           inputs:
           - name: source
             resource: source
+          outputs:
           - name: image
             resource: image
       - name: hello-person
@@ -281,11 +283,19 @@ The PVC should look as follow :
         requests:
           storage: 5Gi
       volumeMode: Filesystem
+      storageClassName: managed-nfs-storage
     EOF
 
 And create it:
 
     # oc create -f pipeline-workspace-pvc.yaml
+
+And we need to make sure it is bounded before we continue
+
+    # oc get pvc
+    NAME                     STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS          AGE
+    container-build          Bound    pvc-2eb12afc-c67a-41dd-a56e-2173e4b9dad4   3Gi        RWX            managed-nfs-storage   19m
+    container-build-ws-pvc   Bound    pvc-7d1c3fd1-5ca9-4085-b683-ab33dce4d44e   5Gi        RWX            managed-nfs-storage   3s
 
 In order to configure the Workspace we will add the definition :
 
@@ -321,6 +331,7 @@ In order to configure the Workspace we will add the definition :
           inputs:
           - name: source
             resource: source
+          outputs:
           - name: image
             resource: image
       - name: hello-person
@@ -369,6 +380,7 @@ Before we are creating the pipeline run we do need to update (in our case we wil
         inputs:
           - name: source
             type: git
+        outputs:
           - name: image
             type: image
       params:
@@ -385,7 +397,7 @@ Before we are creating the pipeline run we do need to update (in our case we wil
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.inputs.image.name) .
+              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.outputs.image.name) .
     ##################### Workspace Definition ##################
       workspaces:
       - name: pipeline-ws1
@@ -404,10 +416,16 @@ And follow the logs :
 
     # tkn pipelinerun logs pipeline-run-build-monkey-ws -f -n $NAMESPACE
 
-#### Open task
+#### Pushing to the registry
 
-Please update the pipeline (and the task) so we will be able to push the image to our registry  
-(Hint: create a new task for the authfile and use buildah push)
+Please update the pipeline (and the task) so we will be able to push the image to our registry
+In Order achieve it we need to add the "buildah push" command to our ws task
+
+##### Big Hint
+
+    buildah push $(resources.outputs.image.name)
+
+(mmm ... we need to login to the registry first ...)
 
 ### The Pipeline (parallel)
 
