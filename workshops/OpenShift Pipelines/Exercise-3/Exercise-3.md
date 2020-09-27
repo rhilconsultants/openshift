@@ -348,11 +348,12 @@ Now run the push to make sure our code is update 2 date :
     Compressing objects: 100% (2/2), done.
     Writing objects: 100% (3/3), 250 bytes | 0 bytes/s, done.
     Total 3 (delta 1), reused 0 (delta 0)
-    To http://user01:OcpPa$$w0rd@gogs.rhil-workshop.duckdns.org/user01/monkey-app.git
+    To http://user01:OcpPa$$w0rd@gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
        92ff6dc..02c7955  master -> master
 
 Now that our repository is up 2 date we can change the pipeline source named image :
 
+    # cd ../Ex3
     # cat > pipelineResource-git.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
@@ -364,10 +365,60 @@ Now that our repository is up 2 date we can change the pipeline source named ima
         - name: revision
           value: master
         - name: url
-          value: http://gogs.rhil-workshop.duckdns.org/user01/monkey-app.git
+          value: http://gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
     EOF
 
 And apply the changes :
 
     # oc apply -f pipelineResource-git.yaml
-    
+
+and update the trigger template :
+
+    # vi monkey-trigger-template.yaml
+    ...
+    spec:
+      params:
+      - name: SERVICE_ACCOUNT
+        description: The ServiceAccount under which to run the Pipeline.
+    ############################### Resource Section ################
+      resourceTemplates:
+      - apiVersion: tekton.dev/v1alpha1
+        kind: PipelineResource
+        ...
+        spec:
+          type: git
+          params:
+            ...
+            - name: url
+              value: http://gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
+
+Now update the template :
+
+    # oc apply -f monkey-trigger-template.yaml
+    Warning: oc apply should be used on resource created by either oc create --save-config or oc apply
+    dtriggertemplate.triggers.tekton.dev/monkey-trigger-template configured
+
+Now we need to setup the webhook on our gogs server , in order to to that we need to go
+to "setting" (top right) of our repository 
+
+<img alt="workflow" src="gogs-settings-menu.png" width="100%" height="100%">
+
+And then to the "Webhooks" webhook section :
+
+<img alt="workflow" src="gogs-webhooks-menu.png" width="100%" height="100%">
+
+Now click on the "Add Webhook" button 
+
+<img alt="workflow" src="gogs-adding-webhooks.png" width="100%" height="100%">
+
+Add your route to the Payload URL and save the webhook
+
+Now all we need to do is to make a change to our repository and push it.  
+The push should trigger our pipeline with the new commit.
+
+    # cd ../monkey-app
+    # touch 1
+    # git add -A
+    # git commit -a -m "adding 1"
+    # git push origin master
+
