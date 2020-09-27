@@ -52,8 +52,11 @@ we can do that by quering for service accounts and look for pipeline among them 
 Now that we see the pipeline service account we can start by creating a simple task :  
 Create a Directory and Navigate to it :
 
-    #mkdir Tekton
-    # cd Tekton
+First let's make sure we are on the right directory
+
+    # mkdir ~/Tekton
+    # mkdir -p ~/Tekton/Ex1 && cd ~/Tekton/Ex1
+  
 
 Now let's create our first Task:
 
@@ -79,7 +82,7 @@ All we are asking the task to do is to obtain our image module (YES , the images
 Sense it is a Kubernetes Object , we will go ahead and use the oc command to create it :
 echo-hello-world
 
-    # oc create -f task-hello-world.yaml
+    # oc create -f echo-hello-world.yaml
 
 We can also use the command to list the task :
 
@@ -90,7 +93,7 @@ We can also use the command to list the task :
 Now , In order to run the command we need to create a runtask (we can create it with a YAML or using the tkn command)  
 For YAML :
 
-    # cat > taskrun-echo-hello-world.yaml << EOF
+    # cat > tr-echo-hello-world.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
     kind: TaskRun
     metadata:
@@ -102,7 +105,7 @@ For YAML :
 
 And Create it 
 
-    # oc create -f taskrun-hello-world.yaml
+    # oc create -f tr-echo-hello-world.yaml
 
 Now that we created a Run for our task we can view it using the CLI :
 
@@ -110,7 +113,7 @@ Now that we created a Run for our task we can view it using the CLI :
 
 to view the output of the task run we can use our tkn tool :
 
-    # tkn taskrun logs echo-hello-world-task-run 
+    # tkn taskrun logs taskrun-echo-hello-world 
     [echo] Hello World
 
 In case the Task takes a long time to finish (it it simple task , this should take to long , does it ?) we better look at the pods and their status :
