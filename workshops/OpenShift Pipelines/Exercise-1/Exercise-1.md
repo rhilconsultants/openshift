@@ -164,9 +164,13 @@ Now we will set our namespace into a variable :
 
     # export NAMESPACE=$(oc project -q)
 
+To make life easier for podman we can set an Environment variable for our config.json file
+
+    # export REGISTRY_AUTH_FILE="/home/$USER/.docker/config.json"
+
 Next we will create a secret and add the file to our namespace 
 
-    # oc create secret generic --from-file=.dockerconfigjson=/home/$USER/.docker/config.json \
+    # oc create secret generic --from-file=.dockerconfigjson=${REGISTRY_AUTH_FILE} \
     --type=kubernetes.io/dockerconfigjson pullsecret -n $NAMESPACE
 
 and then attach it to the pull operation :

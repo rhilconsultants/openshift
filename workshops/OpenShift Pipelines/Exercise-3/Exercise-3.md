@@ -267,6 +267,8 @@ And Finally we will add the route :
       to:
         kind: Service
         name: el-monkey-eventlistener
+        weight: 100
+      wildcardPolicy: None
     EOF
         
 
