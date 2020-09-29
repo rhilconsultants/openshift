@@ -82,3 +82,14 @@ To navigate between them you can run CTRL+ARROW and the arrows.
 
 now you are ready for work :)  
 
+#### Small Suggestion
+
+In Ex1 on the top left run watch for taskrun and on the right run watch for tasks
+
+    # watch -n 1 "oc get taskrun"
+    # watch -n 1 "oc get tasks"
+
+In the following Exercises run pipelinerun instead of tasks
+
+    # watch -n 1 "oc get pipelinerun"
+    
