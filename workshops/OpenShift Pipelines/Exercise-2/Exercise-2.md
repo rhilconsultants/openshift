@@ -137,7 +137,7 @@ our task should look like :
             privileged: true
           volumeMounts:
           - name: varlibcontainers
-            	mountPath: /var/lib/containers
+            mountPath: /var/lib/containers
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
@@ -436,7 +436,6 @@ In Order achieve it we need to add the "buildah push" command to our ws task
 The Only Difference between sequential and parallel is the "runAfter" section.
 recreate the task without the runAfter, create a pipeline run and let me know what you notice
 
-
 ### ClusterTask
 
 we can do in an easier with ClusterTask :
@@ -453,6 +452,4 @@ we can do in an easier with ClusterTask :
             name: build-push
             kind: ClusterTask
     ...
-
-
 We will wait for the rest of the Class to complete the exercise and move on to [Exercise 3](../Exercise-3/Exercise-3.md)

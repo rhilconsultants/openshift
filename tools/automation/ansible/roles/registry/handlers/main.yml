@@ -1,0 +1,9 @@
+---
+# handlers file for registry
+
+- name: Restart the firewalld service
+  service:
+    state: restarted
+    daemon_reload: yes
+    name: firewalld
+
