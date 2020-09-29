@@ -92,7 +92,7 @@ A good place to start is the Trigger Template which holds what we already have c
     # echo 'apiVersion: triggers.tekton.dev/v1alpha1
     kind: TriggerTemplate
     metadata:
-      name: monkey-trigger-template
+      name: monkey-trigger-template-$(uid)
     spec:
       params:
       - name: SERVICE_ACCOUNT
@@ -100,29 +100,9 @@ A good place to start is the Trigger Template which holds what we already have c
     ############################### Resource Section ################
       resourceTemplates:
       - apiVersion: tekton.dev/v1alpha1
-        kind: PipelineResource
-        metadata:
-          name: monkey-app-git
-        spec:
-          type: git
-          params:
-            - name: revision
-              value: master
-            - name: url
-              value: https://github.com/ooichman/monkey-app.git
-      - apiVersion: tekton.dev/v1alpha1
-        kind: PipelineResource
-        metadata:
-          name: monkey-app
-        spec:
-          type: image
-          params:
-            - name: url
-              value: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest
-      - apiVersion: tekton.dev/v1alpha1
         kind: PipelineRun
         metadata:
-          name: pipeline-run-build-monkey-ws
+          name: pipeline-run-build-monkey-ws-$(uid)
         spec:
           serviceAccountName: $(params.SERVICE_ACCOUNT)
           pipelineRef:
@@ -222,6 +202,11 @@ Add it to the cluster :
 
     # oc create -f monkey-rolebinding.yaml
 
+And we are going to give the service account extra credentials to make sure everything goes right!
+
+    # export NAMESPACE=$(oc project -q)
+    # oc adm policy oc adm policy add-role-to-user admin system:serviceaccount:${NAMESPACE}:monkey -n ${NAMESPACE}
+
 and Now we will create the event Listener and a route to make sure our git webhook can send a an HTTP POST command to out event Listener in order to trigger the pipeline
 
 create the event listener :
@@ -243,7 +228,7 @@ create the event listener :
           bindings:
             - name: monkey-trigger-binding
           template:
-            name: monkey-trigger-template
+            name: monkey-trigger-template-$(uid)
     EOF
 
 Add it to our Cluster :
@@ -321,13 +306,14 @@ First let's clone it to our Home directory :
 
 Now we will change the directory name to "old" 
 
-    # mv monkey-app to monkey-app-old
+    # mv monkey-app monkey-app-old
 
 And clone our new repository
 (take a few second an think about why we are doing this)
 
     # cd monkey-app-old/
     # cp -R src/ ../monkey-app/
+    # cd ../monkey-app/
 
 Now let's update our new repository over the gogs server
 
@@ -341,17 +327,6 @@ for convenience sake we will add our username and password to our git configurat
 
     # export PASS='OcpPa$$w0rd' (also not recommended)
     # sed -i "s/http:\/\/gogs/http:\/\/${USER}:${PASS}\@gogs/" .git/config
-
-Now run the push to make sure our code is update 2 date :
-
-    # git push origin master
-    Counting objects: 4, done.
-    Delta compression using up to 2 threads.
-    Compressing objects: 100% (2/2), done.
-    Writing objects: 100% (3/3), 250 bytes | 0 bytes/s, done.
-    Total 3 (delta 1), reused 0 (delta 0)
-    To http://user01:OcpPa$$w0rd@gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
-       92ff6dc..02c7955  master -> master
 
 Now that our repository is up 2 date we can change the pipeline source named image :
 
@@ -374,32 +349,6 @@ And apply the changes :
 
     # oc apply -f pipelineResource-git.yaml
 
-and update the trigger template :
-
-    # vi monkey-trigger-template.yaml
-    ...
-    spec:
-      params:
-      - name: SERVICE_ACCOUNT
-        description: The ServiceAccount under which to run the Pipeline.
-    ############################### Resource Section ################
-      resourceTemplates:
-      - apiVersion: tekton.dev/v1alpha1
-        kind: PipelineResource
-        ...
-        spec:
-          type: git
-          params:
-            ...
-            - name: url
-              value: http://gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
-
-Now update the template :
-
-    # oc apply -f monkey-trigger-template.yaml
-    Warning: oc apply should be used on resource created by either oc create --save-config or oc apply
-    dtriggertemplate.triggers.tekton.dev/monkey-trigger-template configured
-
 Now we need to setup the webhook on our gogs server , in order to to that we need to go
 to "setting" (top right) of our repository 
 
@@ -418,9 +367,13 @@ Add your route to the Payload URL and save the webhook
 Now all we need to do is to make a change to our repository and push it.  
 The push should trigger our pipeline with the new commit.
 
-    # cd ../monkey-app
-    # touch 1
-    # git add -A
-    # git commit -a -m "adding 1"
     # git push origin master
+    Counting objects: 4, done.
+    Delta compression using up to 2 threads.
+    Compressing objects: 100% (2/2), done.
+    Writing objects: 100% (3/3), 250 bytes | 0 bytes/s, done.
+    Total 3 (delta 1), reused 0 (delta 0)
+    To http://user01:OcpPa$$w0rd@gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
+       92ff6dc..02c7955  master -> master
 
+Now you should see the event trigger (you should see it in one of your tmux sessions)

@@ -60,14 +60,25 @@ for those of you who don't know tmux in a very powerful tool which allows us to 
 
 Here is how we do it :
 
-first start a tmux session :
+first modify the tmux configuration file :
+
+    # cat > ~/.tmux.conf << EOF
+    unbind C-b
+    set -g prefix C-a
+    bind -n C-Left select-pane -L
+    bind -n C-Right select-pane -R
+    bind -n C-Up select-pane -U
+    bind -n C-Down select-pane -D
+    EOF
+
+now start a tmux session :
 
     #tmux new-session -s tkn
 
-next we will split the screen by clicking on CTRL+b then '"'.  
-Now we will Navigate to the top bar by CTRL+b then up  
-and create another slip horizontally by running CTRL+b then "%"  
-To navigate between them you can run CTRL+b and the arrows.  
+next we will split the screen by clicking on CTRL+a then '"'.  
+Now we will Navigate to the top bar by CTRL+UP (the ARROW UP)  
+and create another slip horizontally by running CTRL+a then "%"  
+To navigate between them you can run CTRL+ARROW and the arrows.  
 
 now you are ready for work :)  
 
