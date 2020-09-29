@@ -141,7 +141,7 @@ our task should look like :
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.outputs.image.name) .
+              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.outputs.image.url) .
       volumes:
       - name: varlibcontainers
         persistentVolumeClaim:
@@ -401,7 +401,7 @@ Before we are creating the pipeline run we do need to update (in our case we wil
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.outputs.image.name) .
+              buildah bud --storage-driver vfs -f Dockerfile -t monkey-app .
     ##################### Workspace Definition ##################
       workspaces:
       - name: pipeline-ws1
@@ -427,7 +427,7 @@ In Order achieve it we need to add the "buildah push" command to our ws task
 
 ##### Big Hint
 
-    buildah push $(resources.outputs.image.name)
+    buildah push monkeya-app $(resources.outputs.image.url)
 
 (mmm ... we need to login to the registry first ...)
 
@@ -439,7 +439,7 @@ recreate the task without the runAfter, create a pipeline run and let me know wh
 
 ### ClusterTask
 
-we can do in an easier with ClusterTask :
+we can do in an easier with ClusterTask (Not installed in this LAB) :
 
     apiVersion: tekton.dev/v1beta1
     kind: Pipeline

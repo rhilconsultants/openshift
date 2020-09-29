@@ -92,7 +92,7 @@ A good place to start is the Trigger Template which holds what we already have c
     # echo 'apiVersion: triggers.tekton.dev/v1alpha1
     kind: TriggerTemplate
     metadata:
-      name: monkey-trigger-template-$(uid)
+      name: monkey-trigger-template
     spec:
       params:
       - name: SERVICE_ACCOUNT
@@ -205,7 +205,7 @@ Add it to the cluster :
 And we are going to give the service account extra credentials to make sure everything goes right!
 
     # export NAMESPACE=$(oc project -q)
-    # oc adm policy oc adm policy add-role-to-user admin system:serviceaccount:${NAMESPACE}:monkey -n ${NAMESPACE}
+    # oc adm policy add-role-to-user admin system:serviceaccount:${NAMESPACE}:monkey -n ${NAMESPACE}
 
 and Now we will create the event Listener and a route to make sure our git webhook can send a an HTTP POST command to out event Listener in order to trigger the pipeline
 
@@ -228,7 +228,7 @@ create the event listener :
           bindings:
             - name: monkey-trigger-binding
           template:
-            name: monkey-trigger-template-$(uid)
+            name: monkey-trigger-template
     EOF
 
 Add it to our Cluster :
@@ -309,6 +309,9 @@ Now we will change the directory name to "old"
     # mv monkey-app monkey-app-old
 
 And clone our new repository
+
+    # git clone http://gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
+
 (take a few second an think about why we are doing this)
 
     # cd monkey-app-old/
@@ -367,6 +370,7 @@ Add your route to the Payload URL and save the webhook
 Now all we need to do is to make a change to our repository and push it.  
 The push should trigger our pipeline with the new commit.
 
+    # cd ../monkey-app
     # git push origin master
     Counting objects: 4, done.
     Delta compression using up to 2 threads.
@@ -377,3 +381,5 @@ The push should trigger our pipeline with the new commit.
        92ff6dc..02c7955  master -> master
 
 Now you should see the event trigger (you should see it in one of your tmux sessions)
+
+Now that everything is ready you can move on to [Exercise 4](../Exercise-4/Exercise-4.md)
