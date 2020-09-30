@@ -180,7 +180,7 @@ Now that we have our image we need to TAG it and push it to our registry
     # podman push default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
     (You may need to login before you can push)
 
-### Deploying on Openshift (Optional)
+### Deploying on Openshift 
 
 Now that the image is ready let's create a working directory and deploy it :
 
@@ -310,7 +310,7 @@ Add a task which uses our new Image for their run and deploy everything
             type: git
       steps:
         - name: deploy
-          image: 
+          image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/ubi-pipeline
           workingDir: /workspace/source/
           
           command: ["/bin/bash" ,"-c"]
