@@ -431,6 +431,10 @@ In Order achieve it we need to add the "buildah push" command to our ws task
 
 (mmm ... we need to login to the registry first ...)
 
+And test if the image has being uploaded
+
+    # oc describe is/monkey-app
+
 ### The Pipeline (parallel)
 
 The Only Difference between sequential and parallel is the "runAfter" section.
