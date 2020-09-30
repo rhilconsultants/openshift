@@ -39,15 +39,129 @@ Now create a Dockerfile and copy the binaries to the new image
 
     # cat > Dockerfile << EOF
     FROM ubi8/ubi-minimal
+    ENV KUBECONFIG=/opt/root-app/kubeconfig
     USER root
-    COPY run.sh /opt/root-app/
+    COPY run.sh kubeconfig /opt/root-app/
     COPY tkn oc /usr/bin
     USER 1001
     ENTRYPOINT ["/opt/root-app/run.sh"]
     EOF
 
+### Creating a Service Account and kubeconfig
+
+In order to provide the right permissions for our automation in Openshift we need to create a service account for authentication provide it the expected permissions and create an authentication file (kubeconfig).
+
+Let's make our working directory 
+
+    # mkdir ~/Tekton/Ex4 && cd ~/Tekton/Ex4
+
+#### Service account
+
+Now let's create a service account in our namespace :
+
+    # cat >> ubi-pipeline-sa.yaml << EOF
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: ubi-tekton
+    EOF
+
+And create it :
+
+    # oc create -f ubi-pipeline-sa.yaml
+
+#### Permissions 
+
+To make things easy we will give the service account admin permissions on our namespace :
+
+    # oc adm policy add-role-to-user admin system:serviceaccount:project-${USER}:ubi-tekton -n project-${USER}
+
+#### Generate Kubeconfig
+
+Fetch the name of the secrets used by the service account. This can be found by running the following command:
+
+    # oc describe serviceAccounts ubi-tekton
+
+Fetch the token from the secret.  
+
+    # TOKEN_NAME=$(oc describe serviceAccounts ubi-tekton | grep Tokens | awk '{print $2}')
+
+Using the Mountable secrets value, you can get the token used by the service account. Run the following command to extract this information:
+
+    # oc describe secrets ${TOKEN_NAME}
+
+and save the token to a variable :
+
+    # TOKEN=$(oc describe secrets ${TOKEN_NAME} | grep 'token:' | awk '{print $2}')
+
+To make things easy we are going to generate the kubeconfig for our user and change it to fit the service account.  
+Let's first create the base file:
+
+    # cd ~/Tekton/ubi-pipeline
+    # oc config view --flatten --minify > kubeconfig
+
+A Quick look at the file shows how the kubeconfig file looks like :
+
+    # cat kubeconfig
+    apiVersion: v1
+    clusters:
+    - cluster:
+        insecure-skip-tls-verify: true
+        server: https://api.ocp4.infra.local:6443
+      name: api-ocp4-infra-local:6443
+    contexts:
+    - context:
+        cluster: api-ocp4-infra-local:6443
+        namespace: project-${USER}
+        user: ${USER}
+      name: project-${USER}/api-ocp4-infra-local:6443/${USER}
+    current-context: project-${USER}/api-ocp4-infra-local:6443/${USER}
+    kind: Config
+    preferences: {}
+    users:
+    - name: ${USER}
+      user:
+        token: < user token >
+
+
+And let's modify it to fit our new service account :
+
+    # cat > kubeconfig << EOF
+    apiVersion: v1
+    clusters:
+    - cluster:
+        insecure-skip-tls-verify: true
+        server: https://api.ocp4.infra.local:6443
+      name: api-ocp4-infra-local:6443
+    contexts:
+    - context:
+        cluster: api-ocp4-infra-local:6443
+        namespace: project-${USER}
+        user: ubi-tekton
+      name: ubi-tekton
+    current-context: ubi-tekton
+    kind: Config
+    preferences: {}
+    users:
+    - name: ubi-tekton
+      user:
+        token: $TOKEN
+    EOF
+
+Test the new file by setting the environment variable and point to it :
+
+    # export KUBECONFIG="/home/${USER}/Tekton/ubi-pipeline/kubeconfig"
+
+And Run oc command to see all the pods :
+
+    # oc get pods
+
+if you see all your running pipelines and the event listener pods ... you are good to go.  
+
+
 ### Creating the Image
 
+Now that we have a kubeconfig we can copy it to our image and use it with our oc command to create object in our cluster.  
 Once we've done that we can go ahead and create our image :
 
     # buildah bud -f Dockerfile -t ubi-pipeline .
@@ -66,16 +180,15 @@ Now that we have our image we need to TAG it and push it to our registry
     # podman push default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
     (You may need to login before you can push)
 
-### Deploying on Openshift (Optional)
+### Deploying on Openshift 
 
 Now that the image is ready let's create a working directory and deploy it :
 
-    # mkdir ~/Tekton/Ex4/
     # cd ~/Tekton/Ex4/
 
 All that is left is to create a deployment for our image :
 
-    #cat > deployment.yaml << EOF
+    # cat > deployment.yaml << EOF
     apiVersion: apps/v1
     kind: Deployment
     metadata:
@@ -99,83 +212,17 @@ And deploy it :
 
     # oc create -f deployment.yaml
 
+and look if the pod is running successfully :
+
+    # oc get pods | grep ubi
+
 After the deployment we can use the web console to login or use the oc command to get the pod terminal access
 
-    # oc get pods -n $NAMESPACE -o name | grep ubi-pipeline | xargs oc rsh -n $NAMESPACE
+    # POD_ID=$(oc get pods -n $NAMESPACE -o name | grep ubi-pipeline | awk -F \/ '{print $2}')
+    # oc rsh ${POD_ID}
 
-## Creating a Service Account and kubeconfig
+Run get pod  (oc get pods) command to see that it's working and continue to the next section.
 
-In order to provide the right permissions for our automation in Openshift we need to create a service account for authentication provide it the expected permissions and create an authentication file (kubeconfig).
-
-### Service account
-
-First let's create a service account in our namespace :
-
-    # cat >> ubi-pipeline-sa.yaml << EOF
-    apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      name: ubi-tekton
-
-### Permissions 
-
-To make things easy we will give the service account admin permissions on our namespace :
-
-    # oc adm policy add-role-to-user admin system:serviceaccount:ns-user01:ubi-tekton
-
-### Generate Kubeconfig
-
-Fetch the name of the secrets used by the service account. This can be found by running the following command:
-
-    # oc describe serviceAccounts ubi-tekton
-
-Fetch the token from the secret.  
-Using the Mountable secrets value, you can get the token used by the service account. Run the following command to extract this information:
-
-    # oc describe secrets <the service account secret>
-
-Get the certificate info for the cluster
-
-Every cluster has a certificate that clients can use to encryt traffic. Fetch the certificate and write to a file by running this command. In this case, we are using a file name cluster-cert.txt
-
-    # oc config view --flatten --minify > cluster-cert.txt
-    # cat cluster-cert.txt
-
-In case you see the output of "insecure-skip-tls-verify: true" that will work as well.  
-Copy two pieces of information from here certificate-authority-data and server
-Create a kubeconfig file
-
-From the steps above, you should have the following pieces of information
-
-  - token
-  - certificate-authority-data
-  - server
-
-Create a file called sa-config and paste this content on to it
-
-    # cat > kubeconfig << EOF
-    apiVersion: v1
-    kind: Config
-    users:
-    - name: ubi-tekton
-      user:
-        token: <replace this with token info>
-    clusters:
-    - cluster:
-        certificate-authority-data: <replace this with certificate-authority-data info>
-        server: <replace this with server info>
-      name: self-hosted-cluster
-    contexts:
-    - context:
-        cluster: self-hosted-cluster
-        user: ubi-tekton
-      name: ubi-tekton
-    current-context: ubi-tekton
-    EOF
-
-Now that we have a kubeconfig we can copy it to our image and use it with our oc command to create object in our cluster.
-
-### YAML Files
 
 ## The IAC Pipeline
 
@@ -189,11 +236,13 @@ Now that we have everything ready we can build the pipeline with the following t
 
 Create the deployment fie in the git repository :
 
-    #cat > ~/Tekton/monkey-app/deployment.yaml << EOF
+    # mkdir ~/Tekton/monkey-app/deploy
+    # cat > ~/Tekton/monkey-app/deploy/deployment.yaml << EOF
     kind: Deployment
     apiVersion: v1
     metadata:
       name: monkey-app
+      namespace: project-${USER}
     spec:
       template:
         metadata:
@@ -205,20 +254,21 @@ Create the deployment fie in the git repository :
               image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest
               ports:
               - containerPort: 8080
-  replicas: 1
-  selector:
-    matchLabels:
-      app: monkey-app
-EOF
+      replicas: 1
+      selector:
+        matchLabels:
+          app: monkey-app
     EOF
+
 
 Create the service YAML file
 
-    # cat > ~/Tekton/monkey-app/service.yaml << EOF
+    # cat > ~/Tekton/monkey-app/deploy/service.yaml << EOF
     apiVersion: v1
     kind: Service
     metadata:
       name: monkey-app
+      namespace: project-${USER}
     spec:
       selector:
         app: monkey-app
@@ -230,12 +280,12 @@ Create the service YAML file
 
 Create the route YAML file
 
-    # cat > ~/Tekton/monkey-app/route.yaml << EOF
+    # cat > ~/Tekton/monkey-app/deploy/route.yaml << EOF
     apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
       name: monkey-app
-      namespace: ns-${USER}
+      namespace: project-${USER}
     spec:
       port:
         targetPort: 8080
@@ -246,8 +296,62 @@ Create the route YAML file
       wildcardPolicy: None
     EOF
 
-Add a task which uses our new Image for their run and deploy the 
+Add a task which uses our new Image for their run and deploy everything
+
+    # cd ~/Tekton/Ex4/
+    # cat > monkey-deploy-task << EOF
+    kind: Task
+    metadata:
+      name: monkey-deploy-task
+    spec:
+      resources:
+        inputs:
+          - name: source
+            type: git
+      steps:
+        - name: deploy
+          image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/ubi-pipeline
+          workingDir: /workspace/source/
+          
+          command: ["/bin/bash" ,"-c"]
+          args:
+            - |-
+              oc create -f deploy/deployment.yaml
+              oc create -f deploy/service.yaml
+              oc create -f deploy/route.yaml
+    EOF
+
+Create the new Task :
+
+    # oc create -f monkey-deploy-task.yaml
+
+update the pipeline with our new task :
+
+    # cp ../Ex2/pipeline-build-monkey-ws.yaml .
+
+And Add the lines :
+
+    - name: monkey-deploy
+        taskRef:
+          name: monkey-deploy-task
+        runAfter: 
+          - monkey-build-task-ws
+
+Apply the update
+
+    # oc apply -f pipeline-build-monkey-ws.yaml
+
+now let's push our new files to our git and see what is happening :
+
+    # cd ~/Tekton/monkey-app/
+    # git add -A
+    # git commit -a -m "Adding IAS"
+    # git push origin master
 
 Watch for new pipeline runs and monitor their logs.
 
 If every went as expected your IAC process is set.
+
+# Congratulations ...
+
+You have completed the OpenShift Pipeline Workshop
