@@ -46,6 +46,78 @@ Now create a Dockerfile and copy the binaries to the new image
     ENTRYPOINT ["/opt/root-app/run.sh"]
     EOF
 
+### Creating a Service Account and kubeconfig
+
+In order to provide the right permissions for our automation in Openshift we need to create a service account for authentication provide it the expected permissions and create an authentication file (kubeconfig).
+
+#### Service account
+
+First let's create a service account in our namespace :
+
+    # cat >> ubi-pipeline-sa.yaml << EOF
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: ubi-tekton
+
+#### Permissions 
+
+To make things easy we will give the service account admin permissions on our namespace :
+
+    # oc adm policy add-role-to-user admin system:serviceaccount:ns-user01:ubi-tekton
+
+#### Generate Kubeconfig
+
+Fetch the name of the secrets used by the service account. This can be found by running the following command:
+
+    # oc describe serviceAccounts ubi-tekton
+
+Fetch the token from the secret.  
+Using the Mountable secrets value, you can get the token used by the service account. Run the following command to extract this information:
+
+    # oc describe secrets <the service account secret>
+
+Get the certificate info for the cluster
+
+Every cluster has a certificate that clients can use to encryt traffic. Fetch the certificate and write to a file by running this command. In this case, we are using a file name cluster-cert.txt
+
+    # oc config view --flatten --minify > cluster-cert.txt
+    # cat cluster-cert.txt
+
+In case you see the output of "insecure-skip-tls-verify: true" that will work as well.  
+Copy two pieces of information from here certificate-authority-data and server
+Create a kubeconfig file
+
+From the steps above, you should have the following pieces of information
+
+  - token
+  - certificate-authority-data
+  - server
+
+Create a file called sa-config and paste this content on to it
+
+    # cat > kubeconfig << EOF
+    apiVersion: v1
+    kind: Config
+    users:
+    - name: ubi-tekton
+      user:
+        token: <replace this with token info>
+    clusters:
+    - cluster:
+        certificate-authority-data: <replace this with certificate-authority-data info>
+        server: <replace this with server info>
+      name: self-hosted-cluster
+    contexts:
+    - context:
+        cluster: self-hosted-cluster
+        user: ubi-tekton
+      name: ubi-tekton
+    current-context: ubi-tekton
+    EOF
+
+Now that we have a kubeconfig we can copy it to our image and use it with our oc command to create object in our cluster.
+
 ### Creating the Image
 
 Once we've done that we can go ahead and create our image :
@@ -103,79 +175,7 @@ After the deployment we can use the web console to login or use the oc command t
 
     # oc get pods -n $NAMESPACE -o name | grep ubi-pipeline | xargs oc rsh -n $NAMESPACE
 
-## Creating a Service Account and kubeconfig
 
-In order to provide the right permissions for our automation in Openshift we need to create a service account for authentication provide it the expected permissions and create an authentication file (kubeconfig).
-
-### Service account
-
-First let's create a service account in our namespace :
-
-    # cat >> ubi-pipeline-sa.yaml << EOF
-    apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      name: ubi-tekton
-
-### Permissions 
-
-To make things easy we will give the service account admin permissions on our namespace :
-
-    # oc adm policy add-role-to-user admin system:serviceaccount:ns-user01:ubi-tekton
-
-### Generate Kubeconfig
-
-Fetch the name of the secrets used by the service account. This can be found by running the following command:
-
-    # oc describe serviceAccounts ubi-tekton
-
-Fetch the token from the secret.  
-Using the Mountable secrets value, you can get the token used by the service account. Run the following command to extract this information:
-
-    # oc describe secrets <the service account secret>
-
-Get the certificate info for the cluster
-
-Every cluster has a certificate that clients can use to encryt traffic. Fetch the certificate and write to a file by running this command. In this case, we are using a file name cluster-cert.txt
-
-    # oc config view --flatten --minify > cluster-cert.txt
-    # cat cluster-cert.txt
-
-In case you see the output of "insecure-skip-tls-verify: true" that will work as well.  
-Copy two pieces of information from here certificate-authority-data and server
-Create a kubeconfig file
-
-From the steps above, you should have the following pieces of information
-
-  - token
-  - certificate-authority-data
-  - server
-
-Create a file called sa-config and paste this content on to it
-
-    # cat > kubeconfig << EOF
-    apiVersion: v1
-    kind: Config
-    users:
-    - name: ubi-tekton
-      user:
-        token: <replace this with token info>
-    clusters:
-    - cluster:
-        certificate-authority-data: <replace this with certificate-authority-data info>
-        server: <replace this with server info>
-      name: self-hosted-cluster
-    contexts:
-    - context:
-        cluster: self-hosted-cluster
-        user: ubi-tekton
-      name: ubi-tekton
-    current-context: ubi-tekton
-    EOF
-
-Now that we have a kubeconfig we can copy it to our image and use it with our oc command to create object in our cluster.
-
-### YAML Files
 
 ## The IAC Pipeline
 

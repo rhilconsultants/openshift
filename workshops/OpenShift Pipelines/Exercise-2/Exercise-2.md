@@ -254,7 +254,7 @@ And create the object with oc
 Follow the logs and see the magic happens...  
 
     # tkn pipelinerun logs pipeline-run-build-monkey -f -n ${NAMESPACE}
-    (or the tkn outout )
+    (If you have used 'tkn pipeline start' follow the instructions at the end of the output )
 
 #### NOTE
 
@@ -427,7 +427,7 @@ In Order achieve it we need to add the "buildah push" command to our ws task
 
 ##### Big Hint
 
-    buildah push monkeya-app $(resources.outputs.image.url)
+    buildah push monkey-app $(resources.outputs.image.url)
 
 (mmm ... we need to login to the registry first ...)
 
