@@ -140,7 +140,7 @@ Next we need to take our token and use it as a password:
 
 Take the output and put in where the trienge brakets are :
 
-    # REG_SECRET=`echo -n 'myuser:<the token here>' | base64 -w0`
+    # REG_SECRET=`echo -n '<the username here>:<the token here>' | base64 -w0`
 
 Now we will setup a few variable:
 

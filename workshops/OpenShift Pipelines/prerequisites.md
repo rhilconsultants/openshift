@@ -21,7 +21,8 @@ The 2 tools are
 
 First create the ${HOME}/bin Directory
 
-    #mkdir ${HOME}/bin
+    # mkdir ${HOME}/bin
+    # export PATH="${HOME}/bin:${PATH}"
 
 To download oc all we need to do is to download the latest oc binary with the following command :
 
@@ -52,7 +53,9 @@ to generate it just run the following command :
 
 ### cluster login
 
-    #oc login api.<cluster>.<domain>:6443
+    # export OCP_DOMAIN="infra.local"
+    # export OCP_CLUSTER="ocp4"
+    # oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 
 ### tmux
 
@@ -92,4 +95,4 @@ In Ex1 on the top left run watch for taskrun and on the right run watch for task
 In the following Exercises run pipelinerun instead of tasks
 
     # watch -n 1 "oc get pipelinerun"
-    
+
