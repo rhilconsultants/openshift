@@ -158,6 +158,9 @@ And Run oc command to see all the pods :
 
 if you see all your running pipelines and the event listener pods ... you are good to go.  
 
+now unset the kubeconfig
+
+    # unset KUBECONFIG
 
 ### Creating the Image
 
@@ -239,7 +242,7 @@ Create the deployment fie in the git repository :
     # mkdir ~/Tekton/monkey-app/deploy
     # cat > ~/Tekton/monkey-app/deploy/deployment.yaml << EOF
     kind: Deployment
-    apiVersion: v1
+    apiVersion: apps/v1
     metadata:
       name: monkey-app
       namespace: project-${USER}
@@ -320,9 +323,9 @@ Add a task which uses our new Image for their run and deploy everything
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              oc create -f deploy/deployment.yaml
-              oc create -f deploy/service.yaml
-              oc create -f deploy/route.yaml
+              oc apply -f deploy/deployment.yaml
+              oc apply -f deploy/service.yaml
+              oc apply -f deploy/route.yaml
     EOF
 
 Create the new Task :
@@ -340,6 +343,13 @@ And Add the lines :
           name: monkey-deploy-task
         runAfter: 
           - monkey-build-task
+        resources:
+          inputs:
+          - name: source
+            resource: source
+          outputs:
+          - name: image
+            resource: image
 
 Apply the update
 
