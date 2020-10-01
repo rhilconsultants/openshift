@@ -347,6 +347,9 @@ And Add the lines :
           inputs:
           - name: source
             resource: source
+          outputs:
+          - name: image
+            resource: image
 
 Apply the update
 
