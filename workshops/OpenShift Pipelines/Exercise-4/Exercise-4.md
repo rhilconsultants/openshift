@@ -309,6 +309,9 @@ Add a task which uses our new Image for their run and deploy everything
         inputs:
           - name: source
             type: git
+        outputs:
+          - name: image
+            type: image
       steps:
         - name: deploy
           image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/ubi-pipeline
