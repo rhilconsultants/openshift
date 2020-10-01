@@ -323,7 +323,6 @@ First Add your credentials :
 
     # git config --global user.email ${USER}@infra.local
     # git config --global user.name ${USER}
-    # git commit -a -m "init 0"
 
 Now let's update our new repository over the gogs server
 
