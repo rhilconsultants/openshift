@@ -326,6 +326,10 @@ Add a task which uses our new Image for their run and deploy everything
               oc apply -f deploy/deployment.yaml
               oc apply -f deploy/service.yaml
               oc apply -f deploy/route.yaml
+      workspaces:
+      - name: pipeline-ws1
+        description: the location of the containers
+        mountPath: /var/lib/containers
     EOF
 
 Create the new Task :
