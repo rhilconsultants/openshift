@@ -378,6 +378,8 @@ Watch for new pipeline runs and monitor their logs.
 
 If every went as expected your IAC process is set.
 
+### Testing 
+
 you can see the monkey-app running by checking the pods :
 
     # oc get pod | grep monkey-app
