@@ -182,6 +182,7 @@ Now that we have our image we need to TAG it and push it to our registry
 
     # podman push default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
     (You may need to login before you can push)
+You can see how did we logged in in [Exercise 1](../Exercise-1/Exercise-1.md)
 
 ### Deploying on Openshift 
 
@@ -336,7 +337,7 @@ Create the new Task :
 
     # oc create -f monkey-deploy-task.yaml
 
-update the pipeline with our new task :
+Update the pipeline with our new task :
 
     # cp ../Ex2/pipeline-build-monkey-ws.yaml .
 
@@ -354,6 +355,9 @@ And Add the lines :
           outputs:
           - name: image
             resource: image
+        workspaces:
+        - name: pipeline-ws1
+          workspace: pipeline-ws1
 
 Apply the update
 
@@ -363,13 +367,28 @@ now let's push our new files to our git and see what is happening :
 
     # cd ~/Tekton/monkey-app/
     # git add -A
-    # git commit -a -m "Adding IAS"
+    # git commit -a -m "Adding IAC"
     # git push origin master
+
+If you see any errors you can always Test the Task is working :
+
+    # tkn task start monkey-deploy-task
 
 Watch for new pipeline runs and monitor their logs.
 
 If every went as expected your IAC process is set.
 
+you can see the monkey-app running by checking the pods :
+
+    # oc get pod | grep monkey-app
+    monkey-app-cdb855978-v2hqd            1/1     Running     0          2m6s
+
+and you can even test the application with a Get command ( a good place to start building another task for testing ... )
+
+    # MONKEY_ROUTE=$(oc get route | grep monkey-app | awk '{print "http://"$2}')
+    # curl -X GET ${MONKEY_ROUTE}/test
+    Hello, you requested: /test
+ 
 # Congratulations ...
 
-You have completed the OpenShift Pipeline Workshop
+You have now completed the OpenShift Pipeline Workshop
