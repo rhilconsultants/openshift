@@ -299,7 +299,8 @@ Create the route YAML file
 Add a task which uses our new Image for their run and deploy everything
 
     # cd ~/Tekton/Ex4/
-    # cat > monkey-deploy-task << EOF
+    # cat > monkey-deploy-task.yaml << EOF
+    apiVersion: tekton.dev/v1alpha1
     kind: Task
     metadata:
       name: monkey-deploy-task
@@ -335,7 +336,7 @@ And Add the lines :
         taskRef:
           name: monkey-deploy-task
         runAfter: 
-          - monkey-build-task-ws
+          - monkey-build-task
 
 Apply the update
 
