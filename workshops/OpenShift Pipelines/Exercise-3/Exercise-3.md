@@ -320,9 +320,10 @@ And clone our new repository
     # cd ../monkey-app/
 
 First Add your credentials :
-
-    # git config --global user.email ${USER}@infra.local
-    # git config --global user.name ${USER}
+  
+    # GITUSER=<your git user>
+    # git config --global user.email ${GITUSER}@infra.local
+    # git config --global user.name ${GITUSER}
 
 Now let's update our new repository over the gogs server
 
@@ -335,7 +336,7 @@ And run an initial commit
 for convenience sake we will add our username and password to our git configuration (not recommended in Production environment )
 
     # export PASS='OcpPa$$w0rd' (also not recommended)
-    # sed -i "s/http:\/\/gogs/http:\/\/${USER}:${PASS}\@gogs/" .git/config
+    # sed -i "s/http:\/\/gogs/http:\/\/${GITUSER}:${PASS}\@gogs/" .git/config
 
 Now that our repository is up 2 date we can change the pipeline source named image :
 
