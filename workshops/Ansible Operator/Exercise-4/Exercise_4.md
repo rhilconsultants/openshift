@@ -23,7 +23,7 @@
   - UBI Container with operator-sdk
 
 ## Operator-SDK
-Until now we worked with containers , Ansible and the Ansible module for Kubernetes , now it’s time to bring it all together 
+Until now we worked with containers, Ansible and the Ansible module for Kubernetes, now it’s time to bring it all together 
 
 ### Download UBI Image
 
@@ -84,7 +84,7 @@ Now make sure you are using the right operator-sdk:
 
 Now that we have the binary and the image let’s bring them together and work from the pod
 TIP
-(Make the POD running first , then connect to the pod)
+(Make the POD running first, then connect to the pod)
 ………….
 (working within a pod will help us …)
 
@@ -188,7 +188,7 @@ For the last act we would want to update the default:
     size: 3
     EOF
 
-In order to provide a good operator we need to make sure we are taking care of all the aspects which means , adding a service and a route through the operator :
+In order to provide a good operator we need to make sure we are taking care of all the aspects which means, adding a service and a route through the operator :
 
 First copy the service to the templates directory :
 
@@ -354,7 +354,7 @@ Another way to Verify that the hellogo-operator is running is by viewing the dep
     NAME                DESIRED CURRENT UP-TO-DATE AVAILABLE AGE
     ${USER}-hellogo-operator  1       1       1          1         1m
 
-Once the operator is running your are good to go and you can continue with testing it in another namespace 
+Once the operator is running you are good to go and you can continue with testing it in another namespace 
 
 ### Using the Operator
 
@@ -383,7 +383,7 @@ Let’s go ahead and apply this in our Tutorial project to deploy 3  hellogo pod
     spec:
       size: 3
 
-Now run the the “oc create” command to create the proper CR:
+Now run use the “oc create” command to create the proper CR:
 
     # oc create -f deploy/crds/hellogo.example.com_v1alpha1_${USER}hellogo_cr.yaml
 
@@ -425,7 +425,7 @@ Tag amd push the new image :
 
     # podman push registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
 
-for best practice , delete and recreate the deploymnet.yaml
+for best practice, delete and recreate the deployment.yaml
 
     # oc delete -f deploy/operator.yaml
 
