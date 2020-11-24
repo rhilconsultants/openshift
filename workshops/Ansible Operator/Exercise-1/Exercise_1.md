@@ -1,5 +1,5 @@
 # Exercise 1 - Building a GO application
-## Content :
+## Content:
 
   - Installing GO LANG (SKIP…)
     - Package Based
@@ -21,7 +21,7 @@ To install Go, e.g. via Homebrew on macOS ( brew install go ), Chocolatey on Win
 ( choco install -y golang ), or via various third-party repositories via apt or yum ; 
 
 as long as you can get a working Go installation, you should be able to compile the application we’ll build.
-On your Linux Box :
+On your Linux computer:
 
 ```bash
 # yum install -y golang.x86_64
@@ -66,7 +66,7 @@ Add the Go binaries to your $PATH.
 
 If you want the $PATH changes to persist, make sure to add them to shell profile (e.g. ∼/.profile ).
 
-The above commands should be run as the root user, or via sudo , so the Go installation can operate correctly.
+The above commands should be run as the root user, or via sudo, so the Go installation can operate correctly.
 
 ## Creating a ‘Hello world’ app in Go
 
@@ -79,7 +79,7 @@ The design goal is simple:
   - Run a web server on port ${GO_PORT}.
   - For any request, return the content “Hello, you requested: URL_PATH_HERE”
 
-First, create a new project directory, hello-go , with the following directory structure:
+First, create a new project directory, hello-go, with the following directory structure:
 
 ```bash
  hello-go/
@@ -88,7 +88,7 @@ First, create a new project directory, hello-go , with the following directory s
 # mkdir -p hello-go/cmd/hello
 ```
 
-And make sure we set the right variables we need :
+And make sure we set the right variables we need:
 
 ```bash
 # export USER_NUMBER=`echo $USER | sed 's/user//'`
@@ -96,10 +96,10 @@ And make sure we set the right variables we need :
 # echo $GO_PORT
 ```
 
-Now, inside the hello directory, create the file hello.go with the following Go code:
+Now, inside the hello-go/cmd/hello directory, create a file named hello.go with the following Go code:
 
     
-```bash
+```go
     package main
     import (
             "fmt"
@@ -151,16 +151,16 @@ directory. Run it by typing:
 # ./hello
 ```
 
-Now, **in another terminal (login again with ssh)** , run curl localhost:${GO_PORT} . You should see something like
+Now, **in another terminal (login again with ssh)**, run curl http://localhost:${GO_PORT} . You should see something like
 
 the following:
 
-     # curl localhost:${GO_PORT}
+     # curl http://localhost:${GO_PORT}
      Hello, you requested: /
 
-And if you curl another path, like curl localhost:80${user number}/test, you’ll see:
+And if you curl another path, like curl http://localhost:80${user number}/test, you’ll see:
 
-     # curl localhost:${GO_PORT}/test
+     # curl http://localhost:${GO_PORT}/test
      Hello, you requested: /test
 
 Amazing! A couple more hours and we’ll have implemented Apache in Go! You may also 
@@ -190,11 +190,11 @@ First login to the registry
       Password: mypassword
       Login Succeeded!
 
-If we want it to be consistent through this session (change user01 and the password from the file) :
+If we want it to be consistent through this session (change user01 and the password from the file):
 
      # REG_SECRET=`echo -n 'myuser:mypassword' | base64 -w0`
 
-And now create and update the ~/.docker/config.json file :
+And now create and update the ~/.docker/config.json file:
 
     # mkdir ~/.docker
     # echo '{ "auths": {}}' | \
@@ -242,29 +242,28 @@ Finally, we EXPOSE port ${GO_PORT}, since that’s the port our web server liste
 we set the ENTRYPOINT to our hello binary, so Docker will run it as the singular
 process in the container when running it with all the default settings.
 
-### Building the container
+### Building and Run the Container
 
 Now we can build the container image. Run the following command inside the same
 directory as the Dockerfile:
 
      # buildah bud -f Dockerfile -t hello-go .
 
-
-After a couple minutes (or less if you already had the base images downloaded!), you should be able to see the hello-go container image when you run docker images :
+After a couple minutes (or less if you already had the base images downloaded!), you should be able to see the hello-go container image when you run docker images:
 
      # podman image list
      REPOSITORY                                    TAG      IMAGE ID       CREATED       SIZE
-     localhost/${USER}-hello-go                            latest   92310a101177   4 days ago    116 MB
+     localhost/hello-go                            latest   92310a101177   4 days ago    116 MB
 
 Now we’ll run the container image to make sure Hello Go operates in the container identically to how it operated when run directly.
 Running the container
-To run the container and expose the internal port 8180 to your host, run the command:
+To run the container and expose the internal port to your host, run the command:
 
      # podman run --name hello-go --rm -p ${GO_PORT}:${GO_PORT} hello-go
 
-After a second or two, the web server should be operational. In another terminal, run:
+After a second or two, the web server should be operational. In another terminal with the environment variable GO_PORT specified, run:
 
-     # curl localhost:${GO_PORT}/testing
+     # curl http://localhost:${GO_PORT}/testing
 
 
 And you should see the “Hello, you’ve requested: /testing” response in that window, as well as the logged request in the window where docker/podman run was executed.
@@ -275,26 +274,27 @@ And you should see the “Hello, you’ve requested: /testing” response in tha
 To stop and terminate the container, press Ctrl-C in the terminal where you ran
 docker/podman run .
 
-Clean you work :
+Clean up your work
 
      # podman stop hello-go 
      # podman rm hello-go
 
-Push to the Registry
-Only 2 more steps remaining , re tag our application :
+### Push to the Registry
+
+Tag our application:
 
      # podman tag localhost/hello-go registry.infra.local:5000/${USER}/hello-go 
 
-Verify you image was successfully tagged :
+Verify that your image was successfully tagged:
 
      # podman image list 
      REPOSITORY                                   TAG      IMAGE ID       CREATED         SIZE
      registry.infra.local:5000/userxx/hello-go    latest   376409b93b2c   3 minutes ago   116 MB
 
-And push it to the registry :
+Push the image to the registry:
 
      # podman push  registry.infra.local:5000/${USER}/hello-go
 
-Hello Go app summary
-Many tools in the Kubernetes ecosystem are written in Go. You might not be a master of the Go language after building and running this app in a container, but you at least know the basics, and could even put ‘Go programmer’ on your resumé now (just kidding!).
+## Hello Go Application Summary
+Many tools in the Kubernetes ecosystem are written in Go. You might not be a master of the Go language after building and running this application in a container, but you at least know the basics, and could even put ‘Go programmer’ on your resumé now (just kidding!).
 
