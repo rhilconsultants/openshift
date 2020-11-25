@@ -1,5 +1,5 @@
 
-# Biulding an Operator
+# Building an Operator
 
 ## Contents
   - Operator-SDK
@@ -23,11 +23,11 @@
   - UBI Container with operator-sdk
 
 ## Operator-SDK
-Until now we worked with containers, Ansible and the Ansible module for Kubernetes, now it’s time to bring it all together 
+Until now we worked with containers, Ansible and the Ansible module for Kubernetes (k8s). Now it’s time to bring it all together.
 
 ### Download UBI Image
 
-First let’s make sure we have the UBI image (we know what it is now)
+First let’s make sure we have the UBI image:
 
     # podman pull registry.infra.local:5000/ubi8/ubi-minimal
 
@@ -37,7 +37,7 @@ First let’s make sure we have the UBI image (we know what it is now)
 
 Set the release version variable:
 
-    # export RELEASE_VERSION=v0.17.0
+    # export RELEASE_VERSION=v1.2.0
 
 Now download the GNU binary
 
@@ -93,93 +93,128 @@ TIP
 The SDK provides workflows to develop operators in Go, Ansible, or Helm. In this tutorial we will be focusing on Ansible.
 The following workflow is for a new Ansible operator:
 
-  - Create a new operator project using the SDK Command Line Interface(CLI)
-  - Write the reconciling logic for your object using ansible playbooks and roles
+  - Create a new operator project using the SDK Command Line Interface (CLI)
+  - Write the reconciling logic for your object using Ansible playbooks and roles
   - Use the SDK CLI to build and generate the operator deployment manifests
   - Optionally add additional CRD’s using the SDK CLI and repeat steps 2 and 3
 
-First lets create a project with our new tool We’ll be building a Hello-go Ansible Operator for the remainder of this tutorial :
+First lets create a project with our new tool We’ll be building a Hello-go Ansible Operator for the remainder of this tutorial:
 (Change the user in both places to your username)
 
     # cd ~/ose-openshift
-    # operator-sdk new ${USER}-hellogo-operator --type=ansible \
-    --api-version=hellogo.example.com/v1alpha1 --kind=${USER^}hellogo
-
-Now let’s look at the TREE of our new object :
-
-
-    # tree ${USER}-hellogo-operator
-    ${USER}-memcached-operator
-    ├── build
-    │   ├── Dockerfile
-    │   └── test-framework
-    │       ├── ansible-test.sh
-    │       └── Dockerfile
-    ├── deploy
-    │   ├── crds
-    │   │   ├── cache_v1alpha1_memcached_crd.yaml
-    │   │   └── cache_v1alpha1_memcached_cr.yaml
-    │   ├── operator.yaml
-    │   ├── role_binding.yaml
-    │   ├── role.yaml
-    │   └── service_account.yaml
-    ├── molecule
-    │   ├── default
-    │   │   ├── asserts.yml
-    │   │   ├── molecule.yml
-    │   │   ├── playbook.yml
-    │   │   └── prepare.yml
-    │   ├── test-cluster
-    │   │   ├── molecule.yml
-    │   │   └── playbook.yml
-    │   └── test-local
-    │       ├── molecule.yml
-    │       ├── playbook.yml
-    │       └── prepare.yml
-    ├── roles
-    │   └── memcached
-    │       ├── defaults
-    │       │   └── main.yml
-    │       ├── files
-    │       ├── handlers
-    │       │   └── main.yml
-    │       ├── meta
-    │       │   └── main.yml
-    │       ├── README.md
-    │       ├── tasks
-    │       │   └── main.yml
-    │       ├── templates
-    │       └── vars
-    │           └── main.yml
-    └── watches.yaml
-17 directories, 25 files
-
-Now let’s change the directory :
-
+    # mkdir ${USER}-hellogo-operator
     # cd ${USER}-hellogo-operator
+    # operator-sdk init --plugins=ansible --domain=example.com
+    # operator-sdk create api --group hellogo --version=v1alpha1 --kind=${USER^}hellogo --generate-role
 
-To test the operator we will use another user named {USER}-client on OpenShift in order to test our deployment by consuming the hello-go service from it and not through the ansible playbook.
+Now let’s look at the directory structure of our new object:
+
+    # tree
+    .
+    ├── config
+    │   ├── crd
+    │   │   ├── bases
+    │   │   │   └── hellogo.example.com_michaelhellogoes.yaml
+    │   │   └── kustomization.yaml
+    │   ├── default
+    │   │   ├── kustomization.yaml
+    │   │   └── manager_auth_proxy_patch.yaml
+    │   ├── manager
+    │   │   ├── kustomization.yaml
+    │   │   └── manager.yaml
+    │   ├── prometheus
+    │   │   ├── kustomization.yaml
+    │   │   └── monitor.yaml
+    │   ├── rbac
+    │   │   ├── auth_proxy_client_clusterrole.yaml
+    │   │   ├── auth_proxy_role_binding.yaml
+    │   │   ├── auth_proxy_role.yaml
+    │   │   ├── auth_proxy_service.yaml
+    │   │   ├── kustomization.yaml
+    │   │   ├── leader_election_role_binding.yaml
+    │   │   ├── leader_election_role.yaml
+    │   │   ├── michaelhellogo_editor_role.yaml
+    │   │   ├── michaelhellogo_viewer_role.yaml
+    │   │   ├── role_binding.yaml
+    │   │   └── role.yaml
+    │   ├── samples
+    │   │   ├── hellogo_v1alpha1_michaelhellogo.yaml
+    │   │   └── kustomization.yaml
+    │   ├── scorecard
+    │   │   ├── bases
+    │   │   │   └── config.yaml
+    │   │   ├── kustomization.yaml
+    │   │   └── patches
+    │   │       ├── basic.config.yaml
+    │   │       └── olm.config.yaml
+    │   └── testing
+    │       ├── debug_logs_patch.yaml
+    │       ├── kustomization.yaml
+    │       ├── manager_image.yaml
+    │       └── pull_policy
+    │           ├── Always.yaml
+    │           ├── IfNotPresent.yaml
+    │           └── Never.yaml
+    ├── Dockerfile
+    ├── Makefile
+    ├── molecule
+    │   ├── default
+    │   │   ├── converge.yml
+    │   │   ├── create.yml
+    │   │   ├── destroy.yml
+    │   │   ├── kustomize.yml
+    │   │   ├── molecule.yml
+    │   │   ├── prepare.yml
+    │   │   ├── tasks
+    │   │   │   └── michaelhellogo_test.yml
+    │   │   └── verify.yml
+    │   └── kind
+    │       ├── converge.yml
+    │       ├── create.yml
+    │       ├── destroy.yml
+    │       └── molecule.yml
+    ├── playbooks
+    ├── PROJECT
+    ├── requirements.yml
+    ├── roles
+    │   └── michaelhellogo
+    │       ├── defaults
+    │       │   └── main.yml
+    │       ├── files
+    │       ├── handlers
+    │       │   └── main.yml
+    │       ├── meta
+    │       │   └── main.yml
+    │       ├── README.md
+    │       ├── tasks
+    │       │   └── main.yml
+    │       ├── templates
+    │       └── vars
+    │           └── main.yml
+    └── watches.yaml
+    
+    27 directories, 54 files
+
+To test the operator we will use another user named {USER}-client on OpenShift in order to test our deployment by consuming the hello-go service from it and not through the Ansible playbook.
 
 
 ## Building the Ansible Role
 
-Now that the Skeleton is set we can take the role from Exercise number 3 and apply if through the Operator.
+Now that the skeleton files have been created, we can take the role from Exercise number 3 and apply if through the Operator.
 
-First let’s take the templates  file from our previous exercise:And change the name to : '{{ meta.name }}-hellogo'
+First let’s take the templates file from our previous exercise and change the name to: '{{ ansible_operator_meta.name }}-hellogo'
 
-    # cat ~/ose-openshift/roles/Hello-go-role/templates/hello-go-deployment.yml.j2 \
-    | sed "s/hellogo-pod/\'\{\{\ meta\.name\ \}\}-hellogo\'/"\
-     > roles/${USER}hellogo/templates/hello-go-deployment.yml.j2
+    # sed "s/hellogo-pod/\'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
+        ~/ose-openshift/roles/Hello-go-role/templates/hello-go-deployment.yml.j2 \
+        > roles/${USER}hellogo/templates/hello-go-deployment.yml.j2
 
-Now we can copy the tasks main.yml from our previous exercise and remove the ‘state’s section sense we will always want it as present and change the namespace to be read from the metadata and not pre defined  :
+Now we will copy the task's main.yml from our previous exercise and remove the ‘state’ section as we will always want it as **present**. We will also change the namespace value to be read from the metadata so that it is not hard-coded:
 
-    # cat ~/ose-openshift/roles/Hello-go-role/tasks/main.yml \
-    | sed "s/project-${USER}/\'\{\{\ meta\.namespace\ \}\}\'/" \
-    | grep -v 'state:' > roles/${USER}hellogo/tasks/main.yml
+    # sed -e "s/namespace:.*/namespace: \'\{\{\ ansible_operator_meta\.namespace\ \}\}\'/" \
+        -e "/state:/d" ~/ose-openshift.bad/roles/Hello-go-role/tasks/main.yml \
+        > roles/${USER}hellogo/tasks/main.yml
 
-Update the defaults main.yml file :
-
-For the last act we would want to update the default:
+For the last step is to update the default values:
 
     # cat > roles/${USER}hellogo/defaults/main.yml << EOF
     ---
@@ -188,72 +223,93 @@ For the last act we would want to update the default:
     size: 3
     EOF
 
-In order to provide a good operator we need to make sure we are taking care of all the aspects which means, adding a service and a route through the operator :
+A well written operator will ensure that all container requirements are fulfilled. Therefore we will add a service and a route through the operator:
 
-First copy the service to the templates directory :
+First copy the service to the templates directory:
 
     # cp ~/ose-openshift/hello-go-service.yaml roles/${USER}hellogo/templates/hello-go-service.yml.j2
 
-And the route :
+And the route:
 
     # cp ~/ose-openshift/hello-go-route.yaml roles/${USER}hellogo/templates/hello-go-route.yml.j2
 
-Now let’s make sure that the task main is reading from those templates as well :
+Now let’s make sure that the task main is reading from those templates as well:
 
     # cat >> roles/${USER}hellogo/tasks/main.yml  << EOF
 
     - name: set hello-go service
       k8s:
         definition: "{{ lookup('template', 'hello-go-service.yml.j2') | from_yaml }}"
-        namespace:  '{{ meta.namespace }}'
+        namespace:  '{{ ansible_operator_meta.namespace }}'
 
     - name: set hello-go route
       k8s:
         definition: "{{ lookup('template', 'hello-go-route.yml.j2') | from_yaml }}"
-        namespace:  '{{ meta.namespace }}'
+        namespace:  '{{ ansible_operator_meta.namespace }}'
     EOF
 
-## Build and run the Operator
+## Building and Running the Operator
+
+#### Build and Push the Image
+
+The generated Makfiles uses the "docker" command to build and push images. We will change the build to use the "podman" command, but will not change the Makefile targets:
+
+    # sed -i "s/docker /podman /g" Makefile
+
+The first step is to build the operator image:
+
+    # make docker-build IMG=registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+
+The next step is to push the operator image to the registry:
+
+    # make docker-push IMG=registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+
+Note that the above two commands can be combined using: make docker-build docker-push IMG=...
 
 Before running the Operator, Kubernetes needs to know about the new custom resource definition 
 the Operator will be watching, by running the following command 
 
-#### Stage 1 **(As A Cluster Admin)**
+#### Install the CRD
 
-    # oc create -f deploy/crds/hellogo.example.com_${USER}hellogos_crd.yaml
+Run the following command:
 
-By running this command, we are creating a new resource type, ${USER}hellogo, on the cluster. 
-We will give our Operator work to do by creating and modifying resources of this type.
-But before regular users will be able to create a CR of the type of your CRD we need to allow 
-them to do so by creating the following file:
-As $USER
+    # make install
 
+#### Deploy the Operator
 
-    # cat > deploy/custom-clusterRole.yaml  << EOF
-    kind: ClusterRole
-    apiVersion: rbac.authorization.k8s.io/v1
-    metadata:
-      name: aggregate-${USER}-hellogo-admin-edit
-      labels:
-        rbac.authorization.k8s.io/aggregate-to-admin: "true"
-        rbac.authorization.k8s.io/aggregate-to-edit: "true"
-    rules:
-    - apiGroups: ["hellogo.example.com"]
-      resources: ["${USER}hellogos"]
-      verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
-    ---
-    kind: ClusterRole
-    apiVersion: rbac.authorization.k8s.io/v1
-    metadata:
-      name: aggregate-${USER}-hellogo-view
-      labels:
-        rbac.authorization.k8s.io/aggregate-to-view: "true"
-    rules:
-    - apiGroups: ["hellogo.example.com"]
-      resources: ["${USER}hellogos"]
-      verbs: ["get", "list", "watch"]
-    EOF
+Create a namespace ${USER}-hellogo-operator-system, install the RBAC configuration and create a Kubernetes Deployment by running:
 
+    # make deploy IMG=registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+
+Verify that the operator is running by checking the output of:
+
+    # oc get all -n ${USER}-hellogo-operator-system
+
+The output should be of the form:
+
+    NAME                                                               READY   STATUS    RESTARTS   AGE
+    pod/${USER}-hellogo-operator-controller-manager-55bfdf7795-drwvm   2/2     Running   0          4m55s
+
+    NAME                                                                  TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+    service/${USER}-hellogo-operator-controller-manager-metrics-service   ClusterIP   172.25.195.190   <none>        8443/TCP   4m55s
+
+    NAME                                                          READY   UP-TO-DATE   AVAILABLE   AGE
+    deployment.apps/${USER}-hellogo-operator-controller-manager   1/1     1            1           4m55s
+
+    NAME                                                                     DESIRED   CURRENT   READY   AGE
+    replicaset.apps/${USER}-hellogo-operator-controller-manager-55bfdf7795   1         1         1       4m55s-
+
+####  Setting Permissions for Users
+
+Create a ClusterRole as follows:
+
+    # oc create -f config/rbac/${USER}hellogo_editor_role.yaml
+
+Allow a User to Create and Delete Custom Resources
+
+    # oc adm policy add-cluster-role-to-user ${USER}hellogo-editor-role ${USER}-client
+
+# OBSOLETE NEED TO CHECK IF RELEVANT
 ### Ways to Run an Operator
 
 Once the CRD is registered, there are two ways to run the Operator:
@@ -341,7 +397,7 @@ Create Operator Deployment Object
 
     # oc create -f deploy/operator.yaml
 
-In your terminal you should see the following output :
+In your terminal you should see the following output:
 
     ${USER}-hellogo-operator-f9b84b855-d6chs   0/1     Pending       0          0s
     ${USER}-hellogo-operator-f9b84b855-d6chs   0/1     ContainerCreating   0          0s
@@ -359,33 +415,36 @@ Once the operator is running you are good to go and you can continue with testin
 ### Using the Operator
 
 Now that we have deployed our Operator, let’s create a CR and 3 instances of our hellogo application with our client user.
-First login to openshift with the ${USER}-client :
+First login to openshift with the ${USER}-client:
 
     # oc login --username ${USER}-client --password 'OcpPa$$w0rd'
 
-There is a sample CR in the scaffolding created as part of the Operator SDK:
+Create a new project for our testing:
+
+    # oc create project ${USER}-client
+
+There is a sample CR in the scaffolding created as part of the Operator SDK config/samples/hellogo_v1alpha1_${USER}hellogo.yaml:
 
     apiVersion: hellogo.example.com/v1alpha1
-    kind: ${USER}hellogo
+    kind: ${USER^}hellogo
     metadata:
-      name: example-${USER}hellogo
+      name: ${USER}hellogo-sample
     spec:
-      # Add fields here
-      size: 3
+      foo: bar
 
-Let’s go ahead and apply this in our Tutorial project to deploy 3  hellogo pods, using our Operator:
+Change "foo: bar" to "size: 3" and we will deploy 3 hellogo pods, using our operator:
 
-    # cat deploy/crds/hellogo.example.com_v1alpha1_${USER}hellogo_cr.yaml
-    apiVersion: cache.example.com/v1alpha1
-    kind: ${USER}hellogo
+    # cat config/samples/hellogo_v1alpha1_${USER}hellogo.yaml
+    apiVersion: hellogo.example.com/v1alpha1
+    kind: ${USER^}hellogo
     metadata:
-      name: example-${USER}hellogo
+      name: ${USER}hellogo-sample
     spec:
       size: 3
 
 Now run use the “oc create” command to create the proper CR:
 
-    # oc create -f deploy/crds/hellogo.example.com_v1alpha1_${USER}hellogo_cr.yaml
+    # oc create -f config/samples/hellogo_v1alpha1_${USER}hellogo.yaml
 
 Ensure that the hellogo-operator creates the deployment for the CR:
 
@@ -414,11 +473,11 @@ Let's edit the watches.yaml again with the option of 'watchClusterScopedResource
       watchClusterScopedResources: true
       reconcilePeriod: 5m
 
-once you have updated the watches.yaml file rebuild the operator :
+once you have updated the watches.yaml file rebuild the operator:
 
     # operator-sdk build ${USER}-hellogo-operator:v0.0.1 --image-builder buildah
 
-Tag amd push the new image :
+Tag amd push the new image:
 
     # podman tag  localhost/${USER}-hellogo-operator:v0.0.1 \
     registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
@@ -512,7 +571,7 @@ Finally, verify that the memcached-operator is no longer running.
     
     # oc get deployment
 
-Ask the Cluster Admin to run :
+Ask the Cluster Admin to run:
 
     # oc delete -f deploy/role_binding.yaml
     # oc delete -f deploy/role.yaml
