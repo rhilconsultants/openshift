@@ -225,13 +225,17 @@ For the last step is to update the default values:
 
 A well written operator will ensure that all container requirements are fulfilled. Therefore we will add a service and a route through the operator:
 
-First copy the service to the templates directory:
+First copy the service to the templates directory after change the hardcoded name:
 
-    # cp ~/ose-openshift/hello-go-service.yaml roles/${USER}hellogo/templates/hello-go-service.yml.j2
+    # sed "s/name:.*/name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
+         ~/ose-openshift/hello-go-service.yaml > roles/${USER}hellogo/templates/hello-go-service.yml.j2
 
-And the route:
+And the route after removing hardcoded values:
 
-    # cp ~/ose-openshift/hello-go-route.yaml roles/${USER}hellogo/templates/hello-go-route.yml.j2
+    # sed -e "0,/name:.*/s//name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
+	-e "s/namespace:.*/namespace: \'\{\{\ ansible_operator_meta\.namespace\ \}\}\'/" \
+	-e "/to:/,\$s/name:.*/name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
+        ~/ose-openshift/hello-go-route.yaml > roles/${USER}hellogo/templates/hello-go-route.yml.j2
 
 Now let’s make sure that the task main is reading from those templates as well:
 
@@ -247,6 +251,25 @@ Now let’s make sure that the task main is reading from those templates as well
         definition: "{{ lookup('template', 'hello-go-route.yml.j2') | from_yaml }}"
         namespace:  '{{ ansible_operator_meta.namespace }}'
     EOF
+
+In addition, our operator will need permission to access the service and route objects. Add the following to the first **resources** section of config/rbac/role.yaml:
+
+    - services
+
+Add the following section to the config/rbac/role.yaml file:
+
+      - apiGroups:
+          - route.openshift.io
+        resources:
+          - routes
+        verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
 
 ## Building and Running the Operator
 
@@ -298,16 +321,6 @@ The output should be of the form:
 
     NAME                                                                     DESIRED   CURRENT   READY   AGE
     replicaset.apps/${USER}-hellogo-operator-controller-manager-55bfdf7795   1         1         1       4m55s-
-
-####  Setting Permissions for Users
-
-Create a ClusterRole as follows:
-
-    # oc create -f config/rbac/${USER}hellogo_editor_role.yaml
-
-Allow a User to Create and Delete Custom Resources
-
-    # oc adm policy add-cluster-role-to-user ${USER}hellogo-editor-role ${USER}-client
 
 # OBSOLETE NEED TO CHECK IF RELEVANT
 ### Ways to Run an Operator
