@@ -1,5 +1,5 @@
 
-# Exercise 2 - Ansible container 
+# Exercise 2 - Ansible Container 
 
 
 ## Contents
@@ -16,7 +16,7 @@
 
 ## Ansible Container
 
-In today’s world it is much easier to just run a container then to install an application on our laptops, for that reason Red Hat has developed 2 containers for running Ansible with the Kubernetes module.
+In today’s world it is much easier to just run a container then to install an application on our laptops, for that reason Red Hat has developed two containers for running Ansible with the Kubernetes module.
 
 ### Download
 
@@ -91,11 +91,11 @@ It may not look like this now but if you Copy/Paste the playbook to your termina
 
 ### Running the Container 
 
-Generate your SSH key to interact with your local machine using ansible. Press `Enter` to approve the passphrase, This command will automatically create your public and private SSH keys.
+Generate your SSH key to interact with your local machine using Ansible. Press `Enter` to approve the passphrase, This command will automatically create your public and private SSH keys.
 
     # ssh-keygen -N '' -f ~/.ssh/id_rsa -t rsa
 
-Now that we have our files in place lets make sure the ansible container can run with our newly created files:
+Now that we have our files in place lets make sure the Ansible container can run with our newly created files:
 
     # podman run --rm --name ose-ansible -tu `id -u` \
     -v $HOME/.ssh/id_rsa:/opt/app-root/src/.ssh/id_rsa:Z,ro \
@@ -128,9 +128,9 @@ Expected Output:
 
 ## Kubernetes Module
 
-Now that we are able to run ansible from our container let’s switch our focus to the Kubernetes module.
+Now that we are able to run Ansible from our container let’s switch our focus to the Ansible Kubernetes module (k8s).
 
-### Running the k8s Ansible modules locally
+### Running the k8s Ansible Modules Locally
 
 For this example we will create and delete a namespace with the switch of an Ansible variable.
 First we need to create a rule for our Kubernetes cluster:
@@ -156,7 +156,7 @@ Make sure you are on your project:
 
     # oc project project-${USER}
 
-Next let’s generate a yaml by creating a config map (change user01 to your user):
+Next let’s generate a yaml by creating a config map:
 
 
     # touch Dockerfile
@@ -224,5 +224,5 @@ Run playbook.yml, which will execute 'example-role'.
     fatal: [127.0.0.1]: FAILED! => {"changed": false, "msg": \
     "This module requires the OpenShift Python client. Try `pip install openshift`"}
 
-Think about a few minutes and we will pick this up together 
+What is the root cause of this error? We'll discuss a solution before proceeding.
 

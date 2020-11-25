@@ -1,8 +1,8 @@
-#Exercise 3 - Ansible K8S module
+# Exercise 3 - Ansible K8S Module
 
 ## Contents
   - Running the Container
-    - Exposing the application:
+    - Exposing the application
     - Final Task
   - Advanced - Generate kubeconfig
 
@@ -10,7 +10,7 @@
 
 Now that we know that we need to update our image we need to provide the proper RPMs which provide the K8S module  and add them to our image .
 
-### Create the ose-openshift container
+### Create an ose-openshift Image
 
 The RPMs you need are in /usr/share/workshop/RPMS
 
@@ -92,7 +92,7 @@ OpenShift Resource files. Let's take the hello-go deployment example.
           app: hellogo
     EOF
 
-Update tasks file Hello-go-role/tasks/main.yml to create the hello-go deployment using the k8s module
+Update tasks file Hello-go-role/tasks/main.yml to create the hello-go deployment using the k8s module:
 
     # cat > roles/Hello-go-role/tasks/main.yml <<EOF
     ---
@@ -190,7 +190,7 @@ After running the Playbook, the cluster will scale the number of hello-go pods t
 
     # oc get all -n project-${USER}
 
-#### Exposing the application
+#### Exposing the Application
 
 In order to expose our application we first need to create a service with a matching 
 
@@ -230,7 +230,7 @@ And now the route yaml:
       wildcardPolicy: None
     EOF
 
-And create them:
+Now create the instances:
 
     # oc create -f hello-go-service.yaml -f hello-go-route.yaml
 
@@ -239,9 +239,6 @@ Now test your deployment:
     # curl http://hellogo-route-${USER}-project-${USER}.apps.ocp4.infra.local/testing
     Hello, you requested: /testing
 
-If everything works as expected then remove the service and the route.
-
-    # oc delete -f hello-go-route.yaml -f hello-go-service.yaml
 
 #### Final Task
 
@@ -251,4 +248,8 @@ var in the defaults/main.yaml file from **present** to **absent**.
 
 After changing it, run the playbook again and verify there are no pods by running the command: `oc get pods`.
 
+#### Cleanup
 
+Remove the service and the route:
+
+    # oc delete -f hello-go-route.yaml -f hello-go-service.yaml

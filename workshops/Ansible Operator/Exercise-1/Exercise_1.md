@@ -1,4 +1,4 @@
-# Exercise 1 - Building a GO application
+# Exercise 1 - Building and Containerizing a GO Application
 ## Content:
 
   - Installing GO LANG (SKIP…)
@@ -190,7 +190,7 @@ First login to the registry
       Password: mypassword
       Login Succeeded!
 
-If we want it to be consistent through this session (change user01 and the password from the file):
+If we want it to be consistent through this session (change *myuser* to your user name and change *password* to your password):
 
      # REG_SECRET=`echo -n 'myuser:mypassword' | base64 -w0`
 
