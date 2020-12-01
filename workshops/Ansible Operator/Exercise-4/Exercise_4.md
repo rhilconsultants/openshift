@@ -114,7 +114,7 @@ Now let’s look at the directory structure of our new object:
     ├── config
     │   ├── crd
     │   │   ├── bases
-    │   │   │   └── hellogo.example.com_michaelhellogoes.yaml
+    │   │   │   └── hellogo.example.com_${USER}hellogoes.yaml
     │   │   └── kustomization.yaml
     │   ├── default
     │   │   ├── kustomization.yaml
@@ -133,12 +133,12 @@ Now let’s look at the directory structure of our new object:
     │   │   ├── kustomization.yaml
     │   │   ├── leader_election_role_binding.yaml
     │   │   ├── leader_election_role.yaml
-    │   │   ├── michaelhellogo_editor_role.yaml
-    │   │   ├── michaelhellogo_viewer_role.yaml
+    │   │   ├── ${USER}hellogo_editor_role.yaml
+    │   │   ├── ${USER}hellogo_viewer_role.yaml
     │   │   ├── role_binding.yaml
     │   │   └── role.yaml
     │   ├── samples
-    │   │   ├── hellogo_v1alpha1_michaelhellogo.yaml
+    │   │   ├── hellogo_v1alpha1_${USER}hellogo.yaml
     │   │   └── kustomization.yaml
     │   ├── scorecard
     │   │   ├── bases
@@ -166,7 +166,7 @@ Now let’s look at the directory structure of our new object:
     │   │   ├── molecule.yml
     │   │   ├── prepare.yml
     │   │   ├── tasks
-    │   │   │   └── michaelhellogo_test.yml
+    │   │   │   └── ${USER}hellogo_test.yml
     │   │   └── verify.yml
     │   └── kind
     │       ├── converge.yml
@@ -177,7 +177,7 @@ Now let’s look at the directory structure of our new object:
     ├── PROJECT
     ├── requirements.yml
     ├── roles
-    │   └── michaelhellogo
+    │   └── ${USER}hellogo
     │       ├── defaults
     │       │   └── main.yml
     │       ├── files
