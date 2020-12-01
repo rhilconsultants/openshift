@@ -1,8 +1,8 @@
-#Exercise 3 - Ansible K8S module
+# Exercise 3 - Ansible K8S Module
 
 ## Contents
   - Running the Container
-    - Exposing the application:
+    - Exposing the application
     - Final Task
   - Advanced - Generate kubeconfig
 
@@ -10,7 +10,7 @@
 
 Now that we know that we need to update our image we need to provide the proper RPMs which provide the K8S module  and add them to our image .
 
-### Create the ose-openshift container
+### Create an ose-openshift Image
 
 The RPMs you need are in /usr/share/workshop/RPMS
 
@@ -22,7 +22,7 @@ Now Copy the RPMs from the share Directory:
 
     # cp /usr/share/workshop/RPMs/* .
 
-And let’s create a new Dockerfile and edit it :
+And let’s create a new Dockerfile and edit it:
 
     # cat > Dockerfile << EOF
     FROM registry.infra.local:5000/openshift3/ose-ansible
@@ -34,15 +34,15 @@ And let’s create a new Dockerfile and edit it :
     RUN yum install -y python* && rm -f python*
     EOF
 
-Build the container :
+Build the container:
 
     # buildah bud -f Dockerfile -t ose-openshift .
 
-If Everything went well , you should see the new image on the Server
+If everything went well, you should see the new image on the Server
 
     # podman image list
 
-**(What do you See wrong with this image and method ???)**
+**(What do you see wrong with this image and method ???)**
 
 ### Clean up
 
@@ -72,7 +72,7 @@ OpenShift Resource files. Let's take the hello-go deployment example.
 
     # cat > roles/Hello-go-role/templates/hello-go-deployment.yml.j2 << EOF
     kind: Deployment
-    apiVersion: v1
+    apiVersion: apps/v1
     metadata:
       name: hellogo-pod
     spec:
@@ -92,7 +92,7 @@ OpenShift Resource files. Let's take the hello-go deployment example.
           app: hellogo
     EOF
 
-Update tasks file Hello-go-role/tasks/main.yml to create the hello-go deployment using the k8s module
+Update tasks file Hello-go-role/tasks/main.yml to create the hello-go deployment using the k8s module:
 
     # cat > roles/Hello-go-role/tasks/main.yml <<EOF
     ---
@@ -119,14 +119,14 @@ but OpenShift doesn’t know about that file. For that we need to create a secre
 
 the registry and then link it to our OpenShift pull request.
 
-Let’s generate a secret specific for docker-registry :
+Let’s generate a secret specific for docker-registry:
 
 **(change the USER to your user):**
 
     # oc create secret generic --from-file=.dockerconfigjson=/home/$USER/.docker/config.json \
     --type=kubernetes.io/dockerconfigjson pullsecret
 
-And link it to our namespace pull request :
+And link it to our namespace pull request:
 
     # oc secrets link default pullsecret --for=pull
 
@@ -134,9 +134,9 @@ Now we can run the Playbook to deploy your hello-go on to OpenShift
 
     # podman run --name ose-openshift ...
 
-And remove leftovers :
+And remove leftovers (may not be necessary):
 
-    # podman rm ose-openshif (may not be necessary)
+    # podman rm ose-openshift 
 
 You can see the hello-go deployment created in your namespace.
 
@@ -186,17 +186,17 @@ Clean it up.
 
     # podman rm ose-openshift (may not be necessary)
 
-After running the Playbook, the cluster will scale down one of the hello-go pods to meet the new requested replica count of 2. 
+After running the Playbook, the cluster will scale the number of hello-go pods to meet the new requested replica count of 2. 
 
     # oc get all -n project-${USER}
 
-#### Exposing the application
+#### Exposing the Application
 
 In order to expose our application we first need to create a service with a matching 
 
 label of the application label and then a route for that service.
 
-Now we can add a service with the matching label :
+Now we can add a service with the matching label:
 
     # cat > hello-go-service.yaml << EOF
     apiVersion: v1
@@ -212,7 +212,7 @@ Now we can add a service with the matching label :
           targetPort: ${GO_PORT}
     EOF
 
-And now the route yaml :
+And now the route yaml:
 
     # cat > hello-go-route.yaml << EOF
     apiVersion: route.openshift.io/v1
@@ -230,25 +230,26 @@ And now the route yaml :
       wildcardPolicy: None
     EOF
 
-And create them :
+Now create the instances:
 
     # oc create -f hello-go-service.yaml -f hello-go-route.yaml
 
-Now test your deployment :
+Now test your deployment:
 
     # curl http://hellogo-route-${USER}-project-${USER}.apps.ocp4.infra.local/testing
     Hello, you requested: /testing
 
-If everything works as expected then remove the service and the route.
-
-    # oc delete -f hello-go-route.yaml -f hello-go-service.yaml
 
 #### Final Task
 
 If everything is running as expected we can delete it by changing the  ‘state’ 
 
-var in the defaults.yaml file from present to absent. 
+var in the defaults/main.yaml file from **present** to **absent**. 
 
-After changing it, run the playbook again and verify you have no pods with `oc get pods`.
+After changing it, run the playbook again and verify there are no pods by running the command: `oc get pods`.
 
+#### Cleanup
 
+Remove the service and the route:
+
+    # oc delete -f hello-go-route.yaml -f hello-go-service.yaml
