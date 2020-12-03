@@ -195,6 +195,8 @@ Now let’s look at the directory structure of our new object:
     
     27 directories, 54 files
 
+Note: as a convention, when creating Ansible operators, Ansible YAML files use a `.yml` suffix whereas Kubernetes/OpenShift assets use a `.yaml` suffix.
+
 To test the operator we will use another user named {USER}-client on OpenShift in order to test our deployment by consuming the hello-go service from it and not through the Ansible playbook.
 
 
