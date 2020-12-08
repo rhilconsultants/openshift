@@ -209,7 +209,7 @@ It’s time to create a Dockerfile to instruct Docker how to build our Hello Go 
 Create a Dockerfile in the hello-go project’s root directory, and add the following:
 ```bash
 # cat > Dockerfile << EOF
-FROM registry.redhat.io/ubi8/go-toolset as build
+FROM ubi8/go-toolset as build
 
 WORKDIR /opt/app-root
 COPY cmd cmd
