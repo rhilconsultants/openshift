@@ -85,7 +85,7 @@ OpenShift Resource files. Let's take the hello-go deployment example.
             - name: hello-go
               image: registry.infra.local:5000/${USER}/hello-go
               ports:
-              - containerPort: ${GO_PORT}
+              - containerPort: 8080
       replicas: 1
       selector:
         matchLabels:
@@ -170,7 +170,7 @@ Modify the hello-go deployment definition to read replicas from the hellogo_repl
             - name: hello-go
               image: registry.infra.local:5000/${USER}/hello-go
               ports:
-              - containerPort: ${GO_PORT}
+              - containerPort: 8080
       replicas: {{ size }}
       selector:
         matchLabels:
@@ -208,8 +208,8 @@ Now we can add a service with the matching label:
         app: hellogo
       ports:
         - protocol: TCP
-          port: ${GO_PORT}
-          targetPort: ${GO_PORT}
+          port: 8080
+          targetPort: 8080
     EOF
 
 And now the route yaml:
@@ -222,7 +222,7 @@ And now the route yaml:
       namespace: project-${USER}
     spec:
       port:
-        targetPort: ${GO_PORT}
+        targetPort: 8080
       to:
         kind: Service
         name: hellogo-service-${USER}

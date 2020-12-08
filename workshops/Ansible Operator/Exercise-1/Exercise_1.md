@@ -79,221 +79,235 @@ The design goal is simple:
   - Run a web server on port ${GO_PORT}.
   - For any request, return the content “Hello, you requested: URL_PATH_HERE”
 
-First, create a new project directory, hello-go, with the following directory structure:
-
+First, create a new project directory and change into its root:
 ```bash
- hello-go/
-        cmd/
-          hello/
 # mkdir -p hello-go/cmd/hello
+# cd hello-go
 ```
-
-And make sure we set the right variables we need:
-
-```bash
-# export USER_NUMBER=`echo $USER | sed 's/user//'`
-# export GO_PORT="80${USER_NUMBER}"
-# echo $GO_PORT
-```
-
-Now, inside the hello-go/cmd/hello directory, create a file named hello.go with the following Go code:
+Inside the hello-go/cmd/hello directory, create a file named hello.go with the following Go code:
 
     
 ```go
-    package main
-    import (
-            "fmt"
-            "log"
-            "net/http"
-     )
+package main
 
-     // HelloServer responds to requests with the given URL path.
-     func HelloServer(w http.ResponseWriter, r *http.Request) {
-               fmt.Fprintf(w, "Hello, you requested: %s\n", r.URL.Path)
-               log.Printf("Received request for path: %s", r.URL.Path)
-     }
-     func main() {
-               var addr string = ":GO_PORT"
-               handler := http.HandlerFunc(HelloServer)
-               if err := http.ListenAndServe(addr, handler); err != nil {
-                        log.Fatalf("Could not listen on port %s %v", addr, err)
-               }
-     }
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+)
+
+// HelloServer responds to requests with the given URL path.
+func HelloServer(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello, you requested: %s\n", r.URL.Path)
+	log.Printf("Received request for path: %s", r.URL.Path)
+}
+
+func main() {
+	port, found := os.LookupEnv("GO_PORT")
+	if !found {
+		port = "8080"
+	}
+	handler := http.HandlerFunc(HelloServer)
+	log.Printf("Starting to listen on port %s", port)
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
+		log.Fatalf("Could not listen on port %s %v", port, err)
+	}
+}
 ```
 
-Change the GO_PORT to you GO_PORT number 
+In the main function, Go’s http.ListenAndServe() listens on the given port, and routes incoming requests through the handler.
 
-This is all that’s needed to generate an HTTP server responding on port $GO_PORT. In the
-
-main function, Go’s http.ListenAndServe() listens on the given network address
-
-( addr ), and routes incoming requests through the handler ( handler ).
-
-Our HelloServer handler responds to any request by printing “Hello, you requested: %s”, 
-
-with the URL path replacing the %s placeholder. This is not an amazing HTTP server, and 
+Our HelloServer handler responds to any request by printing “Hello, you requested: %s”, with the URL path replacing the %s placeholder. This is not an amazing HTTP server, and 
 
 it doesn’t do a whole lot, but it is a full- fledged Go application, which can now be compiled into a binary.
 
-## Building Hello Go
+## Building the Hello Go Application
 
 With the hello.go file saved, run the following command from the project’s root directory:
 
 ```bash
 # go build cmd/hello/hello.go
 ```
+After a couple seconds, you should see a new **hello** binary file in the project’s root directory.
 
-After a couple seconds, you should see a new hello binary in the project’s root
+## Runnng Hello Go
+Before we run the **hello** program locally, we will set up a unique port variable based on your USER name offset by 8000, so that our usage does not conflict with other applications running on the same host:
 
-directory. Run it by typing:
+```bash
+# export GO_PORT="$(printf 80%02d ${USER#user})"
+# echo $GO_PORT
+```
+
+Run the application as follows:
 
 ```bash
 # ./hello
 ```
 
-Now, **in another terminal (login again with ssh)**, run curl http://localhost:${GO_PORT} . You should see something like
+Now, **in another terminal (login again with ssh)**, run:
+```bash
+# export GO_PORT="$(printf 80%02d ${USER#user})"
+# curl http://localhost:${GO_PORT}
+ ```
+You should see the following:
+```
+Hello, you requested: /
+```
 
-the following:
+And if you curl another path:
+```bash
+curl http://localhost:${GO_PORT}/test
+```
+you’ll see:
+```
+Hello, you requested: /test
+```
 
-     # curl http://localhost:${GO_PORT}
-     Hello, you requested: /
+Amazing! 
 
-And if you curl another path, like curl http://localhost:80${user number}/test, you’ll see:
+You may also note that your original terminal window is logging your curl requests:
+```bash
+# ./hello
+2025/11/12 20:58:00 Starting to listen on port ${GO_PORT}
+2025/11/12 20:58:07 Received request for path: /
+2025/11/12 20:58:15 Received request for path: /test
+```
 
-     # curl http://localhost:${GO_PORT}/test
-     Hello, you requested: /test
+It’s always nice to have applications log to standard output (stdout) and standard error (stderr), because in the cloud-native world, these logs are easy to route and store centrally. You can press Control + C to exit the Hello Go application.
 
-Amazing! A couple more hours and we’ll have implemented Apache in Go! You may also 
+We’re now going to work on running it in a container, so we can get one step closer to running it in Kubernetes!
 
-note that your original terminal window was logging your first curl:
+## Containerized Hello Go
 
-     # ./hello
-     2025/11/12 20:58:07 Received request for path: /
-     2025/11/12 20:58:15 Received request for path: /test
-
-It’s always nice to have applications log to standard output (stdout) and standard 
-
-error (stderr), because in the cloud-native world, these logs are easy to route and 
-
-store centrally. You can press Control + C to exit the Hello Go app; we’re going to 
-
-work on running it in a container now, so we can get one step closer to running it 
-
-in Kubernetes!
-
-### Containerized Hello Go
-
-First login to the registry
-
-      # podman login registry.infra.local:5000
-      Username: myuser
-      Password: mypassword
-      Login Succeeded!
+### Configuring Access to the Registry
+First login to the registry, providing your username and password:
+```bash
+# podman login registry.infra.local:5000
+Username: myuser
+Password: mypassword
+Login Succeeded!
+```
 
 If we want it to be consistent through this session (change *myuser* to your user name and change *password* to your password):
-
-     # REG_SECRET=`echo -n 'myuser:mypassword' | base64 -w0`
+```bash
+# REG_SECRET=`echo -n 'myuser:mypassword' | base64 -w0`
+```
 
 And now create and update the ~/.docker/config.json file:
-
-    # mkdir ~/.docker
-    # echo '{ "auths": {}}' | \
-    jq '.auths += {"registry.infra.local:5000": {"auth": "REG_SECRET","email": "me@working.me"}}' | \
-    sed "s/REG_SECRET/$REG_SECRET/" | jq . > ~/.docker/config.json
-
+```bash
+# mkdir ~/.docker
+# echo '{ "auths": {}}' | \
+  jq '.auths += {"registry.infra.local:5000": {"auth": "REG_SECRET","email": "me@working.me"}}' | \
+  sed "s/REG_SECRET/$REG_SECRET/" | jq . > ~/.docker/config.json
+```
+### Building the Hello Go Application in as a Container Image
 Hello Go isn’t very useful if you can only run it locally on your workstation. This app is stateless, it logs to stdout, and it fulfills a single purpose, so it is a perfect fit to containerize for a cloud-native deployment!
 
 Building Go apps in Docker containers is easy. Go maintains a number of images on Docker Hub containing all the necessary tooling to build your app, and all you need to do is copy in the source and run go build.
 It’s time to create a Dockerfile to instruct Docker how to build our Hello Go app container image.
 Create a Dockerfile in the hello-go project’s root directory, and add the following:
+```bash
+# cat > Dockerfile << EOF
+FROM registry.redhat.io/ubi8/go-toolset as build
 
-    # cat > Dockerfile << EOF
-    FROM ubi8/go-toolset as build
-
-    WORKDIR /opt/app-root
-    COPY cmd cmd
-    RUN go build cmd/hello/hello.go
-    EOF
+WORKDIR /opt/app-root
+COPY cmd cmd
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" cmd/hello/hello.go
+EOF
+```
 
 If you’ve worked with Docker before, you might be wondering about the syntax of the first line.
 The first line of a Dockerfile should define the base image for the Docker container. Here, we’re building from the golang library image using the ubi8/go-toolset  tag, which will give us the latest version in the Go 1.x series of images, based on Red Hat  Linux. But what about as build ? This portion of the FROM line allows a multi-stage build. If we just built our app inside the ubi8/go-toolset  image, we would end up with at least a 1.21 GB Docker image. For a tiny HTTP server app like Hello Go, that’s a lot of overhead!
 Using a multi-stage build, we can build Hello Go in one container (named build using that as build statement), then copy Hello Go into a very small container for deployment.
-Add the following to the same Dockerfile to complete the multi-stage build:
+Append the following to the same Dockerfile to complete the multi-stage build:
 
+```bash
+# cat >> Dockerfile << EOF
+FROM scratch
 
-    # cat >> Dockerfile << EOF
-    FROM ubi8/ubi-minimal
+COPY --from=build /opt/app-root/hello /bin/hello
 
-    WORKDIR /opt/app-root
-    COPY --from=build /opt/app-root/hello /opt/app-root/hello
+EXPOSE 8080
+ENTRYPOINT ["/bin/hello"]
+EOF
+```
 
-    EXPOSE ${GO_PORT}
-    ENTRYPOINT ["./hello"]
-    EOF
+Building a stand-alone Go image as above will give us a final container image that’s only a 6 megabytes, which means it will be faster to upload into a container registry, and faster to pull when running it in Kubernetes.
 
-Building on the ubi8/ubi-minimal image will give us a final container image that’s only a 108 megabytes, which means it will be faster to upload into a container registry, and faster to pull when running it in Kubernetes.
-
-#### What is UBI ?
+#### What is UBI?
 
 
 We set the same workdir ( /opt/app-root ) as the build container, and then COPY the binary that
 was built ( /opt/app-root/hello ) into the final deployment container.
-Finally, we EXPOSE port ${GO_PORT}, since that’s the port our web server listens on, and then
-we set the ENTRYPOINT to our hello binary, so Docker will run it as the singular
+Finally, we EXPOSE port 8080, as it will be the port our web server listens on, and then
+we set the ENTRYPOINT to our hello binary, so Docker will run it as the sole
 process in the container when running it with all the default settings.
 
 ### Building and Run the Container
 
 Now we can build the container image. Run the following command inside the same
 directory as the Dockerfile:
-
-     # buildah bud -f Dockerfile -t hello-go .
-
+```bash
+# buildah bud -f Dockerfile -t hello-go .
+```
 After a couple minutes (or less if you already had the base images downloaded!), you should be able to see the hello-go container image when you run docker images:
-
-     # podman image list
-     REPOSITORY                                    TAG      IMAGE ID       CREATED       SIZE
-     localhost/hello-go                            latest   92310a101177   4 days ago    116 MB
+```bash
+# podman images
+REPOSITORY                                    TAG      IMAGE ID       CREATED       SIZE
+localhost/hello-go                            latest   92310a101177   4 days ago    5.43 MB
+```
 
 Now we’ll run the container image to make sure Hello Go operates in the container identically to how it operated when run directly.
 Running the container
 To run the container and expose the internal port to your host, run the command:
-
-     # podman run --name hello-go --rm -p ${GO_PORT}:${GO_PORT} hello-go
+```bash
+# export GO_PORT="$(printf 80%02d ${USER#user})"
+# podman run --name hello-go --rm -p ${GO_PORT}:8080 hello-go
+```
 
 After a second or two, the web server should be operational. In another terminal with the environment variable GO_PORT specified, run:
+```bash
+# export GO_PORT="$(printf 80%02d ${USER#user})"
+# curl http://localhost:${GO_PORT}/testing
+```
 
-     # curl http://localhost:${GO_PORT}/testing
-
-
-And you should see the “Hello, you’ve requested: /testing” response in that window, as well as the logged request in the window where docker/podman run was executed.
-
-     # podman run -d --name hello-go --rm -p ${GO_PORT}:${GO_PORT} hello-go
-     2025/11/12 22:31:07 Received request for path: /testing
+And you should see the following response:
+```
+Hello, you’ve requested: /testing
+```
+As well as the logged request in the window where container run was executed.
+```
+2025/11/12 22:31:00 Starting to listen on port 8080
+2025/11/12 22:31:07 Received request for path: /testing
+```
 
 To stop and terminate the container, press Ctrl-C in the terminal where you ran
 docker/podman run .
 
 Clean up your work
-
-     # podman stop hello-go 
-     # podman rm hello-go
+```bash
+# podman stop hello-go 
+```
 
 ### Push to the Registry
 
 Tag our application:
-
-     # podman tag localhost/hello-go registry.infra.local:5000/${USER}/hello-go 
+```bash
+# podman tag localhost/hello-go registry.infra.local:5000/${USER}/hello-go
+```
 
 Verify that your image was successfully tagged:
-
-     # podman image list 
-     REPOSITORY                                   TAG      IMAGE ID       CREATED         SIZE
-     registry.infra.local:5000/userxx/hello-go    latest   376409b93b2c   3 minutes ago   116 MB
+```bash
+# podman images
+REPOSITORY                                   TAG      IMAGE ID       CREATED         SIZE
+registry.infra.local:5000/${USER}/hello-go    latest   376409b93b2c   3 minutes ago   5.43 MB
+```
 
 Push the image to the registry:
-
-     # podman push  registry.infra.local:5000/${USER}/hello-go
+```bash
+# podman push registry.infra.local:5000/${USER}/hello-go
+```
 
 ## Hello Go Application Summary
 Many tools in the Kubernetes ecosystem are written in Go. You might not be a master of the Go language after building and running this application in a container, but you at least know the basics, and could even put ‘Go programmer’ on your resumé now (just kidding!).
