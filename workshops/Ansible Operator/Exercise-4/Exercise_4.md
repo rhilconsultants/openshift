@@ -43,31 +43,6 @@ Now download the GNU binary
 
     # curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
 
-#### (Optional) - Verify the downloaded release binary
-
-    #  curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu.asc
-
-To verify a release binary using the provided asc files, place the binary and corresponding asc file into the same directory and use the corresponding command:
-
-    #  gpg --verify operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu.asc
-
-If you do not have the maintainers public key on your machine, you will get an error message similar to this:
-
-    # gpg --verify operator-sdk-${RELEASE_VERSION}-x86_64-apple-darwin.asc
-    gpg: assuming signed data in 'operator-sdk-${RELEASE_VERSION}-x86_64-apple-darwin'
-    gpg: Signature made Fri Apr  5 20:03:22 2019 CEST
-    gpg:                using RSA key <KEY_ID>
-    gpg: Can't check signature: No public key
-
-To download the key, use the following command, replacing $KEY_ID with the RSA key string provided in the output of the previous command: 
-    #  gpg --recv-key "$KEY_ID"
-
-You’ll need to specify a key server if one hasn’t been configured. For example: 
-
-    #  gpg --keyserver keyserver.ubuntu.com --recv-key "$KEY_ID"
-
-Now you should be able to verify the binary.
-
 ### Install the release binary in your PATH
     
     # chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu 
