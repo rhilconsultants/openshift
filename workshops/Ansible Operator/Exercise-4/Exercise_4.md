@@ -43,31 +43,6 @@ Now download the GNU binary
 
     # curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
 
-#### (Optional) - Verify the downloaded release binary
-
-    #  curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu.asc
-
-To verify a release binary using the provided asc files, place the binary and corresponding asc file into the same directory and use the corresponding command:
-
-    #  gpg --verify operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu.asc
-
-If you do not have the maintainers public key on your machine, you will get an error message similar to this:
-
-    # gpg --verify operator-sdk-${RELEASE_VERSION}-x86_64-apple-darwin.asc
-    gpg: assuming signed data in 'operator-sdk-${RELEASE_VERSION}-x86_64-apple-darwin'
-    gpg: Signature made Fri Apr  5 20:03:22 2019 CEST
-    gpg:                using RSA key <KEY_ID>
-    gpg: Can't check signature: No public key
-
-To download the key, use the following command, replacing $KEY_ID with the RSA key string provided in the output of the previous command: 
-    #  gpg --recv-key "$KEY_ID"
-
-You’ll need to specify a key server if one hasn’t been configured. For example: 
-
-    #  gpg --keyserver keyserver.ubuntu.com --recv-key "$KEY_ID"
-
-Now you should be able to verify the binary.
-
 ### Install the release binary in your PATH
     
     # chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu 
@@ -195,6 +170,8 @@ Now let’s look at the directory structure of our new object:
     
     27 directories, 54 files
 
+Note: as a convention, when creating Ansible operators, Ansible YAML files use a `.yml` suffix whereas Kubernetes/OpenShift assets use a `.yaml` suffix.
+
 To test the operator we will use another user named {USER}-client on OpenShift in order to test our deployment by consuming the hello-go service from it and not through the Ansible playbook.
 
 
@@ -281,11 +258,11 @@ The generated Makfiles uses the "docker" command to build and push images. We wi
 
 The first step is to build the operator image:
 
-    # make docker-build IMG=registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+    # make docker-build IMG=registry.infra.local:5000/project-${USER}/hellogo-operator:v0.0.1
 
 The next step is to push the operator image to the registry:
 
-    # make docker-push IMG=registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+    # make docker-push IMG=registry.infra.local:5000/project-${USER}/hellogo-operator:v0.0.1
 
 Note that the above two commands can be combined using: make docker-build docker-push IMG=...
 
@@ -308,11 +285,11 @@ If you are interested in learning more about running the Operator using operator
 
 Create a namespace ${USER}-hellogo-operator-system, install the RBAC configuration and create a Kubernetes Deployment by running:
 
-    # make deploy IMG=registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+    # make deploy IMG=registry.infra.local:5000/project-${USER}/hellogo-operator:v0.0.1
 
 Verify that the operator is running by checking the output of:
 
-    # oc get all -n ${USER}-hellogo-operator-system
+    # oc get all -n project-${USER}-hellogo-operator-system
 
 The output should be of the form:
 
