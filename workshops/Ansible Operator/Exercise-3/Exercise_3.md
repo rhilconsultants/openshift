@@ -97,25 +97,25 @@ $ cat > roles/Hello-go-role/tasks/main.yml <<EOF
     namespace: project-${USER}
 EOF
 ```
-Modify vars file Hello-go-role/defaults/main.yml, setting state: present by default.
+Modify the variables file Hello-go-role/defaults/main.yml, setting state: present by default.
 ```yaml
-$ cat >> roles/Hello-go-role/defaults/main.yml <<EOF
+$ cat > roles/Hello-go-role/defaults/main.yml <<EOF
 ---
 state: present
 size: 1
 EOF
 ```
-Now we can run the Playbook to deploy your hello-go on to OpenShift:
+Now we can run the Ansible playbook to deploy your hello-go application on OpenShift:
 ```bash
-$ podman run --rm --name ose-openshift -t \
-    -v ~/ose-openshift/inventory:/tmp/inventory:Z,ro  \
+$ podman run --rm --name ose-openshift -tu `id -u` \
+    -v ${HOME}/ose-openshift/inventory:/tmp/inventory:Z,ro  \
     -e INVENTORY_FILE=/tmp/inventory \
     -e OPTS="-v" \
-    -v ~/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
+    -v ${HOME}/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
     -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
     -e K8S_AUTH_API_KEY=$(oc whoami -t) \
     -e K8S_AUTH_HOST=$(oc whoami --show-server) \
-    -e K8S_AUTH_VALIDATE_CERTS=false \
+    -e K8S_AUTH_VALIDATE_CERTS=true \
     ose-openshift
 ```
 
@@ -141,7 +141,7 @@ imagestream.image.openshift.io/hello-go   default-route-openshift-image-registry
 
 Next, let's make it possible to customize the replica count for our hello-go deployment by adding an hellogo_replicas variable to the DeploymentConfig template and setting the variable value dynamically using Ansible.
 
-Modify vars file roles/Hello-go-role/defaults/main.yml, setting size: 2:
+Modify the variables file `roles/Hello-go-role/defaults/main.yml`, setting size: 2:
 ```yaml
 ---
 state: present
@@ -171,7 +171,7 @@ spec:
 ```
 Running the Playbook again will read the variable hellogo_replicas and use the provided value to customize the hello-go DeploymentConfig.
 ```bash
-$ podman run --rm --name ose-openshift -t \
+$ podman run --rm --name ose-openshift -tu `id -u` \
     -v ~/ose-openshift/inventory:/tmp/inventory:Z,ro  \
     -e INVENTORY_FILE=/tmp/inventory \
     -e OPTS="-v" \
@@ -227,29 +227,29 @@ spec:
   wildcardPolicy: None
 EOF
 ```
-Now create the instances:
+Now create the service and route resources:
 ```bash
 $ oc create -f hello-go-service.yaml -f hello-go-route.yaml
 ```
 ### Testing the Deployment
 
-Create an environment variable with the route:
+Create an environment variable with the route to the application's service:
 ```bash
 $ ROUTE=$(oc get route hellogo-route -n project-${USER} -o=jsonpath='{.spec.host}')
 $ echo ${ROUTE}
 ```
 Now access the hello-go application:
 ```bash
-$ curl ${ROUTE}/testing
+$ curl ${ROUTE}/testingInsideOpenShift
 ```
 The output should be:
 ```
-Hello, you requested: /testing
+Hello, you requested: /testingInsideOpenShift
 ```
 
 ### Final Task
 
-If everything is running as expected we can delete it by changing the ‘state’ var in the roles/Hello-go-role/defaults/main.yml file from **present** to **absent**. 
+If everything is running as expected we can delete it by changing the ‘state’ variable in the `roles/Hello-go-role/defaults/main.yml` file from **present** to **absent**. 
 
 After changing it, run the playbook again and verify there are no pods by running the command: `oc get pods`.
 

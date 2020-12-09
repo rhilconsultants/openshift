@@ -46,3 +46,6 @@ Create accounts for:
 ## OpenShift Projects
 Create OpenShift projects:
 * project-${USER} owned by ${USER}
+
+## Podman rootless configuration
+/etc/subuid may need to be configured for podman rootless use.
