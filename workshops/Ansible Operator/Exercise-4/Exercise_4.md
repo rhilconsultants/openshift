@@ -309,14 +309,7 @@ The output should be of the form:
 ## Using the Operator
 
 Now that we have deployed our operator, let’s create a CR and 3 instances of our hellogo application with our client user.
-First login to OpenShift with the ${USER}-client:
-```bash
-$ oc login --username ${USER}-client --password 'OcpPa$$w0rd' api.$OCP_CLUSTER.$OCP_DOMAIN:6443
-```
-Create a new project for our testing:
-```bash
-$ oc new-project ${USER}-client
-```
+
 There is a sample CR in the scaffolding created as part of the Operator SDK config/samples/hellogo_v1alpha1_${USER}hellogo.yaml:
 ```yaml
 apiVersion: hellogo.example.com/v1alpha1
@@ -336,6 +329,18 @@ metadata:
 spec:
   size: 3
 ```
+<!--
+PROBLEM WITH PERMISSIONS HERE
+First login to OpenShift with the ${USER}-client:
+```bash
+$ oc login --username ${USER}-client --password 'OcpPa$$w0rd' api.$OCP_CLUSTER.$OCP_DOMAIN:6443
+```
+Create a new project for our testing:
+```bash
+$ oc new-project ${USER}-client
+```
+-->
+
 Now run use the “oc create” command to create the proper CR:
 ```bash
 $ oc create -f config/samples/hellogo_v1alpha1_${USER}hellogo.yaml

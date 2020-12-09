@@ -45,12 +45,15 @@ $ curl -LO https://github.com/operator-framework/operator-sdk/releases/download/
 ## OpenShift Accounts
 Create accounts for:
 * ${USER}
+<!--
 * ${USER}-client
+-->
 
 ## OpenShift Projects
 Create OpenShift projects owned by ${USER}:
 * project-${USER}
+<!--
 * ${USER}-hellogo-operator-system
-
+-->
 ## Podman rootless configuration
 /etc/subuid may need to be configured for podman rootless use.
