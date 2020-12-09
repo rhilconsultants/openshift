@@ -31,6 +31,10 @@ $ oc new-project ubi8
 $ skopeo copy docker://registry.redhat.io/ubi8/go-toolset docker://${REGISTRY}/ubi8/go-toolset
 ```
 
+The image quay.io/operator-framework/ansible-operator is downloaded in Exercise-4. This image appears to download:
+* https://galaxy.ansible.com/download/community-kubernetes-0.11.1.tar.gz
+* https://galaxy.ansible.com/download/operator_sdk-util-0.1.0.tar.gz
+
 ## Download the Operator SDK
 ```bash
 $ export RELEASE_VERSION=v1.2.0
@@ -44,8 +48,9 @@ Create accounts for:
 * ${USER}-client
 
 ## OpenShift Projects
-Create OpenShift projects:
-* project-${USER} owned by ${USER}
+Create OpenShift projects owned by ${USER}:
+* project-${USER}
+* ${USER}-hellogo-operator-system
 
 ## Podman rootless configuration
 /etc/subuid may need to be configured for podman rootless use.

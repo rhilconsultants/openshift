@@ -6,6 +6,7 @@
 * Operator-SDK
   * Download the Operator-SDK Binary
 * WorkFlow
+* Creating an Operator
 * Building the Ansible Role
 * Building and Running the Operator
   * Build and Push the Image
@@ -47,7 +48,7 @@ $ which operator-sdk
 ```
 The output should be:
 ```
- home/${USER}/bin/operator-sdk
+ ~/bin/operator-sdk
  ```
 
 ## WorkFlow
@@ -60,6 +61,7 @@ The following workflow is for a new Ansible operator:
   - Use the SDK CLI to build and generate the operator deployment manifests
   - Optionally add additional CRD’s using the SDK CLI and repeat steps 2 and 3
 
+## Creating an Operator
 First lets create a project with our new tool. We’ll be building a Hello-go Ansible Operator for the remainder of this tutorial:
 ```bash
 $ cd ~/ose-openshift
@@ -177,7 +179,7 @@ $ sed -e "s/namespace:.*/namespace: \'\{\{\ ansible_operator_meta\.namespace\ \}
     -e "/state:/d" ~/ose-openshift.bad/roles/Hello-go-role/tasks/main.yml \
     > roles/${USER}hellogo/tasks/main.yml
 ```
-For the last step is to update the default values:
+The next step is to update the default values:
 ```bash
 $ cat > roles/${USER}hellogo/defaults/main.yml <<EOF
 ---
@@ -200,10 +202,9 @@ $ sed -e "0,/name:.*/s//name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\
     -e "/to:/,\$s/name:.*/name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
     ~/ose-openshift/hello-go-route.yaml > roles/${USER}hellogo/templates/hello-go-route.yml.j2
 ```
-Add Ansible tasks that will read these templates:
+Add an Ansible tasks that will read these templates:
 ```yaml
-$ cat >> roles/${USER}hellogo/tasks/main.yml  << EOF
-
+$ cat >> roles/${USER}hellogo/tasks/main.yml  <<EOF
 - name: set hello-go service
   k8s:
     definition: "{{ lookup('template', 'hello-go-service.yml.j2') | from_yaml }}"
@@ -215,11 +216,11 @@ $ cat >> roles/${USER}hellogo/tasks/main.yml  << EOF
     namespace:  '{{ ansible_operator_meta.namespace }}'
 EOF
 ```
-In addition, our operator will need permission to access the service and route objects. Add the following to the first **resources** section of config/rbac/role.yaml:
+In addition, our operator will need permission to access the service and route objects. Add the following to the first **resources** section of `config/rbac/role.yaml`:
 
     - services
 
-Add the following section to the config/rbac/role.yaml file:
+Add the following section to the end of the `config/rbac/role.yaml`:
 
       - apiGroups:
           - route.openshift.io
@@ -235,12 +236,25 @@ Add the following section to the config/rbac/role.yaml file:
           - watch
 
 ## Building and Running the Operator
+### Log in to OpenShift
+Log into OpenShift (if you have not already done so):
+```bash
+$ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
+```
+Create an environment variable pointing to the OpenShift registry:
+```bash
+$ REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
+```
 
 ### Build and Push the Image
 
-The generated Makfiles uses the "docker" command to build and push images. We will change the build to use the "podman" command, but will not change the Makefile targets:
+The generated Makfiles uses the "docker" command to build and push images. We will change the build to use the "podman" command, but will not change the Makefile target names:
 ```bash
 $ sed -i "s/docker /podman /g" Makefile
+```
+For this workshop, we will use the same namespace as in the previous exercises:
+```bash
+$ sed -i "s/namespace:.*/namespace: project-${USER}/" config/default/kustomization.yaml
 ```
 The first step is to build the operator image:
 ```bash
@@ -254,10 +268,10 @@ Note that the above two commands can be combined using: make docker-build docker
 
 ### Install the CRD
 
-Before running the operator, Kubernetes needs to know about the new custom resource definition 
+Before running the operator, OpenShift needs to know about the new custom resource definition 
 that the operator will be watching, by running the following command:
 ```bash
-    $ make install
+$ make install
 ```
 ### Ways to Run an Operator
 
@@ -269,13 +283,13 @@ If you are interested in learning more about running the Operator using operator
 
 ### Deploy the Operator
 
-Create a namespace ${USER}-hellogo-operator-system, install the RBAC configuration and create a Kubernetes Deployment by running:
+Create a namespace ${USER}-hellogo-operator-system, install the RBAC configuration and create a Kubernetes Deployment (for this workshop: using the OpenShift internal name of our image) by running:
 ```bash
 $ make deploy IMG=image-registry.openshift-image-registry.svc:5000/project-${USER}/hellogo-operator:v0.0.1
 ```
 Verify that the operator is running by checking the output of:
 ```bash
-$ oc get all -n project-${USER}-hellogo-operator-system
+$ oc get all -n project-${USER}
 ```
 The output should be of the form:
 
