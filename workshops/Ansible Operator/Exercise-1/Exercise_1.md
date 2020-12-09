@@ -180,27 +180,7 @@ We’re now going to work on running it in a container, so we can get one step c
 
 ## Containerized Hello Go
 
-### Configuring Access to the Registry
-First login to the registry, providing your username and password:
-```bash
-# podman login registry.infra.local:5000
-Username: myuser
-Password: mypassword
-Login Succeeded!
-```
 
-If we want it to be consistent through this session (change *myuser* to your user name and change *password* to your password):
-```bash
-# REG_SECRET=`echo -n 'myuser:mypassword' | base64 -w0`
-```
-
-And now create and update the ~/.docker/config.json file:
-```bash
-# mkdir ~/.docker
-# echo '{ "auths": {}}' | \
-  jq '.auths += {"registry.infra.local:5000": {"auth": "REG_SECRET","email": "me@working.me"}}' | \
-  sed "s/REG_SECRET/$REG_SECRET/" | jq . > ~/.docker/config.json
-```
 ### Building the Hello Go Application in as a Container Image
 Hello Go isn’t very useful if you can only run it locally on your workstation. This app is stateless, it logs to stdout, and it fulfills a single purpose, so it is a perfect fit to containerize for a cloud-native deployment!
 
@@ -290,23 +270,45 @@ Clean up your work
 # podman stop hello-go 
 ```
 
-### Push to the Registry
+## Push to the Registry
+First let’s make sure we are logged in to the cluster (login credentials placed in the sheets file under ocp user and ocp password):
+```bash
+# oc login api.ocp4.infra.local:6443
+```
 
+For this exercise, we will use OpenShift's internal registry. We will define an environment variable with the registry's host name:
+```bash
+# export REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
+```
+
+### Configuring Access to the Registry
+
+
+Now log in to the registry, providing your username and password:
+```bash
+# podman login -u unused -p $(oc whoami -t) ${REGISTRY}
+```
+The output should be:
+```
+Login Succeeded!
+```
+
+### Tag the Application for Our Project
 Tag our application:
 ```bash
-# podman tag localhost/hello-go registry.infra.local:5000/${USER}/hello-go
+# podman tag localhost/hello-go ${REGISTRY}/$(oc project -q)/hello-go
 ```
 
 Verify that your image was successfully tagged:
 ```bash
 # podman images
 REPOSITORY                                   TAG      IMAGE ID       CREATED         SIZE
-registry.infra.local:5000/${USER}/hello-go    latest   376409b93b2c   3 minutes ago   5.43 MB
+${REGISTRY}/project-userNN/hello-go    latest   376409b93b2c   3 minutes ago   5.43 MB
 ```
-
+### Push the Image
 Push the image to the registry:
 ```bash
-# podman push registry.infra.local:5000/${USER}/hello-go
+# podman push ${REGISTRY}/$(oc project -q)/hello-go
 ```
 
 ## Hello Go Application Summary

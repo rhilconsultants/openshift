@@ -18,12 +18,39 @@
 
 In today’s world it is much easier to just run a container then to install an application on our laptops, for that reason Red Hat has developed two containers for running Ansible with the Kubernetes module.
 
-### Download
+### Log in to OpenShift
+First let’s make sure that you are logged in to the cluster. Your login credentials can be found on the attendance sheet under ocp user and ocp password):
+```bash
+# oc login api.ocp4.infra.local:6443
+```
+Make sure you are on your project:
+```bash
+# oc project project-${USER}
+```
 
-To obtain the package run the following command :
 
-    # podman pull registry.infra.local:5000/openshift3/ose-ansible
+### ose-ansible Download
+Access to the ose-ansible registry requires a Red Hat account. It is assumed that when preparing the environment for this course, the instructor loaded the ose-ansible container into the OpenShift registry using:
+```bash
+# REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
+# skopeo copy docker://registry.redhat.io/openshift3/ose-ansible docker://${REGISTRY}/openshift/ose-ansible
+```
 
+### Logging in to the Internal OpenShift Registry
+Log in to the internal OpenShift registry by running:
+```bash
+# REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
+# podman login -u unused -p $(oc whoami -t) ${REGISTRY}
+```
+The output should be:
+```
+Login Succeeded!
+```
+### Download the ose-ansible Image
+To obtain the package run the following command:
+```bash
+# podman pull ${REGISTRY}/openshift/ose-ansible
+```
 ### Image Testing
 
 Now that we obtain the image that we need, let's run it with a small test run to make sure everything is working properly:
@@ -43,21 +70,21 @@ From your Home Directory
     EOF
 
 Every playbook starts with a play, which is a root level list item, with at least one key, hosts. To run a playbook against the local machine, you can set the following line at the beginning of the playbook, in a new file named main.yaml:
-
-    ---
-    - hosts: localhost
-
+```yaml
+---
+- hosts: localhost
+```
 When connecting to localhost and running simple automation tasks, you should usually disable Ansible’s fact-gathering functionality. Often this is not needed and can save time in your playbook runs. When it is enabled, Ansible digs through the system and stores tons of environment information in variables before it begins running tasks.
 So, to do this, the next line should be: “gather_facts: false”
 
 Next up, we’re going to write our first-ever Ansible task, to run the date command and capture its output:
-
-    tasks:
-      - name: Get the current date.
-        command: date
-        register: current_date
-        changed_when: false
-
+```yaml
+tasks:
+  - name: Get the current date.
+    command: date
+    register: current_date
+    changed_when: false
+```
 The tasks keyword should be on the same level as hosts, etc., and then all the tasks should be in a YAML list under tasks.
 It’s best practice to name every task you write in Ansible. This serves two purposes:
 
@@ -91,25 +118,17 @@ It may not look like this now but if you Copy/Paste the playbook to your termina
 
 ### Running the Container 
 
-Generate your SSH key to interact with your local machine using Ansible. Press `Enter` to approve the passphrase, This command will automatically create your public and private SSH keys.
-
-    # ssh-keygen -N '' -f ~/.ssh/id_rsa -t rsa
-
 Now that we have our files in place lets make sure the Ansible container can run with our newly created files:
 
     # podman run --rm --name ose-ansible -tu `id -u` \
-    -v $HOME/.ssh/id_rsa:/opt/app-root/src/.ssh/id_rsa:Z,ro \
-    -v $HOME/ose-ansible/inventory:/tmp/inventory:Z,ro  \
-    -e INVENTORY_FILE=/tmp/inventory -e OPTS="-v"  \
-    -v $HOME/ose-ansible/:/opt/app-root/ose-ansible/:Z,ro \
+    -v ~/ose-ansible/inventory:/tmp/inventory:Z,ro  \
+    -e INVENTORY_FILE=/tmp/inventory \
+    -e OPTS="-v"  \
+    -v ~/ose-ansible/:/opt/app-root/ose-ansible/:Z,ro \
     -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/main.yaml \
-    registry.infra.local:5000/openshift3/ose-ansible
+    ${REGISTRY}/openshift/ose-ansible
 
 Expected Output: 
-
-
-
-
 
     PLAY [localhost] *****************************************************************************************************************************************************************************
     
@@ -120,7 +139,7 @@ Expected Output:
     TASK [Print the Current date.] ***************************************************************************************************************************************************************
     Thursday 23 April 2020  20:05:45 +0000 (0:00:00.413)       0:00:00.572 ******** 
     ok: [127.0.0.1] => {
-        "msg": "Hello world!"
+        "msg": "Thu Apr 23 20:05:45 UTC 2020"
     }
     
     PLAY RECAP ***********************************************************************************************************************************************************************************
@@ -138,55 +157,28 @@ First we need to create a rule for our Kubernetes cluster:
     # cd $HOME
     # mkdir ose-openshift && cd ose-openshift
 
-Now we will create a Playbook.yaml file.
+Now we will create a playbook.yaml file.
+```bash
+# cat > playbook.yaml <<EOF
+---
+- name: Create a new file named names in the current directory
+  hosts: localhost
+  roles:
+  - Hello-go-role
+EOF
+```
 
-    # cat > playbook.yaml << EOF
-    ---
-    - name: Create a new file named names in the current directory
-      hosts: localhost
-      roles:
-      - Hello-go-role
-    EOF
-
-First let’s make sure we are login to the cluster (login credentials placed in the sheets file under ocp user and ocp password):
-
-    # oc login api.ocp4.infra.local:6443
-
-Make sure you are on your project:
-
-    # oc project project-${USER}
-
-Next let’s generate a yaml by creating a config map:
-
-
-    # touch Dockerfile
-    # oc create configmap dockerfile --from-file=$HOME/ose-openshift/Dockerfile -o yaml
-    apiVersion: v1
-    data:
-      Dockerfile: ""
-    kind: ConfigMap
-    metadata:
-      creationTimestamp: "2020-04-21T17:31:51Z"
-      name: dockerfile
-      namespace: project-${USER}
-      resourceVersion: "911597"
-      selfLink: /api/v1/namespaces/project-user01/configmaps/dockerfile
-      uid: 4b09279e-bd02-4f88-973d-ca58cc353f9a
-
-Make sure you save the YAML output, we will use it in a minute, for now delete the configmap: 
-
-    # oc delete configmap dockerfile
-
-Now we will create the role directory and the Example-role structure:
+Now we will create the role directory generate skeleton files:
 
     # mkdir roles && cd roles
     # ansible-galaxy init Hello-go-role
     - Role Hello-go-role was created successfully
+    # cd ..
 
 Modify tasks file Hello-go-role/tasks/main.yml to contain the Ansible shown below:
 
 
-    # cat > Hello-go-role/tasks/main.yml << EOF
+    # cat > roles/Hello-go-role/tasks/main.yml <<EOF
     ---
     - name: set a configmap to test credentials 
       k8s:
@@ -198,13 +190,11 @@ Modify tasks file Hello-go-role/tasks/main.yml to contain the Ansible shown belo
           metadata:
             name: dockerfile
             namespace: project-${USER}
-    
     EOF
 
 Build the inventory file for this playbook:
 
-    # cd ..
-    # cat >> inventory << EOF
+    # cat >> inventory <<EOF
     [localhost]
     127.0.0.1 ansible_connection=local
     EOF
@@ -212,17 +202,16 @@ Build the inventory file for this playbook:
 Run playbook.yml, which will execute 'example-role'.
 
     # podman run --rm --name ose-openshift -tu `id -u` \
-    -v $HOME/.ssh/id_rsa:/opt/app-root/src/.ssh/id_rsa:Z,ro \
     -v $HOME/ose-openshift/inventory:/tmp/inventory:Z,ro  \
     -e INVENTORY_FILE=/tmp/inventory -e OPTS="-v" \
     -v $HOME/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
     -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
-    registry.infra.local:5000/openshift3/ose-ansible
+    ${REGISTRY}/openshift/ose-ansible
 
 #### ERROR !!
+```
+fatal: [127.0.0.1]: FAILED! => {"changed": false, "error": "No module named kubernetes", "msg": "Failed to import the required Python library (openshift) on 5601abe6115c's Python /usr/bin/python. Please read module documentation and install in the appropriate location. If the required library is installed, but Ansible is using the wrong Python interpreter, please consult the documentation on ansible_python_interpreter"}
+```
 
-    fatal: [127.0.0.1]: FAILED! => {"changed": false, "msg": \
-    "This module requires the OpenShift Python client. Try `pip install openshift`"}
-
-What is the root cause of this error? We'll discuss a solution before proceeding.
+What is the root cause of this error? We'll discuss a solution in the next section.
 

@@ -258,11 +258,11 @@ The generated Makfiles uses the "docker" command to build and push images. We wi
 
 The first step is to build the operator image:
 
-    # make docker-build IMG=registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+    # make docker-build IMG=registry.infra.local:5000/project-${USER}/hellogo-operator:v0.0.1
 
 The next step is to push the operator image to the registry:
 
-    # make docker-push IMG=registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+    # make docker-push IMG=registry.infra.local:5000/project-${USER}/hellogo-operator:v0.0.1
 
 Note that the above two commands can be combined using: make docker-build docker-push IMG=...
 
@@ -285,11 +285,11 @@ If you are interested in learning more about running the Operator using operator
 
 Create a namespace ${USER}-hellogo-operator-system, install the RBAC configuration and create a Kubernetes Deployment by running:
 
-    # make deploy IMG=registry.infra.local:5000/${USER}/hellogo-operator:v0.0.1
+    # make deploy IMG=registry.infra.local:5000/project-${USER}/hellogo-operator:v0.0.1
 
 Verify that the operator is running by checking the output of:
 
-    # oc get all -n ${USER}-hellogo-operator-system
+    # oc get all -n project-${USER}-hellogo-operator-system
 
 The output should be of the form:
 

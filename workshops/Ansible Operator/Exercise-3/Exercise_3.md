@@ -23,24 +23,24 @@ Now Copy the RPMs from the share Directory:
     # cp /usr/share/workshop/RPMs/* .
 
 And let’s create a new Dockerfile and edit it:
+```bash
+# REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
+# cat > Dockerfile << EOF
+FROM ${REGISTRY}/openshift/ose-ansible
 
-    # cat > Dockerfile << EOF
-    FROM registry.infra.local:5000/openshift3/ose-ansible
-    MAINTAINER  Meemail me@comefind.me # not a real email
-
-    USER root
-    WORKDIR /opt/app-root/
-    COPY python* .
-    RUN yum install -y python* && rm -f python*
-    EOF
-
+USER root
+WORKDIR /opt/app-root/
+COPY python* .
+RUN yum install -y python* && rm -f python*
+EOF
+```
 Build the container:
 
     # buildah bud -f Dockerfile -t ose-openshift .
 
 If everything went well, you should see the new image on the Server
 
-    # podman image list
+    # podman images
 
 **(What do you see wrong with this image and method ???)**
 
@@ -70,7 +70,7 @@ OpenShift Resource files. Let's take the hello-go deployment example.
 **Note**: We've modified the resource file slightly as we will be deploying on OpenShift.
 
 
-    # cat > roles/Hello-go-role/templates/hello-go-deployment.yml.j2 << EOF
+    # cat > roles/Hello-go-role/templates/hello-go-deployment.yml.j2 <<EOF
     kind: Deployment
     apiVersion: apps/v1
     metadata:
@@ -83,7 +83,7 @@ OpenShift Resource files. Let's take the hello-go deployment example.
         spec:
           containers:
             - name: hello-go
-              image: registry.infra.local:5000/${USER}/hello-go
+              image: image-registry.openshift-image-registry.svc:5000/project-${USER}/hello-go
               ports:
               - containerPort: 8080
       replicas: 1
@@ -111,50 +111,49 @@ Modify vars file Hello-go-role/defaults/main.yml, setting state: present by defa
     size: 1
     EOF
 
-Note that we are working with an internal registry with authentication required.
-
-Until now we used our config.json file (which we generated in the first exercise ) 
-
-but OpenShift doesn’t know about that file. For that we need to create a secret for 
-
-the registry and then link it to our OpenShift pull request.
-
-Let’s generate a secret specific for docker-registry:
-
-**(change the USER to your user):**
-
-    # oc create secret generic --from-file=.dockerconfigjson=/home/$USER/.docker/config.json \
-    --type=kubernetes.io/dockerconfigjson pullsecret
-
-And link it to our namespace pull request:
-
-    # oc secrets link default pullsecret --for=pull
-
-Now we can run the Playbook to deploy your hello-go on to OpenShift
-
-    # podman run --name ose-openshift ...
-
-And remove leftovers (may not be necessary):
-
-    # podman rm ose-openshift 
+Now we can run the Playbook to deploy your hello-go on to OpenShift:
+```bash
+podman run --rm --name ose-openshift -t \
+    -v ~/ose-openshift/inventory:/tmp/inventory:Z,ro  \
+    -e INVENTORY_FILE=/tmp/inventory \
+    -e OPTS="-v" \
+    -v ~/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
+    -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
+    -e K8S_AUTH_API_KEY=$(oc whoami -t) \
+    -e K8S_AUTH_HOST=$(oc whoami --show-server) \
+    -e K8S_AUTH_VALIDATE_CERTS=false \
+    ose-openshift
+```
 
 You can see the hello-go deployment created in your namespace.
 
     # oc get all -n project-${USER}
 
-Next, let's make it possible to customize the replica count for our hello-go deployment by 
+The output should be similar to the following:
+```
+NAME                               READY   STATUS    RESTARTS   AGE
+pod/hellogo-pod-6888f96bd8-whnbc   1/1     Running   0          65s
 
-adding an hellogo_replicas variable to the DeploymentConfig template and filling 
+NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/hellogo-pod   1/1     1            1           11m
 
-the variable value dynamically with Ansible.
+NAME                                     DESIRED   CURRENT   READY   AGE
+replicaset.apps/hellogo-pod-6888f96bd8   1         1         1       11m
 
-Modify vars file Hello-go-role/defaults/main.yml, setting size: 2
+NAME                                      IMAGE REPOSITORY                                                                 TAGS     UPDATED
+imagestream.image.openshift.io/hello-go   default-route-openshift-image-registry.apps-crc.testing/project-${USER}/hello-go   latest   2 minutes ago
+
+```
+
+Next, let's make it possible to customize the replica count for our hello-go deployment by adding an hellogo_replicas variable to the DeploymentConfig template and setting the variable value dynamically using Ansible.
+
+Modify vars file roles/Hello-go-role/defaults/main.yml, setting size: 2:
 
     ---
     state: present
     size: 2
 
-Modify the hello-go deployment definition to read replicas from the hellogo_replicas variable
+Modify the roles/Hello-go-role/templates/hello-go-deployment.yml.j2 deployment template to read replicas from the hellogo_replicas variable rather than the fixed size of 1:
 
     kind: Deployment
     apiVersion: v1
@@ -168,7 +167,7 @@ Modify the hello-go deployment definition to read replicas from the hellogo_repl
         spec:
           containers:
             - name: hello-go
-              image: registry.infra.local:5000/${USER}/hello-go
+              image: image-registry.openshift-image-registry.svc:5000/project-${USER}/hello-go
               ports:
               - containerPort: 8080
       replicas: {{ size }}
@@ -176,25 +175,28 @@ Modify the hello-go deployment definition to read replicas from the hellogo_repl
         matchLabels:
           app: hellogo
 
-Running the Playbook again will read the variable hellogo_replicas and use the provided value 
-
-to customize the hello-go DeploymentConfig.
-
-    # podman run --name ose-openshift ...
-
-Clean it up.
-
-    # podman rm ose-openshift (may not be necessary)
-
-After running the Playbook, the cluster will scale the number of hello-go pods to meet the new requested replica count of 2. 
-
-    # oc get all -n project-${USER}
+Running the Playbook again will read the variable hellogo_replicas and use the provided value to customize the hello-go DeploymentConfig.
+```bash
+podman run --rm --name ose-openshift -t \
+    -v ~/ose-openshift/inventory:/tmp/inventory:Z,ro  \
+    -e INVENTORY_FILE=/tmp/inventory \
+    -e OPTS="-v" \
+    -v ~/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
+    -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
+    -e K8S_AUTH_API_KEY=$(oc whoami -t) \
+    -e K8S_AUTH_HOST=$(oc whoami --show-server) \
+    -e K8S_AUTH_VALIDATE_CERTS=false \
+    ose-openshift
+```
+After running the Playbook, the cluster will scale the number of hellogo pods to meet the new requested replica count of 2. 
+```bash
+# oc get pods -n project-${USER}
+```
+You should now see two pods running.
 
 #### Exposing the Application
 
-In order to expose our application we first need to create a service with a matching 
-
-label of the application label and then a route for that service.
+In order to expose our application we first need to create a service with a label that matches the application label and then a create a route for that service.
 
 Now we can add a service with the matching label:
 
@@ -202,7 +204,8 @@ Now we can add a service with the matching label:
     apiVersion: v1
     kind: Service
     metadata:
-      name: hellogo-service-${USER}
+      name: hellogo-service
+      namespace: project-${USER}
     spec:
       selector:
         app: hellogo
@@ -218,14 +221,14 @@ And now the route yaml:
     apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: hellogo-route-${USER}
+      name: hellogo-route
       namespace: project-${USER}
     spec:
       port:
         targetPort: 8080
       to:
         kind: Service
-        name: hellogo-service-${USER}
+        name: hellogo-service
         weight: 100
       wildcardPolicy: None
     EOF
@@ -234,17 +237,25 @@ Now create the instances:
 
     # oc create -f hello-go-service.yaml -f hello-go-route.yaml
 
-Now test your deployment:
+#### Testing the Deployment
 
-    # curl http://hellogo-route-${USER}-project-${USER}.apps.ocp4.infra.local/testing
+Create an environment variable with the route:
+```bash
+# ROUTE=$(oc get route hellogo-route -n project-${USER} -o=jsonpath='{.spec.host}')
+# echo ${ROUTE}
+```
+Now access the hello-go application:
+```
+# curl ${ROUTE}/testing
+```
+The output should be:
+
     Hello, you requested: /testing
 
 
 #### Final Task
 
-If everything is running as expected we can delete it by changing the  ‘state’ 
-
-var in the defaults/main.yaml file from **present** to **absent**. 
+If everything is running as expected we can delete it by changing the ‘state’ var in the roles/Hello-go-role/defaults/main.yml file from **present** to **absent**. 
 
 After changing it, run the playbook again and verify there are no pods by running the command: `oc get pods`.
 
