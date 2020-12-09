@@ -9,14 +9,14 @@
   * Download the ose-ansible Image
   * Ansible Image Testing
   * Running the Container 
-* Kubernetes Module
+* Ansible Kubernetes Module
   * Running the k8s Ansible Modules Locally
 
 
 
 ## Ansible Container
 
-In today’s world it is much easier to just run a container then to install an application on our laptops, for that reason Red Hat has developed two containers for running Ansible with the Kubernetes module.
+In today’s world it is much easier to just run a container then to install an application on our laptops, for that reason Red Hat has developed a container for running Ansible with the Kubernetes module.
 
 ### Log in to OpenShift
 First let’s make sure that you are logged in to the cluster. Your login credentials can be found on the attendance sheet under ocp user and ocp password):
@@ -33,7 +33,7 @@ $ REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath
 ```
 
 ### Download the ose-ansible Image
-To obtain the ose-ansible image for this workshop, run the following command:
+Download the ose-ansible image for this workshop by running the following command:
 ```bash
 $ podman pull ${REGISTRY}/openshift3/ose-ansible
 ```
@@ -55,15 +55,18 @@ $ cat >> inventory <<EOF
 127.0.0.1 ansible_connection=local
 EOF
 ```
-Every playbook starts with a play, which is a root level list item, with at least one key, hosts. To run a playbook against the local machine, you can set the following line at the beginning of the playbook, in a new file named main.yaml:
+Every playbook starts with a play, which is a root level list item, with at least one key, hosts. To run a playbook against the local machine, you can set the following line at the beginning of the playbook:
 ```yaml
 ---
 - hosts: localhost
 ```
 When connecting to localhost and running simple automation tasks, you should usually disable Ansible’s fact-gathering functionality. Often this is not needed and can save time in your playbook runs. When it is enabled, Ansible digs through the system and stores tons of environment information in variables before it begins running tasks.
-So, to do this, the next line should be: “gather_facts: false”
+So, to do this, the next line should be:
+```yaml
+gather_facts: false
+```
 
-Next up, we’re going to write our first-ever Ansible task, to run the date command and capture its output:
+Next up, we’re going to write our first-ever Ansible task, to run the date command and capture its output. the task is as follows:
 ```yaml
 tasks:
   - name: Get the current date.
@@ -83,7 +86,7 @@ This first task uses Ansible’s command module, which takes the value of the co
 The task also registers the returned value (and some other metadata) into a new variable current_date, and because we know running date will never change the state of the host it’s run on, we also add changed_when: false. This helps Ansible keep track of state. Later we will use this to our advantage!
 Let’s add just one more task that will print the date we saved. 
 
-So far, your entire playbook should look like this:
+The playbook can be created by running the following command:
 ```yaml
 $ cat > main.yaml << EOF
 ---
@@ -100,17 +103,16 @@ $ cat > main.yaml << EOF
       debug: msg="{{ current_date.stdout }}"
 EOF
 ```
-It may not look like this now but if you Copy/Paste the playbook to your terminal, you will see that the indentations are correct.
 
 ### Running the Container 
 
 Now that we have our files in place lets make sure the Ansible container can run with our newly created files:
 
     $ podman run --rm --name ose-ansible -tu `id -u` \
-    -v ~/ose-ansible/inventory:/tmp/inventory:Z,ro  \
+    -v ${HOME}/ose-ansible/inventory:/tmp/inventory:Z,ro  \
     -e INVENTORY_FILE=/tmp/inventory \
     -e OPTS="-v"  \
-    -v ~/ose-ansible/:/opt/app-root/ose-ansible/:Z,ro \
+    -v ${HOME}/ose-ansible/:/opt/app-root/ose-ansible/:Z,ro \
     -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/main.yaml \
     ${REGISTRY}/openshift3/ose-ansible
 
@@ -131,7 +133,7 @@ Expected Output:
     PLAY RECAP ***********************************************************************************************************************************************************************************
     127.0.0.1                  : ok=2    changed=0    unreachable=0    failed=0   
 
-## Kubernetes Module
+## Ansible Kubernetes Module
 
 Now that we are able to run Ansible from our container let’s switch our focus to the Ansible Kubernetes module (k8s).
 
@@ -140,15 +142,14 @@ Now that we are able to run Ansible from our container let’s switch our focus 
 For this example we will create and delete a namespace with the switch of an Ansible variable.
 First we need to create a rule for our Kubernetes cluster:
 ```bash
-$ cd $HOME
-$ mkdir ose-openshift && cd ose-openshift
+$ mkdir ~/ose-openshift && cd ~/ose-openshift
 ```
 
 Now we will create a playbook.yaml file.
 ```yaml
 $ cat > playbook.yaml <<EOF
 ---
-- name: Create a new file named names in the current directory
+- name: Run the hellogo image
   hosts: localhost
   roles:
   - Hello-go-role
@@ -196,7 +197,7 @@ $ podman run --rm --name ose-openshift -tu `id -u` \
 -e OPTS="-v" \
 -v $HOME/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
 -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
-${REGISTRY}/openshift/ose-ansible
+${REGISTRY}/openshift3/ose-ansible
 ```
 #### ERROR !!
 Whoops! The output will be similar to the following:

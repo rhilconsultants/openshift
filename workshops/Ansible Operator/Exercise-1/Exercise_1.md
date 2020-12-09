@@ -19,11 +19,11 @@
 
 Go is easy to learn. You can write a main() function, compile, and run your application.
 
-We’re going to write the most basic HTTP request response app, called Hello Go .
+We’re going to write the most basic HTTP request response application, called Hello Go.
 
 The design goal is simple:
 
-  - Run a web server on port ${GO_PORT}.
+  - Run a web server on port specified by the environment variable GO_PORT (defaults to 8080).
   - For any request, return the content “Hello, you requested: URL_PATH_HERE”
 
 First, create a new project directory and change into its root:
@@ -65,13 +65,11 @@ func main() {
 
 In the main function, Go’s http.ListenAndServe() listens on the given port, and routes incoming requests through the handler.
 
-Our HelloServer handler responds to any request by printing “Hello, you requested: %s”, with the URL path replacing the %s placeholder. This is not an amazing HTTP server, and 
-
-it doesn’t do a whole lot, but it is a full- fledged Go application, which can now be compiled into a binary.
+Our HelloServer handler responds to any request by printing “Hello, you requested: %s”, with the URL path replacing the %s placeholder. This is not an amazing HTTP server, and it doesn’t do a whole lot, but it is a full- fledged Go application, which can now be compiled into a binary.
 
 ### Building the Hello Go Application
 
-With the hello.go file saved, run the following command from the project’s root directory:
+With the hello.go file saved, build an executable file by running the following command from the project’s root directory:
 
 ```bash
 $ go build cmd/hello/hello.go
@@ -86,7 +84,7 @@ $ export GO_PORT="$(printf 80%02d ${USER#user})"
 $ echo $GO_PORT
 ```
 
-Run the application as follows:
+After configuring the GO_PORT environment variable, run the application as follows:
 
 ```bash
 $ ./hello
@@ -122,12 +120,12 @@ You may also note that your original terminal window is logging your curl reques
 
 It’s always nice to have applications log to standard output (stdout) and standard error (stderr), because in the cloud-native world, these logs are easy to route and store centrally. You can press Control + C to exit the Hello Go application.
 
-We’re now going to work on running it in a container, so we can get one step closer to running it in Kubernetes!
+We’re now going to work on running it in a container, so we can get one step closer to running it on OpenShift!
 
 ## Containerize the Hello Go Application
 
 ### Downloading Build Image
-First we will download an image that will be used for our build. Outside of this lab environment, these steps are not required.
+First we will download an image with go language tools for our OpenShift environment. Outside of this workshop environment, downloading this image is not required.
 
 #### Logging in to OpenShift
 First let’s log in to the cluster (login credentials placed in the sheets file under ocp user and ocp password):
@@ -221,7 +219,7 @@ And you should see the following response:
 ```
 Hello, you’ve requested: /testing
 ```
-As well as the logged request in the window where container run was executed.
+In the window where container run was executed you will see the logged requests.
 ```
 2025/11/12 22:31:00 Starting to listen on port 8080
 2025/11/12 22:31:07 Received request for path: /testing
@@ -250,7 +248,7 @@ Login Succeeded!
 ```
 
 ### Tag the Application for Our Project
-Tag our application:
+Tag our application and include the project name where we will acces it from:
 ```bash
 $ podman tag localhost/hello-go ${REGISTRY}/$(oc project -q)/hello-go
 ```
