@@ -1,0 +1,1 @@
+install_operator_from_olm.md

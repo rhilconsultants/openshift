@@ -8,14 +8,14 @@ from our prebuild custom OLM.
 
 On the OpenShift web Console, login as Cluster Admin and browse to:
 **Operators** --> **OperatorHUb**. Scroll to the operator that you would like to install:
-![OperatorHub Operator Selection](operator-gui1.png)
+![OperatorHub Operator Selection](images/operator-gui1.png)
 ## Operator Details
 View the details of the operator including it Capability Level. Press **Install** to continue:
-![Operator Install](operator-gui2.png)
+![Operator Install](images/operator-gui2.png)
 ## Operator Installation Options
 Enter/modify the operator's arguments and press **Install**:
-![Install Operator](operator-gui3.png)
+![Install Operator](images/operator-gui3.png)
 ## Wait for Success
 Browse to **Operators**->**Installed Operators** and wait for **Success**.
-![Sucess](operator-gui4.png)
+![Sucess](images/operator-gui4.png)
 
