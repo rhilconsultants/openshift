@@ -1,10 +1,21 @@
-# Installing Operator from OLM
+# Installing Operators Using the OLM
 
 In order to understand how OLM works we first needs to be a client of OLM.
 for this exercise we will login to our running cluster and install an Operator 
 from our prebuild custom OLM.
 
-## GUI View
+## Operator Selection
 
-On the OpenShift Console , login as Cluster Admin and Go to :
-**Operators** --> **OperatorHUB**
+On the OpenShift web Console, login as Cluster Admin and browse to:
+**Operators** --> **OperatorHUb**. Scroll to the operator that you would like to install:
+![OperatorHub Operator Selection](operator-gui1.png)
+## Operator Details
+View the details of the operator including it Capability Level. Press **Install** to continue:
+![Operator Install](operator-gui2.png)
+## Operator Installation Options
+Enter/modify the operator's arguments and press **Install**:
+![Install Operator](operator-gui3.png)
+## Wait for Success
+Browse to **Operators**->**Installed Operators** and wait for **Success**.
+![Sucess](operator-gui4.png)
+
