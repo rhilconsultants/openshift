@@ -192,7 +192,8 @@ A well written operator will ensure that all container requirements are fulfille
 
 First copy the service to the templates directory after change the hardcoded name to a generated name:
 ```bash
-$ sed "s/name:.*/name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
+$ sed -e "s/name:.*/name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
+    -e "s/namespace:.*/namespace: \'\{\{\ ansible_operator_meta\.namespace\ \}\}\'/" \
       ~/ose-openshift/hello-go-service.yaml > roles/${USER}hellogo/templates/hello-go-service.yml.j2
 ```
 Now copy the route after removing hardcoded values:
@@ -244,6 +245,10 @@ $ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 Create an environment variable pointing to the OpenShift registry:
 ```bash
 $ REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
+```
+Log in to the local registry:
+```bash
+podman login -u unused -p $(oc whoami -t) ${REGISTRY}
 ```
 
 ### Build and Push the Image
@@ -305,6 +310,15 @@ The output should be of the form:
     NAME                                                                     DESIRED   CURRENT   READY   AGE
     replicaset.apps/${USER}-hellogo-operator-controller-manager-55bfdf7795   1         1         1       4m55s-
 
+### Create RBAC Rules for the Custom Resource
+Create a read/write RBAC role for the custom resource by running:
+```bash
+$ oc create -f config/samples/hellogo_v1alpha1_${USER}hellogo.yaml
+```
+Allow a user to access the RBAC role:
+```bash
+$ oc adm policy add-cluster-role-to-user ${USER}hellogo-editor-role ${USER}-client
+```
 
 ## Using the Operator
 
@@ -329,8 +343,6 @@ metadata:
 spec:
   size: 3
 ```
-<!--
-PROBLEM WITH PERMISSIONS HERE
 First login to OpenShift with the ${USER}-client:
 ```bash
 $ oc login --username ${USER}-client --password 'OcpPa$$w0rd' api.$OCP_CLUSTER.$OCP_DOMAIN:6443
@@ -339,8 +351,10 @@ Create a new project for our testing:
 ```bash
 $ oc new-project ${USER}-client
 ```
--->
-
+Because we are using the internal OpenShift registry, we need to allow access to the hello-go image from the new project:
+```bash
+$ oc adm policy add-role-to-user system:image-puller system:serviceaccount:${USER}-client:default --namespace=project-${USER}
+```
 Now run use the “oc create” command to create the proper CR:
 ```bash
 $ oc create -f config/samples/hellogo_v1alpha1_${USER}hellogo.yaml

@@ -1,5 +1,5 @@
 # Exercise 1 - Building and Containerizing a GO Application
-## Content
+## Contents
 
 * Creating a ‘Hello world’ Application in Go
 	* Building the Hello Go Application
