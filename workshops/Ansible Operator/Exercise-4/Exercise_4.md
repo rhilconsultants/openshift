@@ -313,7 +313,7 @@ The output should be of the form:
 ### Create RBAC Rules for the Custom Resource
 Create a read/write RBAC role for the custom resource by running:
 ```bash
-$ oc create -f config/samples/hellogo_v1alpha1_${USER}hellogo.yaml
+$ oc create -f config/rbac/{USER}hellogo_editor_role.yaml
 ```
 Allow a user to access the RBAC role:
 ```bash
