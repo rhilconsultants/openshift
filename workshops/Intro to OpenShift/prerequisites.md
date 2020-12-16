@@ -31,14 +31,6 @@ To download oc all we need to do is to download the latest oc binary with the fo
     # wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-${OCP_RELEASE}.tar.gz
     # tar -xzf openshift-client-linux-${OCP_RELEASE}.tar.gz -C ~/bin/
 
-Now to download the tkn tool we can do it in the same matter
-
-    # TKN_VERSION=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/latest/sha256sum.txt \
-    | grep tkn-linux | awk -F \- '{print $4}' | sed 's/.tar.gz//g')
-    # wget https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/latest/tkn-linux-amd64-${TKN_VERSION}.tar.gz
-    # tar -zxvf tkn-linux-amd64-${TKN_VERSION}.tar.gz -C ~/bin/
-
-Now that we have the 2 tools we need we start using them 
 
 ### Auth Complete
 
@@ -47,7 +39,6 @@ In order to utilize the bash auto completion in our environment we need to run a
 to generate it just run the following command :
 
     # oc completion bash > ~/.bash_completion
-    # tkn completion bash >> ~/.bash_completion
 
 ** Now logout , login and test the command with the TAB key **
 
@@ -85,14 +76,4 @@ To navigate between them you can run CTRL+ARROW and the arrows.
 
 now you are ready for work :)  
 
-#### Small Suggestion
-
-In Ex1 on the top left run watch for taskrun and on the right run watch for tasks
-
-    # watch -n 1 "oc get taskrun"
-    # watch -n 1 "oc get tasks"
-
-In the following Exercises run pipelinerun instead of tasks
-
-    # watch -n 1 "oc get pipelinerun"
 
