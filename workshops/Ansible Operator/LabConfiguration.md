@@ -55,5 +55,10 @@ Create OpenShift projects owned by ${USER}:
 <!--
 * ${USER}-hellogo-operator-system
 -->
+
+## OpenShift Roles
+For each user:
+oc policy add-role-to-user registry-editor <username>
+
 ## Podman rootless configuration
 /etc/subuid may need to be configured for podman rootless use.

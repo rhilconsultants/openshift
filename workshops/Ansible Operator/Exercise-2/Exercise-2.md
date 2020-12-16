@@ -23,10 +23,6 @@ First let’s make sure that you are logged in to the cluster. Your login creden
 ```bash
 $ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 ```
-Make sure you are on your project:
-```bash
-$ oc project project-${USER}
-```
 Create an environment variable pointing to the OpenShift registry:
 ```bash
 $ REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
@@ -107,15 +103,15 @@ EOF
 ### Running the Container 
 
 Now that we have our files in place lets make sure the Ansible container can run with our newly created files:
-
-    $ podman run --rm --name ose-ansible -tu `id -u` \
-    -v ${HOME}/ose-ansible/inventory:/tmp/inventory:Z,ro  \
-    -e INVENTORY_FILE=/tmp/inventory \
-    -e OPTS="-v"  \
-    -v ${HOME}/ose-ansible/:/opt/app-root/ose-ansible/:Z,ro \
-    -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/main.yaml \
-    ${REGISTRY}/openshift3/ose-ansible
-
+```bash
+$ podman run --rm --name ose-ansible -tu `id -u` \
+-v ${HOME}/ose-ansible/inventory:/tmp/inventory:Z,ro  \
+-e INVENTORY_FILE=/tmp/inventory \
+-e OPTS="-v"  \
+-v ${HOME}/ose-ansible/:/opt/app-root/ose-ansible/:Z,ro \
+-e PLAYBOOK_FILE=/opt/app-root/ose-ansible/main.yaml \
+${REGISTRY}/openshift3/ose-ansible
+```
 Expected Output: 
 
     PLAY [localhost] *****************************************************************************************************************************************************************************

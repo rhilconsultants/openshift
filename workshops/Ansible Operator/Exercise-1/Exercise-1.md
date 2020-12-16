@@ -250,19 +250,19 @@ Login Succeeded!
 ### Tag the Application for Our Project
 Tag our application and include the project name where we will acces it from:
 ```bash
-$ podman tag localhost/hello-go ${REGISTRY}/$(oc project -q)/hello-go
+$ podman tag localhost/hello-go ${REGISTRY}/${USER}/hello-go
 ```
 
 Verify that your image was successfully tagged:
 ```bash
 $ podman images
 REPOSITORY                                   TAG      IMAGE ID       CREATED         SIZE
-${REGISTRY}/project-userNN/hello-go    latest   376409b93b2c   3 minutes ago   5.43 MB
+${REGISTRY}/${USER}/hello-go    latest   376409b93b2c   3 minutes ago   5.43 MB
 ```
 ### Push the Image
 Push the image to the registry:
 ```bash
-$ podman push ${REGISTRY}/$(oc project -q)/hello-go
+$ podman push ${REGISTRY}/${USER}/hello-go
 ```
 
 ## Hello Go Application Summary
