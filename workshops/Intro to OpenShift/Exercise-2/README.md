@@ -118,11 +118,6 @@ To verify that there your sample application has no health checks configured:
 
 1. View the information in the Resources tab in the side panel.
 
-**Check your work**
-
-To verify there are no health checks configured:
-
-Do you see an inline alert stating that nodejs-sample does not have health checks?
 
 ##### To add health checks to your sample:
 
@@ -140,6 +135,13 @@ Do you see an inline alert stating that nodejs-sample does not have health check
 You will be brought back to the Topology View.
 
 Our sample application now has health checks. To ensure that your application is running correctly we will look at our monitoring option.
+
+**Check your work**
+
+To verify there are no health checks configured:
+
+Do you see an inline alert stating that nodejs-sample does not have health checks?
+
 
 ### monitor your sample application.
 

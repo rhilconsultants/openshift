@@ -11,10 +11,8 @@ In order to start working with OpenShift pipeline you Need to have the following
 
 ## OpenShift Pipeline tools   
 
-Before we start we need to download the right tools in order to work with Tekton  
-The 2 tools are
-  - oc - in order to login to the cluster
-  - tkn - the tekton cli tool which is been used to easy create objects related to Openshift pipeline
+Before we start we need to download the right tools in order to work with OpenShift
+The tools name is oc
 
 
 ### Downloads
