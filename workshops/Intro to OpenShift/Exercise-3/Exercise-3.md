@@ -1,10 +1,10 @@
-# Exercise 3 - Introduction to OpenShift Command line interface (OC)
+# Exercise 3 - Introduction to OpenShift CLI tool (OC)
 
 ## table of content:
 
 1. login to OpenShift with the associate files.
 2. explore the command line options
-4. deploying a pod + deployment
+4. deploying Pods + deployment
 3. deploy Service + route to your application.
 
 ## The Login
@@ -113,9 +113,9 @@ Or just logout and login back to the Bastion Server.
 
 ## deploying a pod + deployment
 
-In this section we will how to create a pod and how to create a deployment which controls the pods.
+In this section we will how to create a pod and how to create a deployment which controls the Pods.
 
-### creating PODs
+### creating Pods
 
 as you know the POD is the smallest unit in our OpenShift Cluster so let's start by creating our first pod. 
 Create a directory for our future YAML files and switch to that directory
@@ -149,13 +149,13 @@ and Let's craete it :
 $ oc create -f hello-go-pod.yaml
 ```
 
-now to see our pods we need to run oc with a get argument :
+now to see our Pods we need to run oc with a get argument :
 
 ```bash
 $ oc get pods
 ```
 
-now we see all our running pods in our namesapce (project) and their status.
+now we see all our running Pods in our namesapce (project) and their status.
 
 Now we will add another pod :
 
@@ -182,7 +182,7 @@ And let's get all the pods again :
 $ oc get pods
 ```
 
-Do you see the same container running on 2 different pods ? good then everything we've done until now has been successful
+Do you see the same container running on 2 different Pods ? good then everything we've done until now has been successful
 
 #### cleaning
 
@@ -207,13 +207,13 @@ For out second pod we will first grep the name and then delete it with another o
 $ oc get pods -o name | grep hello-go-02 | xargs oc delete 
 ```
 
-even though there is only one POD we still ran the command with a grep for it's resource name.This is a good practice because in the real world we would like to delete a single POD or PODs with a command identifier in it's name with out deleting any other PODS by mistake.
+even though there is only one POD we still ran the command with a grep for it's resource name.This is a good practice because in the real world we would like to delete a single Pod or Pods with a command identifier in it's name with out deleting any other PodS by mistake.
 
 ### Creating a Deployment.
 
-A Deployment is Template holder and a set of definitions for PODs (one or more) it is going to deploy from the specified container.
-In order to create a valid template we need to make sure our new PODs contains a label and that our deployment matches that label.  
-More so we need to specified the number of PODs (replicas) we want it to run :
+A Deployment is Template holder and a set of definitions for Pods (one or more) it is going to deploy from the specified container.
+In order to create a valid template we need to make sure our new Pods contains a label and that our deployment matches that label.  
+More so we need to specified the number of Pods (replicas) we want it to run :
 
 ```bash
 $ cat > hello-go-deployment.yaml << EOF
@@ -252,7 +252,7 @@ Now to view that our deployment is successful we can get both the deployment :
 $ oc get deployment
 ```
 
-And the PODs 
+And the Pods 
 
 ```bash
 $ oc get pods
@@ -264,13 +264,13 @@ Try deleting the pods :
 $ oc get pods -o name | grep hello-go | xargs oc delete
 ```
 
-wait 20 seconds and then try to list the pods again :
+wait 20 seconds and then try to list the Pods again :
 
 ```bash
 $ oc get pods
 ```
 
-can you explain why there are still PODs running with a hello-go name ?
+can you explain why there are still Pods running with a hello-go name ?
 
 #### Changing the Replica
 
@@ -359,9 +359,9 @@ and create if :
 $ oc create -f hello-go-service.yaml
 ```
 
-Once the service is created we can access our pods with it the namespace.
+Once the service is created we can access our Pods with it the namespace.
 
-Select One of the pods and rsh into it :
+Select One of the Pods and rsh into it :
 
 ```bash
 $ oc get pods -o name | grep heelo-go | head -1 | xrags oc rsh
