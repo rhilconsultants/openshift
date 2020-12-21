@@ -135,7 +135,8 @@ $ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 #### Logging in to the Internal OpenShift Registry
 Log in to the internal OpenShift registry by running:
 ```bash
-$ REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
+$ UUID="637e"
+$ REGISTRY="default-route-openshift-image-registry.apps.cluster-${UUID}.${UUID}.example.opentlc.com"
 $ podman login -u unused -p $(oc whoami -t) ${REGISTRY}
 ```
 The output should be:

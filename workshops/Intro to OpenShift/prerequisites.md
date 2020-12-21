@@ -9,42 +9,20 @@ In order to start working with OpenShift pipeline you Need to have the following
 
 ## OpenShift Cluster
 
-## OpenShift Pipeline tools   
-
-Before we start we need to download the right tools in order to work with OpenShift
-The tools name is oc
 
 
-### Downloads
+### Bastion login
 
-First create the ${HOME}/bin Directory
+```bash
+$ export OCP_UUID="" # ask the Instructor  
+$ ssh bastion.$UUID.example.opentlc.com:6443
+```
 
-    # mkdir ${HOME}/bin
-    # export PATH="${HOME}/bin:${PATH}"
+### Cluster Login
 
-To download oc all we need to do is to download the latest oc binary with the following command :
-
-    # export OCP_RELEASE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt \
-    | grep 'Name:' | awk '{print $NF}')
-    # wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-${OCP_RELEASE}.tar.gz
-    # tar -xzf openshift-client-linux-${OCP_RELEASE}.tar.gz -C ~/bin/
-
-
-### Auth Complete
-
-In order to utilize the bash auto completion in our environment we need to run a few simple commands which are part of the package itself.  
-
-to generate it just run the following command :
-
-    # oc completion bash > ~/.bash_completion
-
-** Now logout , login and test the command with the TAB key **
-
-### cluster login
-
-    # export OCP_DOMAIN="infra.local"
-    # export OCP_CLUSTER="ocp4"
-    # oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
+```bash
+$ oc login api.cluster-${UUID}.${UUID}.example.opentlc.com:6443
+```
 
 ### tmux
 
@@ -54,18 +32,22 @@ Here is how we do it :
 
 first modify the tmux configuration file :
 
-    # cat > ~/.tmux.conf << EOF
-    unbind C-b
-    set -g prefix C-a
-    bind -n C-Left select-pane -L
-    bind -n C-Right select-pane -R
-    bind -n C-Up select-pane -U
-    bind -n C-Down select-pane -D
-    EOF
+```bash
+cat > ~/.tmux.conf << EOF
+unbind C-b
+set -g prefix C-a
+bind -n C-Left select-pane -L
+bind -n C-Right select-pane -R
+bind -n C-Up select-pane -U
+bind -n C-Down select-pane -D
+EOF
+```
 
 now start a tmux session :
 
-    #tmux new-session -s tkn
+```bash
+tmux new-session -s tkn
+```
 
 next we will split the screen by clicking on CTRL+a then '"'.  
 Now we will Navigate to the top bar by CTRL+UP (the ARROW UP)  
