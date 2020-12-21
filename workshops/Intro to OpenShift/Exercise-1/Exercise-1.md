@@ -127,17 +127,12 @@ We’re now going to work on running it in a container, so we can get one step c
 ### Downloading Build Image
 First we will download an image with go language tools for our OpenShift environment. Outside of this workshop environment, downloading this image is not required.
 
-#### Logging in to OpenShift
-First let’s log in to the cluster (login credentials placed in the sheets file under ocp user and ocp password):
-```bash
-$ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
-```
 #### Logging in to the Internal OpenShift Registry
 Log in to the internal OpenShift registry by running:
 ```bash
 $ UUID="637e"
-$ REGISTRY="default-route-openshift-image-registry.apps.cluster-${UUID}.${UUID}.example.opentlc.com"
-$ podman login -u unused -p $(oc whoami -t) ${REGISTRY}
+$ export REGISTRY="default-route-openshift-image-registry.apps.cluster-${UUID}.${UUID}.example.opentlc.com"
+$ podman login -u $(oc whoami) -p $(oc whoami -t) ${REGISTRY}
 ```
 The output should be:
 ```
@@ -207,7 +202,7 @@ Running the container
 To run the container and expose the internal port to your host, run the command:
 ```bash
 $ export GO_PORT="$(printf 80%02d ${USER#user})"
-$ podman run --name hello-go --rm -p ${GO_PORT}:8080 hello-go
+$ podman run -d --name hello-go --rm -p ${GO_PORT}:8080 hello-go
 ```
 
 After a second or two, the web server should be operational. In another terminal with the environment variable GO_PORT specified, run:
@@ -241,7 +236,7 @@ $ podman stop hello-go
 
 Now log in to the registry, providing your username and password:
 ```bash
-$ podman login -u unused -p $(oc whoami -t) ${REGISTRY}
+$ podman login -u $(oc whoami) -p $(oc whoami -t) ${REGISTRY}
 ```
 The output should be:
 ```
@@ -265,6 +260,13 @@ Push the image to the registry:
 ```bash
 $ podman push ${REGISTRY}/$(oc project -q)/hello-go
 ```
+
+Once the Push has completed we can go ahead and delete all the images :
+
+```bash
+$ podman image list | grep -v REPOSITORY | awk '{print $1}' | xargs podman image rm --force
+```
+
 
 ## Hello Go Application Summary
 Many tools in the Kubernetes ecosystem are written in Go. You might not be a master of the Go language after building and running this application in a container, but you at least know the basics, and could even put ‘Go programmer’ on your resumé now (just kidding!).

@@ -24,6 +24,7 @@ Now let's see our Token
 
 ```bash
 $ oc whoami -t
+$ export NAMESPACE=$(oc project -q)
 ```
 
 (you notice that we did it for our registry login in Exercise 1)
@@ -50,6 +51,7 @@ users:
   user:
     token: 18JdLxcf-f5FlBRPV0nwLGHhLzjTHfmUi5ZRpPKAobM
 ```
+( Do you see something I did not mentioned ? )
 
 As you can see this is a example of a YAML file which contains all the necessary information regarding our current and Past logins.
 
@@ -89,6 +91,7 @@ to generate it just run the following command :
 
 ```bash
 $ oc completion bash > ~/.bash_completion
+$ source  ~/.bash_completion
 ```
 
 ** Now logout , login and test the command with the <TAB><TAB> key **
@@ -105,8 +108,10 @@ to change it back to the original version just remove the $HOME/bin from the PAT
 
 ```bash
 $ TMP_PATH=$(echo $PATH | sed "s/\/home\/${USER}\/bin\://g")
-$ PATH=${TMP_PATH}
+$ export PATH=${TMP_PATH}
 $ unset TMP_PATH
+$ echo $PATH
+home/${USER}/.local/bin:/home/${USER}/.local/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
 ```
 
 Or just logout and login back to the Bastion Server.
@@ -141,12 +146,13 @@ spec:
       image: image-registry.openshift-image-registry.svc:5000/$(oc project -q)/hello-go
       ports:
         - containerPort: 8080
+EOF
 ```
 
 and Let's craete it :
 
 ```bash
-$ oc create -f hello-go-pod.yaml
+$ oc create -f hello-go-pod-01.yaml
 ```
 
 now to see our Pods we need to run oc with a get argument :
@@ -174,6 +180,12 @@ spec:
       image: image-registry.openshift-image-registry.svc:5000/$(oc project -q)/hello-go
       ports:
         - containerPort: 8080
+EOF
+```
+
+And apply it :
+```bash
+$ oc create -f hello-go-pod-02.yaml
 ```
 
 And let's get all the pods again :
@@ -343,10 +355,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: hellogo-service
-  namespace: project-$(oc whoami)
+  namespace: ${NAMESPACE}
 spec:
   selector:
-    app: hellogo
+    app: hello-go
   ports:
     - protocol: TCP
       port: 8080
@@ -358,13 +370,98 @@ and create if :
 ```bash
 $ oc create -f hello-go-service.yaml
 ```
+Once the service is created we can access our Pods within our namespace.
 
-Once the service is created we can access our Pods with it the namespace.
+#### Login the our Pod
+
+First let's create the Image we need :
+
+```bash
+$ mkdir ~/ubi-minimal
+$ cd ~/ubi-minimal
+```
+First create a running script and called it run.sh
+```bash
+$ cat > run.sh << EOF
+#!/bin/bash
+tail -f /dev/null
+EOF
+```
+
+and Make executable :
+```bash
+$ chmod a+x run.sh
+```
+
+We need to create a Dockerfile
+
+```bash
+$ cat > Dockerfile << EOF
+FROM ubi8/ubi-minimal
+MAINTAINER ${USER}
+
+COPY run.sh /usr/bin
+ENTRYPOINT ["/usr/bin/run.sh"]
+EOF
+```
+
+Now create the Pod and push it to out registry :
+
+```bash
+$ buildah bud -f Dockerfile -t ${REGISTRY}/${NAMESPACE}/my-curl .
+$ buildah push ${REGISTRY}/${NAMESPACE}/my-curl
+```
+
+Now we will deploy a pod which allow us to run curl :
+
+
+
+```bash
+$ cd ~/YAML
+$ cat > my-curl-deployment.yaml << EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-curl
+  namespace: ${NAMESPACE}
+spec:
+  selector:
+    matchLabels:
+      app: my-curl
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-curl
+    spec:
+      containers:
+        - name: my-curl
+          image: image-registry.openshift-image-registry.svc:5000/project-user30/my-curl
+EOF
+```
+
+And deploy it :
+
+```bash
+$ oc create -f my-curl-deployment.yaml
+```
+
+and Let's grep our new pod
+
+```bash
+$ oc get pods | grep my-curl
+```
 
 Select One of the Pods and rsh into it :
 
 ```bash
-$ oc get pods -o name | grep heelo-go | head -1 | xrags oc rsh
+$ POD_NAME=$(oc get pods -o name | grep my-curl)
+```
+
+And rsh into it :
+
+```bash
+$ oc rsh ${POD_NAME}
 ```
 
 now run our curl from exercise 1 to our service name 
@@ -414,7 +511,7 @@ $ oc create -f hello-go-route.yaml
 Now let's run the same test only from our Bastion Server :
 
 ```bash
-$ export ROUTE=$(oc get route/hellogo-route -n project-$(oc whoami) -o=jsonpath='{.spec.host}')"
+$ export ROUTE="$(oc get route/hellogo-route -n project-$(oc whoami) -o=jsonpath='{.spec.host}')"
 $ curl http://${ROUTE}/test
 Hello, you requested: /test
 ```

@@ -10,8 +10,6 @@ In the following exercise we will learn how to :
 
 ## create a quota
 
-
-
 A resource quota, defined by a ResourceQuota object, provides constraints that limit aggregate resource consumption per project. It can limit the quantity of objects that can be created in a project by type, as well as the total amount of compute resources and storage that may be consumed by resources in that project.
 
 This guide describes how resource quotas work, how cluster administrators can set and manage resource quotas on a per project basis, and how developers and cluster administrators can view them.
@@ -20,7 +18,7 @@ Let's create a Basic Quota Definition :
 
 ```bash
 $ cd ~/YAML
-$ NAMESPACE=$(oc project -q)
+$ export NAMESPACE=$(oc project -q)
 $ cat > ResourceQuota.yaml << EOF
 apiVersion: v1
 kind: ResourceQuota
@@ -31,7 +29,7 @@ spec:
   hard:
     memory: "2Gi"
     cpu: "20"
-    pods: "3" 
+    pods: "6" 
     replicationcontrollers: "2" 
     secrets: "2" 
     services: "2" 
@@ -102,7 +100,7 @@ spec:
   hard:
     memory: "2Gi"
     cpu: "20"
-    pods: "5" 
+    pods: "7" 
     replicationcontrollers: "2" 
     secrets: "2" 
     services: "2" 
@@ -115,7 +113,11 @@ And ask the Cluster Administrator to apply them :
 $ oc apply -f ResourceQuota.yaml
 ```
 
-We need to wait up to 7 minutes for the quota cycle to complete and reschedule the wait of the Pods with it's limits.
+Now that we have updated the Quota we can scale the pods number to 5 (again)
+
+```bash
+$ oc rollout restart deployment hello-go
+```
 
 run the list of Pods again and see the results:
 
@@ -160,7 +162,7 @@ spec:
   selector:
     matchLabels:
       app: hello-go
-  replicas: 2
+  replicas: 5
   template:
     metadata:
       labels:
@@ -187,7 +189,6 @@ $ oc apply -f hello-go-deployment.yaml
 ```
 
 you can see that the pods have been restarted and now are running within the request and limits we configured.
-
 
 **That is it*** 
 you have completed Exercise 4
