@@ -6,6 +6,12 @@
   * Adding health checks to your sample application
   * Monitoring your sample application
 
+## login to the console.
+
+Open your browser and go to https://console-openshift-console.apps.cluster-${UUID}.${UUID}.example.opentlc.com
+(replace the UUID with the Cluster ID the instructor provided)
+
+
 ### Getting started with a sample
 
 #### Creating a sample application

@@ -14,13 +14,16 @@ In order to start working with OpenShift pipeline you Need to have the following
 ### Bastion login
 
 ```bash
-$ export OCP_UUID="" # ask the Instructor  
+$ export UUID="" # ask the Instructor  
 $ ssh bastion.$UUID.example.opentlc.com:6443
 ```
 
 ### Cluster Login
 
+Once you have logged in to the Bastion server you can connect to the cluster :
+
 ```bash
+$ export UUID=""
 $ oc login api.cluster-${UUID}.${UUID}.example.opentlc.com:6443
 ```
 
@@ -46,7 +49,7 @@ EOF
 now start a tmux session :
 
 ```bash
-tmux new-session -s tkn
+tmux new-session -s ocp
 ```
 
 next we will split the screen by clicking on CTRL+a then '"'.  
