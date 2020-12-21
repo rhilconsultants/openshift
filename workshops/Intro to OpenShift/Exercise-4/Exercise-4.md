@@ -190,6 +190,17 @@ $ oc apply -f hello-go-deployment.yaml
 
 you can see that the pods have been restarted and now are running within the request and limits we configured.
 
+Now delete all the Pods 
+```bash
+$ oc get pods -o name | grep hello-go | xargs oc delete
+```
+
+and check the number of pods again ... see anything diffrent ?
+
+```bash
+$ oc get pods
+```
+
 **That is it*** 
 you have completed Exercise 4
 
