@@ -216,6 +216,10 @@ And you should see the following response:
 Hello, you’ve requested: /testing
 ```
 In the window where container run was executed you will see the logged requests.
+
+```bash
+$ POD_UID=$(podman ps | grep hello-go | awk '{print $1}')
+$ podman logs ${POD_UID}
 ```
 2025/11/12 22:31:00 Starting to listen on port 8080
 2025/11/12 22:31:07 Received request for path: /testing
@@ -264,7 +268,7 @@ $ podman push ${REGISTRY}/$(oc project -q)/hello-go
 Once the Push has completed we can go ahead and delete all the images :
 
 ```bash
-$ podman image list | grep -v REPOSITORY | awk '{print $1}' | xargs podman image rm --force
+$ podman image list | grep -v REPOSITORY | awk '{print $3}' | xargs podman image rm --force
 ```
 
 

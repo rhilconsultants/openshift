@@ -10,7 +10,6 @@ In order to start working with OpenShift pipeline you Need to have the following
 ## OpenShift Cluster
 
 
-
 ### Bastion login
 
 ```bash
@@ -19,13 +18,6 @@ $ ssh bastion.$UUID.example.opentlc.com:6443
 ```
 
 ### Cluster Login
-
-Once you have logged in to the Bastion server you can connect to the cluster :
-
-```bash
-$ export UUID=""
-$ oc login api.cluster-${UUID}.${UUID}.example.opentlc.com:6443
-```
 
 ### tmux
 
@@ -56,6 +48,15 @@ next we will split the screen by clicking on CTRL+a then '"'.
 Now we will Navigate to the top bar by CTRL+UP (the ARROW UP)  
 and create another slip horizontally by running CTRL+a then "%"  
 To navigate between them you can run CTRL+ARROW and the arrows.  
+
+Once you have logged in to the Bastion server you can connect to the cluster :
+
+```bash
+$ export UUID=""
+$ oc login api.cluster-${UUID}.${UUID}.example.opentlc.com:6443
+```
+
+
 
 now you are ready for work :)  
 
