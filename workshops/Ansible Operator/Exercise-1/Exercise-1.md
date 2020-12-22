@@ -125,25 +125,8 @@ We’re now going to work on running it in a container, so we can get one step c
 ## Containerize the Hello Go Application
 
 ### Downloading Build Image
-First we will download an image with go language tools for our OpenShift environment. Outside of this workshop environment, downloading this image is not required.
+First we will download an image with go language tools for our OpenShift environment. If the download fails ensure that you have configured the REGISTRY environment variable as described in Exercise-0:
 
-#### Logging in to OpenShift
-First let’s log in to the cluster (login credentials placed in the sheets file under ocp user and ocp password):
-```bash
-$ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
-```
-#### Logging in to the Internal OpenShift Registry
-Log in to the internal OpenShift registry by running:
-```bash
-$ REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
-$ podman login -u unused -p $(oc whoami -t) ${REGISTRY}
-```
-The output should be:
-```
-Login Succeeded!
-```
-#### Pulling the Image
-To obtain the package run the following command:
 ```bash
 $ podman pull ${REGISTRY}/ubi8/go-toolset
 ```
@@ -235,35 +218,27 @@ $ podman stop hello-go
 
 ## Pushing the Image to the Registry
 
-### Configuring Access to the Registry
-
-
-Now log in to the registry, providing your username and password:
-```bash
-$ podman login -u unused -p $(oc whoami -t) ${REGISTRY}
-```
-The output should be:
-```
-Login Succeeded!
-```
+Log in to the registry as described in Exercise-0.
 
 ### Tag the Application for Our Project
 Tag our application and include the project name where we will acces it from:
 ```bash
-$ podman tag localhost/hello-go ${REGISTRY}/$(oc project -q)/hello-go
+$ podman tag localhost/hello-go ${REGISTRY}/${USER}/hello-go
 ```
 
 Verify that your image was successfully tagged:
 ```bash
 $ podman images
 REPOSITORY                                   TAG      IMAGE ID       CREATED         SIZE
-${REGISTRY}/project-userNN/hello-go    latest   376409b93b2c   3 minutes ago   5.43 MB
+${REGISTRY}/${USER}/hello-go    latest   376409b93b2c   3 minutes ago   5.43 MB
 ```
 ### Push the Image
 Push the image to the registry:
 ```bash
-$ podman push ${REGISTRY}/$(oc project -q)/hello-go
+$ podman push ${REGISTRY}/${USER}/hello-go
 ```
+
+If the workshop is using the Quay registry, log in via the web U/I, select the `hello-go` repository link. In the next window, press the gear (settings symbol) and press the `Make Public` button. Confirm by pressing the `OK` button.
 
 ## Hello Go Application Summary
 Many tools in the Kubernetes ecosystem are written in Go. You might not be a master of the Go language after building and running this application in a container, but you at least know the basics, and could even put ‘Go programmer’ on your resumé now (just kidding!).
