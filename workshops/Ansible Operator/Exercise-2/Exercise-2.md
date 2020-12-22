@@ -18,17 +18,9 @@
 
 In today’s world it is much easier to just run a container then to install an application on our laptops, for that reason Red Hat has developed a container for running Ansible with the Kubernetes module.
 
-### Log in to OpenShift
-First let’s make sure that you are logged in to the cluster. Your login credentials can be found on the attendance sheet under ocp user and ocp password):
-```bash
-$ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
-```
-Create an environment variable pointing to the OpenShift registry:
-```bash
-$ REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
-```
-
 ### Download the ose-ansible Image
+Log in to the registry as specified in Exercise-0.
+
 Download the ose-ansible image for this workshop by running the following command:
 ```bash
 $ podman pull ${REGISTRY}/openshift3/ose-ansible

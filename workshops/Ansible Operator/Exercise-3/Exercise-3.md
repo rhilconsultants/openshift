@@ -31,7 +31,6 @@ $ cp /usr/share/workshop/RPMs/* .
 
 And let’s create a new Dockerfile and edit it:
 ```bash
-$ REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
 $ cat > Dockerfile << EOF
 FROM ${REGISTRY}/openshift3/ose-ansible
 
@@ -77,7 +76,7 @@ spec:
     spec:
       containers:
         - name: hello-go
-          image: image-registry.openshift-image-registry.svc:5000/project-${USER}/hello-go
+          image: ${REGISTRY}/${USER}/hello-go
           ports:
           - containerPort: 8080
   replicas: 1
@@ -97,6 +96,10 @@ $ cat > roles/Hello-go-role/tasks/main.yml <<EOF
     namespace: project-${USER}
 EOF
 ```
+Note that for environments using self-signed certificates the following `k8s` setting can be added:
+```yaml
+    verify_ssl: false
+```
 Modify the variables file Hello-go-role/defaults/main.yml, setting state: present by default.
 ```yaml
 $ cat > roles/Hello-go-role/defaults/main.yml <<EOF
@@ -107,6 +110,7 @@ EOF
 ```
 Now we can run the Ansible playbook to deploy your hello-go application on OpenShift:
 ```bash
+$ oc project ${USER}
 $ podman run --rm --name ose-openshift -tu `id -u` \
     -v ${HOME}/ose-openshift/inventory:/tmp/inventory:Z,ro  \
     -e INVENTORY_FILE=/tmp/inventory \
@@ -133,10 +137,6 @@ deployment.apps/hellogo-pod   1/1     1            1           11m
 
 NAME                                     DESIRED   CURRENT   READY   AGE
 replicaset.apps/hellogo-pod-6888f96bd8   1         1         1       11m
-
-NAME                                      IMAGE REPOSITORY                                                                 TAGS     UPDATED
-imagestream.image.openshift.io/hello-go   default-route-openshift-image-registry.apps-crc.testing/project-${USER}/hello-go   latest   2 minutes ago
-
 ```
 
 Next, let's make it possible to customize the replica count for our hello-go deployment by adding an hellogo_replicas variable to the DeploymentConfig template and setting the variable value dynamically using Ansible.
@@ -161,7 +161,7 @@ spec:
     spec:
       containers:
         - name: hello-go
-          image: image-registry.openshift-image-registry.svc:5000/project-${USER}/hello-go
+          image: ${REGISTRY}/${USER}/hello-go
           ports:
           - containerPort: 8080
   replicas: {{ size }}

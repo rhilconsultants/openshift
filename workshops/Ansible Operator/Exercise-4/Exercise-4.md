@@ -36,6 +36,15 @@ $ chmod +x ${HOME}/bin/operator-sdk
 #### Alternative - Download From the Web
 If your instructor did not download the operator-sdk to /usr/share/workshop/ you can download the binary from the Internet:
 ```bash
+$ mkdir ${HOME}/bin
+$ export ARCH=$(case $(arch) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(arch) ;; esac)
+$ export OS=$(uname | awk '{print tolower($0)}')
+$ export OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/latest/download
+$ curl -Lo ${HOME}/bin/operator-sdk ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
+
+```
+OLD
+```bash
 $ mkdir -p ${HOME}/bin
 $ export RELEASE_VERSION=v1.2.0
 $ curl -L -o operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
@@ -65,8 +74,7 @@ The following workflow is for a new Ansible operator:
 First lets create a project with our new tool. We’ll be building a Hello-go Ansible Operator for the remainder of this tutorial:
 ```bash
 $ cd ~/ose-openshift
-$ mkdir ${USER}-hellogo-operator
-$ cd ${USER}-hellogo-operator
+$ mkdir ${USER}-hellogo-operator && cd ${USER}-hellogo-operator
 $ operator-sdk init --plugins=ansible --domain=example.com
 $ operator-sdk create api --group hellogo --version=v1alpha1 --kind=${USER^}hellogo --generate-role
 ```
@@ -160,30 +168,29 @@ Now let’s look at the directory structure of our new object:
 
 Note: as a convention, when creating Ansible operators, Ansible YAML files use a `.yml` suffix whereas Kubernetes/OpenShift assets use a `.yaml` suffix.
 
-To test the operator we will use another user named {USER}-client on OpenShift in order to test our deployment by consuming the hello-go service from it and not through the Ansible playbook.
+To test the operator on OpenShift we will use a different user named `{USER}-client`.
 
 
 ## Building the Ansible Role
 
-Now that the skeleton files have been created, we can take the role from Exercise number 3 and apply if through the Operator.
+Now that the skeleton files have been created, we can take the role files from Exercise-3 and apply them using the Operator.
 
 First let’s take the templates file from our previous exercise and change the name to: '{{ ansible_operator_meta.name }}-hellogo'
 ```bash
 $ sed "s/hellogo-pod/\'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
-    ~/ose-openshift/roles/Hello-go-role/templates/hello-go-deployment.yml.j2 \
+    ../roles/Hello-go-role/templates/hello-go-deployment.yml.j2 \
     > roles/${USER}hellogo/templates/hello-go-deployment.yml.j2
 ```
 Now we will copy the task's main.yml from our previous exercise and remove the ‘state’ section as we will always want it as **present**. We will also change the namespace value to be read from the metadata so that it is not hard-coded:
 ```bash
 $ sed -e "s/namespace:.*/namespace: \'\{\{\ ansible_operator_meta\.namespace\ \}\}\'/" \
-    -e "/state:/d" ~/ose-openshift.bad/roles/Hello-go-role/tasks/main.yml \
+    -e "/state:/d" ../roles/Hello-go-role/tasks/main.yml \
     > roles/${USER}hellogo/tasks/main.yml
 ```
 The next step is to update the default values:
 ```bash
 $ cat > roles/${USER}hellogo/defaults/main.yml <<EOF
 ---
-# defaults file for ${USER}hellogo
 state: present
 size: 3
 EOF
@@ -194,16 +201,16 @@ First copy the service to the templates directory after change the hardcoded nam
 ```bash
 $ sed -e "s/name:.*/name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
     -e "s/namespace:.*/namespace: \'\{\{\ ansible_operator_meta\.namespace\ \}\}\'/" \
-      ~/ose-openshift/hello-go-service.yaml > roles/${USER}hellogo/templates/hello-go-service.yml.j2
+      ../hello-go-service.yaml > roles/${USER}hellogo/templates/hello-go-service.yml.j2
 ```
 Now copy the route after removing hardcoded values:
 ```bash
 $ sed -e "0,/name:.*/s//name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
     -e "s/namespace:.*/namespace: \'\{\{\ ansible_operator_meta\.namespace\ \}\}\'/" \
     -e "/to:/,\$s/name:.*/name: \'\{\{\ ansible_operator_meta\.name\ \}\}-hellogo\'/" \
-    ~/ose-openshift/hello-go-route.yaml > roles/${USER}hellogo/templates/hello-go-route.yml.j2
+    ../hello-go-route.yaml > roles/${USER}hellogo/templates/hello-go-route.yml.j2
 ```
-Add an Ansible tasks that will read these templates:
+Add Ansible tasks that will read the `service` and `route` templates:
 ```yaml
 $ cat >> roles/${USER}hellogo/tasks/main.yml  <<EOF
 - name: set hello-go service
@@ -217,11 +224,11 @@ $ cat >> roles/${USER}hellogo/tasks/main.yml  <<EOF
     namespace:  '{{ ansible_operator_meta.namespace }}'
 EOF
 ```
-In addition, our operator will need permission to access the service and route objects. Add the following to the first **resources** section of `config/rbac/role.yaml`:
+Our operator will need permission to access the service and route objects. Add the following to the first **resources** section of `config/rbac/role.yaml`:
 
     - services
 
-Add the following section to the end of the `config/rbac/role.yaml`:
+Add the following section to the end of the `config/rbac/role.yaml` file:
 
       - apiGroups:
           - route.openshift.io
@@ -237,47 +244,32 @@ Add the following section to the end of the `config/rbac/role.yaml`:
           - watch
 
 ## Building and Running the Operator
-### Log in to OpenShift
-Log into OpenShift (if you have not already done so):
-```bash
-$ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
-```
-Create an environment variable pointing to the OpenShift registry:
-```bash
-$ REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
-```
-Log in to the local registry:
-```bash
-podman login -u unused -p $(oc whoami -t) ${REGISTRY}
-```
 
 ### Build and Push the Image
+Log into OpenShift and to the image registry as instructed in Exercise-0.
 
-The generated Makfiles uses the "docker" command to build and push images. We will change the build to use the "podman" command, but will not change the Makefile target names:
+The Makfile generated by the `operator-sdk` uses the "docker" command to build and push images. We will change the build to use the "podman" command, but we will not change the Makefile target names:
 ```bash
 $ sed -i "s/docker /podman /g" Makefile
 ```
-For this workshop, we will use the same namespace as in the previous exercises:
+For this workshop, we will use the same namespace as in the previous exercises and we will expose /metrics endpoint without any authn/z:
 ```bash
-$ sed -i "s/namespace:.*/namespace: project-${USER}/" config/default/kustomization.yaml
+$ sed -i -e "s/namespace:.*/namespace: project-${USER}/" \
+    -e "s/namePrefix:.*/namePrefix: project-user1-operator-/" \
+    -e "s/- manager_auth_proxy_patch.yaml/#&/" config/default/kustomization.yaml
 ```
 The first step is to build the operator image:
 ```bash
-$ make docker-build IMG=${REGISTRY}/project-${USER}/hellogo-operator:v0.0.1
+$ make docker-build IMG=${REGISTRY}/${USER}/hellogo-operator:v0.0.1
 ```
 The next step is to push the operator image to the registry:
 ```bash
-$ make docker-push IMG=${REGISTRY}/project-${USER}/hellogo-operator:v0.0.1
+$ make docker-push IMG=${REGISTRY}/${USER}/hellogo-operator:v0.0.1
 ```
 Note that the above two commands can be combined using: make docker-build docker-push IMG=...
 
-### Install the CRD
+If the Quay registry is being used for this workshop, log in via the web UI, select the `hellogo-operator` repository, press on the gear icon on the page that opened, press the `Make Public` button and then press `OK` in the pop-up. 
 
-Before running the operator, OpenShift needs to know about the new custom resource definition 
-that the operator will be watching, by running the following command:
-```bash
-$ make install
-```
 ### Ways to Run an Operator
 
 Once the CRD is registered, there are two ways to run the Operator:
@@ -288,9 +280,9 @@ If you are interested in learning more about running the Operator using operator
 
 ### Deploy the Operator
 
-Create a namespace ${USER}-hellogo-operator-system, install the RBAC configuration and create a Kubernetes Deployment (for this workshop: using the OpenShift internal name of our image) by running:
+Create a namespace ${USER}-hellogo-operator-system, create the CRC, install the RBAC configuration and create a Kubernetes Deployment by running:
 ```bash
-$ make deploy IMG=image-registry.openshift-image-registry.svc:5000/project-${USER}/hellogo-operator:v0.0.1
+$ make deploy IMG=${REGISTRY}/${USER}/hellogo-operator:v0.0.1
 ```
 Verify that the operator is running by checking the output of:
 ```bash
@@ -299,7 +291,7 @@ $ oc get all -n project-${USER}
 The output should be of the form:
 
     NAME                                                               READY   STATUS    RESTARTS   AGE
-    pod/${USER}-hellogo-operator-controller-manager-55bfdf7795-drwvm   2/2     Running   0          4m55s
+    pod/${USER}-hellogo-operator-controller-manager-55bfdf7795-drwvm   1/1     Running   0          4m55s
 
     NAME                                                                  TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
     service/${USER}-hellogo-operator-controller-manager-metrics-service   ClusterIP   172.25.195.190   <none>        8443/TCP   4m55s
@@ -313,7 +305,7 @@ The output should be of the form:
 ### Create RBAC Rules for the Custom Resource
 Create a read/write RBAC role for the custom resource by running:
 ```bash
-$ oc create -f config/rbac/{USER}hellogo_editor_role.yaml
+$ oc create -f config/rbac/${USER}hellogo_editor_role.yaml
 ```
 Allow a user to access the RBAC role:
 ```bash
@@ -333,7 +325,7 @@ metadata:
 spec:
   foo: bar
 ````
-Change "foo: bar" to "size: 3" and we will deploy 3 hellogo pods, using our operator:
+In order to instantiate 3 hellogo pods using the operator, change "foo: bar" to "size: 3":
 ```yaml
 $ cat config/samples/hellogo_v1alpha1_${USER}hellogo.yaml
 apiVersion: hellogo.example.com/v1alpha1
@@ -351,10 +343,7 @@ Create a new project for our testing:
 ```bash
 $ oc new-project ${USER}-client
 ```
-Because we are using the internal OpenShift registry, we need to allow access to the hello-go image from the new project:
-```bash
-$ oc adm policy add-role-to-user system:image-puller system:serviceaccount:${USER}-client:default --namespace=project-${USER}
-```
+
 Now run use the “oc create” command to create the proper CR:
 ```bash
 $ oc create -f config/samples/hellogo_v1alpha1_${USER}hellogo.yaml
@@ -430,7 +419,7 @@ The pods will terminate and disappear.
 
 ### Delete the Operator
 
-Log in as a cluster administrator and delete the operator using:
+Log in to OpenShift as ${USER} and delete the operator using:
 ```bash
 $ make undeploy
 ```
@@ -438,8 +427,5 @@ Finally, verify that the operator is no longer running.
 ```bash 
 $ oc get deployment
 ```
-## Extra Tasks 
-
-  - Update our hello-go code to use mariadb database and update our operator with mariadb dependency 
 
 That is it, you are all done !!!
