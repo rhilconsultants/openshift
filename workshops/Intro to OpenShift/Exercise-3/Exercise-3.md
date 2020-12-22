@@ -132,6 +132,7 @@ $ cd ~/YAML
 now let's create our pod's YAML definition file :
 
 ```bash
+$ export NAMESPACE=$(oc project -q)
 $ cat > hello-go-pod-01.yaml << EOF
 apiVersion: v1
 kind: Pod
@@ -139,11 +140,11 @@ metadata:
   name: hello-go-01
   labels:
     app: hello-go
-  namespace: project-${USER}
+  namespace: ${NAMESPACE}
 spec:
   containers:
     - name: hello-go
-      image: image-registry.openshift-image-registry.svc:5000/$(oc project -q)/hello-go
+      image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/hello-go
       ports:
         - containerPort: 8080
 EOF
@@ -173,11 +174,11 @@ metadata:
   name: hello-go-02
   labels:
     app: hello-go
-  namespace: project-${USER}
+  namespace: ${NAMESPACE}
 spec:
   containers:
     - name: hello-go
-      image: image-registry.openshift-image-registry.svc:5000/$(oc project -q)/hello-go
+      image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/hello-go
       ports:
         - containerPort: 8080
 EOF
@@ -233,7 +234,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hello-go
-  namespace: project-$(oc whoami)
+  namespace: ${NAMESPACE}
 spec:
   selector:
     matchLabels:
@@ -246,7 +247,7 @@ spec:
     spec:
       containers:
         - name: hello-go
-          image: image-registry.openshift-image-registry.svc:5000/$(oc project -q)/hello-go
+          image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/hello-go
           ports:
             - containerPort: 8080
 EOF
@@ -301,7 +302,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hello-go
-  namespace: project-$(oc whoami)
+  namespace: ${NAMESPACE}
 spec:
   selector:
     matchLabels:
@@ -314,7 +315,7 @@ spec:
     spec:
       containers:
         - name: hello-go
-          image: image-registry.openshift-image-registry.svc:5000/$(oc project -q)/hello-go
+          image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/hello-go
           ports:
             - containerPort: 8080
 EOF
@@ -436,7 +437,7 @@ spec:
     spec:
       containers:
         - name: my-curl
-          image: image-registry.openshift-image-registry.svc:5000/project-user30/my-curl
+          image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/my-curl
 EOF
 ```
 
@@ -490,7 +491,7 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: hellogo-route
-  namespace: project-${USER}
+  namespace: ${NAMESPACE}
 spec:
   port:
     targetPort: 8080
@@ -511,7 +512,7 @@ $ oc create -f hello-go-route.yaml
 Now let's run the same test only from our Bastion Server :
 
 ```bash
-$ export ROUTE="$(oc get route/hellogo-route -n project-$(oc whoami) -o=jsonpath='{.spec.host}')"
+$ export ROUTE="$(oc get route/hellogo-route -n ${NAMESPACE} -o=jsonpath='{.spec.host}')"
 $ curl http://${ROUTE}/test
 Hello, you requested: /test
 ```
