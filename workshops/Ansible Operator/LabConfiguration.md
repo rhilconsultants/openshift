@@ -24,19 +24,21 @@ $ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 Configure environment variables:
 ```bash
 $ QUAY_NAMESPACE="quay-enterprise"
-$ QUAY_NAME="quay"
+$ QUAY_NAME="registry"
 ```
 Create a project named `quay-enterprise`:
 ```bash
-$ oc create project quay-enterprise
+$ oc new-project ${QUAY_NAMESPACE}
 ```
 Log in to quay.io using the Red Hat provided password and create a secret:
 ```bash
-$ docker login -u="redhat+quay" -p="<REDACTED>" quay.io
-$ oc create secret generic redhat-pull-secret \
---from-file=".dockerconfigjson=${HOME}/.docker/config.json" --type='kubernetes.io/dockerconfigjson'
+$ podman login -u="redhat+quay" -p="<REDACTED>" quay.io
+$ oc create secret generic redhat-pull-secret --from-file=".dockerconfigjson=${XDG_RUNTIME_DIR}/containers/auth.json" --type='kubernetes.io/dockerconfigjson'
 ```
 Install the Quay operator via the Web UI to the project named `quay-enterprise`.
+![QuayInstall](images/redhatquay.png)
+Wait for `Status` state `Succeeded`:
+![WaitForSucceed](images/redhatquaysucceeded.png)
 
 Create the Quay instance by running the following:
 
@@ -61,35 +63,34 @@ $ REGISTRY=$(echo ${QUAY_NAME}-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN})
 $ echo ${REGISTRY}
 ```
 
-Add the registry as "trusted" in the file `/etc/containers/registries.conf` as follows:
-### CRC
+### Setting the Registry as Trusted
+Check that all nodes are in a `Ready` state:
+```bash
+$ oc get nodes
+```
+Add the registry as trusted:
+```bash
+$ oc patch --type=merge --patch="{\"spec\":{\"registrySources\":{\"insecureRegistries\":[\"${REGISTRY}\"]}}}" image.config.openshift.io/cluster
+```
+The machine-config-operator will push this change to all nodes. As the change is pushed out, nodes will change status to `NotReady,SchedulingDisabled`. Wait for all nodes to be `Ready`.
+
+The default login for quay is quay/password.
+### CRC - Setting the Registry as Trusted
 ```bash
  ssh -i ~/.crc/machines/crc/id_rsa -o StrictHostKeyChecking=no core@$(crc ip) << EOF
   sudo echo " " | sudo tee -a /etc/containers/registries.conf
   sudo echo "[[registry]]" | sudo tee -a /etc/containers/registries.conf
   sudo echo "  location = \"${REGISTRY}\"" | sudo tee -a /etc/containers/registries.conf
   sudo echo "  insecure = true" | sudo tee -a /etc/containers/registries.conf
-  sudo echo "  blocked = false" | sudo tee -a /etc/containers/registries.conf
-  sudo echo "  mirror-by-digest-only = false" | sudo tee -a /etc/containers/registries.conf
   sudo echo "  prefix = \"\"" | sudo tee -a /etc/containers/registries.conf
   sudo systemctl restart crio
   sudo systemctl restart kubelet
 EOF
 ```
-### Other OpenShift
-```
-[registries.insecure]
-registries = ['<name of registry from above>']
-```
 
-You may need to restart the following services:
-```bash
-# systemctl restart crio
-# systemctl restart kubelet
-```
-
-Log into Quay (quay/password) and create accounts for course users, "ubi8" and "openshift3".
 ## Downloading Red Hat Images
+Log in to the registry and create accounts for course users(1-n), "ubi8" and "openshift3".
+
 Use the step below for the registry that will be used for the workshop.
 ### Log in to the Red Hat Registry
 ```bash
