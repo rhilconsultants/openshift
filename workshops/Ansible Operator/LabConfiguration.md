@@ -21,21 +21,27 @@ $ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 ```
 
 ## Installing Quay
-Install the Quay operator via the Web UI to a project named `quay-enterprise`.
-
+Configure environment variables:
+```bash
+$ QUAY_NAMESPACE="quay-enterprise"
+$ QUAY_NAME="quay"
+```
+Create a project named `quay-enterprise`:
+```bash
+$ oc create project quay-enterprise
+```
 Log in to quay.io using the Red Hat provided password and create a secret:
 ```bash
 $ docker login -u="redhat+quay" -p="<REDACTED>" quay.io
 $ oc create secret generic redhat-pull-secret \
 --from-file=".dockerconfigjson=${HOME}/.docker/config.json" --type='kubernetes.io/dockerconfigjson'
 ```
+Install the Quay operator via the Web UI to the project named `quay-enterprise`.
 
 Create the Quay instance by running the following:
 
 ```bash
 $ CLUSTER_DOMAIN=$(oc get route -n openshift-authentication oauth-openshift -o=jsonpath='{.spec.host}' | sed "s/oauth-openshift\.//")
-$ QUAY_NAME="quay"
-$ QUAY_NAMESPACE="quay-enterprise"
 $ oc create -f - <<EOF
 apiVersion: redhatcop.redhat.io/v1alpha1
 kind: QuayEcosystem
@@ -46,12 +52,12 @@ spec:
   quay:
     imagePullSecretName: redhat-pull-secret
     externalAccess:
-      hostname: ${QUAY_NAME}-quay-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN}
+      hostname: ${QUAY_NAME}-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN}
 EOF
 ```
 Obtain the name of the registry that will be used during the workshop:
 ```bash
-$ REGISTRY=$(echo ${QUAY_NAME}-quay-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN})
+$ REGISTRY=$(echo ${QUAY_NAME}-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN})
 $ echo ${REGISTRY}
 ```
 
