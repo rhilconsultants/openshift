@@ -24,8 +24,13 @@ $ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 Configure environment variables:
 ```bash
 $ QUAY_NAMESPACE="quay-enterprise"
-$ QUAY_NAME="registry"
+$ QUAY_NAME="quay"
+$ CLUSTER_DOMAIN=$(oc get route -n openshift-authentication oauth-openshift -o=jsonpath='{.spec.host}' | sed "s/oauth-openshift\.//")
+$ REGISTRY="${QUAY_NAME}-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN}"
+$ echo ${REGISTRY}
 ```
+
+## Install the Quay Operator
 Create a project named `quay-enterprise`:
 ```bash
 $ oc new-project ${QUAY_NAMESPACE}
@@ -40,10 +45,23 @@ Install the Quay operator via the Web UI to the project named `quay-enterprise`.
 Wait for `Status` state `Succeeded`:
 ![WaitForSucceed](images/redhatquaysucceeded.png)
 
+### Setting the Registry as Trusted
+Note that Quay does not appear to recover from this change, therefore, it must be run before Quay is created.
+
+Check that all nodes are in a `Ready` state:
+```bash
+$ oc get nodes
+```
+Add the registry as trusted:
+```bash
+$ oc patch --type=merge --patch="{\"spec\":{\"registrySources\":{\"insecureRegistries\":[\"${REGISTRY}\"]}}}" image.config.openshift.io/cluster
+```
+The machine-config-operator will push this change to all nodes. As the change is pushed out, nodes will change status to `NotReady,SchedulingDisabled`. Wait for all nodes to be `Ready`.
+
+### Create the Quay Instance
 Create the Quay instance by running the following:
 
 ```bash
-$ CLUSTER_DOMAIN=$(oc get route -n openshift-authentication oauth-openshift -o=jsonpath='{.spec.host}' | sed "s/oauth-openshift\.//")
 $ oc create -f - <<EOF
 apiVersion: redhatcop.redhat.io/v1alpha1
 kind: QuayEcosystem
@@ -57,25 +75,12 @@ spec:
       hostname: ${QUAY_NAME}-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN}
 EOF
 ```
-Obtain the name of the registry that will be used during the workshop:
-```bash
-$ REGISTRY=$(echo ${QUAY_NAME}-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN})
-$ echo ${REGISTRY}
-```
 
-### Setting the Registry as Trusted
-Check that all nodes are in a `Ready` state:
-```bash
-$ oc get nodes
-```
-Add the registry as trusted:
-```bash
-$ oc patch --type=merge --patch="{\"spec\":{\"registrySources\":{\"insecureRegistries\":[\"${REGISTRY}\"]}}}" image.config.openshift.io/cluster
-```
-The machine-config-operator will push this change to all nodes. As the change is pushed out, nodes will change status to `NotReady,SchedulingDisabled`. Wait for all nodes to be `Ready`.
+
+
 
 The default login for quay is quay/password.
-### CRC - Setting the Registry as Trusted
+### CRC - Setting the Registry as Trusted (ony for CRC)
 ```bash
  ssh -i ~/.crc/machines/crc/id_rsa -o StrictHostKeyChecking=no core@$(crc ip) << EOF
   sudo echo " " | sudo tee -a /etc/containers/registries.conf
@@ -127,7 +132,7 @@ $ skopeo copy docker://registry.redhat.io/openshift3/ose-ansible docker://${REGI
 $ podman login -u ubi8 -p ubi8ubi8 ${REGISTRY}
 $ skopeo copy docker://registry.redhat.io/ubi8/go-toolset docker://${REGISTRY}/ubi8/go-toolset
 ```
-Manually set the `Repository Visibility` to `public`.
+**IMPORTANT:** Manually set the `Repository Visibility` to `public` for both images.
 
 <!--
 The image quay.io/operator-framework/ansible-operator is downloaded in Exercise-4. This image appears to download:
