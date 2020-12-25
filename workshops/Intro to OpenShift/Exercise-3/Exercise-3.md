@@ -132,7 +132,6 @@ $ cd ~/YAML
 now let's create our pod's YAML definition file :
 
 ```bash
-$ export NAMESPACE=$(oc project -q)
 $ cat > hello-go-pod-01.yaml << EOF
 apiVersion: v1
 kind: Pod
@@ -192,8 +191,16 @@ $ oc create -f hello-go-pod-02.yaml
 And let's get all the pods again :
 
 ```bash
-$ oc get pods
+$ oc get pods 
 ```
+
+If for any reason you do not see the Pods running then let's see why.
+
+```bash
+$ oc get pods -o name | grep hello-go-02 | xargs oc describe 
+```
+
+The description should give us an indication about why the Pods are not running  
 
 Do you see the same container running on 2 different Pods ? good then everything we've done until now has been successful
 
