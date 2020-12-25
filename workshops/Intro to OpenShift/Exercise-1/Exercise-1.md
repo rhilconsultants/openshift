@@ -130,7 +130,7 @@ First we will download an image with go language tools for our OpenShift environ
 #### Logging in to the Internal OpenShift Registry
 Log in to the internal OpenShift registry by running:
 ```bash
-$ UUID="637e"
+$ export UUID="" ### from the Instructor 
 $ export REGISTRY="default-route-openshift-image-registry.apps.cluster-${UUID}.${UUID}.example.opentlc.com"
 $ podman login -u $(oc whoami) -p $(oc whoami -t) ${REGISTRY}
 ```
