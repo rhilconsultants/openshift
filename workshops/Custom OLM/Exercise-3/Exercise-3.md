@@ -2,7 +2,15 @@
 
 ## Prerequisites
 
-### Install the opm Command
+### Option 1 Copy the opm Command
+If the host that you are working on is has the same OS and processor as that running OpenShift, you can copy the `opm` command from a running container:
+```bash
+$ mkdir -p ${HOME}/bin
+$ oc -n openshift-marketplace cp $(oc get pods -n openshift-marketplace | awk '/redhat-operators/{print $1}'):/usr/bin/opm $HOME/bin/opm
+$ chmod +x ${HOME}/bin/opm
+```
+
+### Option 2: build the opm Command
 Build the **opm** command as follows:
 ```bash
 $ cd /tmp
@@ -36,16 +44,16 @@ We will now create bundle manifests by running `make bundle` in the root of the 
 ```bash
 $ make bundle IMG=${REGISTRY}/${USER}/hellogo-operator:v0.0.1
 ```
-When prompted enter required values.
+When prompted enter required values. Replace "Usern" with your ${USER}.
 
 Display name for the operator (required): 
-> Hellogo Operator
+> Usern Hellogo Operator
 
 Description for the operator (required): 
 > Hellogo HTTP request server
 
 Provider's name for the operator (required): 
-> hellogo
+> Usern
 
 Any relevant URL for the provider name (optional): 
 > 
@@ -54,7 +62,7 @@ Comma-separated list of keywords for your operator (required):
 > hellogo
 
 Comma-separated list of maintainers and their emails (e.g. 'name1:email1, name2:email2') (required): 
-> user123@devnull    
+> usern@devnull    
 
 
 A director named `bundle` is created. The `bundle` directory includes a ClusterServiceVersion and the CRDs that define the owned APIs of the CSV. It also includes an annotations file in its metadata folder which defines some higher level aggregate data that helps to describe the format and package information about how the bundle should be added into an index of bundles.
@@ -105,7 +113,13 @@ Add an index as follows:
 $ opm -c podman index add --bundles ${REGISTRY}/${USER}/hellogo-operator-bundle:v0.0.1 --tag ${REGISTRY}/${USER}/registry-index:0.0.1
 $ podman push ${REGISTRY}/${USER}/registry-index:0.0.1
 ```
-If the Quay registry is being used for this workshop, log in via the web UI, select the `registry-index` repository, press on the gear icon on the page that opened, press the `Make Public` button and then press `OK` in the pop-up. 
+If the Quay registry is being used for this workshop, log in via the web UI, select the `registry-index` repository, press on the gear icon on the page that opened, press the `Make Public` button and then press `OK` in the pop-up.
+
+If we are using the internal OpenShift registry, we must allow the default service account in the openshift-marketplace to pull images from the ${USER} respository in the registry by running:
+```bash
+$ oc policy add-role-to-group system:image-puller system:serviceaccounts:openshift-marketplace --namespace=${USER}
+$ oc policy add-role-to-group system:image-puller system:serviceaccounts:openshift-operators --namespace=${USER}
+```
 
 The resulting image is referred to as an "Index". It is an image which contains a database of pointers to operator manifest content that is easily queriable via an included API that is served when the container image is run.
 
@@ -173,7 +187,7 @@ $ oc get pods -n openshift-marketplace | grep ${USER}
 ## Create an Instance of the Application
 Create a new project for the application:
 ```bash
-$ oc new-project ${USER}-client
+$ oc project ${USER}-client
 ```
 Create an instance of the application using the generated custom resource:
 ```bash
@@ -185,21 +199,23 @@ $ oc get all
 ```
 When all pods are running, get the route and test the application:
 ```bash
-$ ROUTENAME=$(oc get route ${USER}hellogo-sample -o=jsonpath='{.spec.host}')
-$ curl ${ROUTENAME}/test
+$ ROUTENAME=$(oc get routes | awk '/sample/{print $2}')
+$ curl ${ROUTENAME}/testing-app-created-by-my-operator-via-OLM
 ```
 The output should be:
 ```
-Hello, you requested: /test
+Hello, you requested: /testing-app-created-by-my-operator-via-OLM
 ```
 ## Cleanup
+### Application
 Erase the application:
 ```bash
 $ oc delete -n ${USER}-client -f config/samples/hellogo_v1alpha1_${USER}hellogo.yaml
 ```
-Erase the subscription:
+### Subscription
+Log back into OpenShift using your ${USER} account and erase the subscription by running:
 ```bash
-oc delete -f - <<EOF
+$ oc delete -f - <<EOF
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
@@ -207,18 +223,19 @@ metadata:
   namespace: openshift-operators
 EOF
 ```
-
-Get the name of the operator instance:
+### Cluster Service Version
+Get the name of the cluster service version:
 ```bash
 $ oc get clusterserviceversion | grep ${USER}
 ```
-Delete the operator instance:
+Delete the cluster service version instance using the version specified above:
 ```bash
-$ oc delete clusterserviceversion ${USER}-hellogo-operator.v0.0.1 -n openshift-operators
+$ oc delete -n openshift-operators clusterserviceversion ${USER}-hellogo-operator.v0.0.1
 ```
+### Catalog Source
 Delete the catalog source:
 ```bash
-oc delete -f - <<EOF
+$ oc delete -f - <<EOF
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
