@@ -20,7 +20,33 @@ Ensure that users configure environment variables for login to OpenShift:
 $ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 ```
 
-## Installing Quay
+## Registry for the Workshop
+The workshop is registry agnostic. That being said, whatever registry is use, it must be accessible and specified as unsecure in OpenShift.
+### Option 1: Using the OpenShift Internal Registry
+#### Exposing the Internal Registry
+Set up an environment variable REGISTRY as follows:
+```bash
+REGISTRY="$(oc get routes -n openshift-image-registry -o json | jq -r '.items[].spec | select(.to.name=="image-registry") | .host')"
+```
+Check the value of `REGISTRY`. If it was not set, you may need to expost the registry service before running the command.
+
+#### Setting the Registry as Trusted
+We will set the external registry name as trusted so that it can be used internally as well.
+
+Check that all nodes are in a `Ready` state:
+```bash
+$ oc get nodes
+```
+Add the registry as trusted:
+```bash
+$ oc patch --type=merge --patch="{\"spec\":{\"registrySources\":{\"insecureRegistries\":[\"${REGISTRY}\"]}}}" image.config.openshift.io/cluster
+```
+The machine-config-operator will push this change to all nodes. As the change is pushed out, nodes will change status to `NotReady,SchedulingDisabled`. Wait for all nodes to be `Ready`.
+#### Configuring a Secret
+TBD
+
+### Option 2: Using a Quay Registry
+#### Installing Quay
 Configure environment variables:
 ```bash
 $ QUAY_NAMESPACE="quay-enterprise"
@@ -30,7 +56,7 @@ $ REGISTRY="${QUAY_NAME}-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN}"
 $ echo ${REGISTRY}
 ```
 
-## Install the Quay Operator
+#### Install the Quay Operator
 Create a project named `quay-enterprise`:
 ```bash
 $ oc new-project ${QUAY_NAMESPACE}
@@ -45,7 +71,7 @@ Install the Quay operator via the Web UI to the project named `quay-enterprise`.
 Wait for `Status` state `Succeeded`:
 ![WaitForSucceed](images/redhatquaysucceeded.png)
 
-### Setting the Registry as Trusted
+#### Setting the Registry as Trusted
 Note that Quay does not appear to recover from this change, therefore, it must be run before Quay is created.
 
 Check that all nodes are in a `Ready` state:
@@ -58,7 +84,7 @@ $ oc patch --type=merge --patch="{\"spec\":{\"registrySources\":{\"insecureRegis
 ```
 The machine-config-operator will push this change to all nodes. As the change is pushed out, nodes will change status to `NotReady,SchedulingDisabled`. Wait for all nodes to be `Ready`.
 
-### Create the Quay Instance
+#### Create the Quay Instance
 Create the Quay instance by running the following:
 
 ```bash
@@ -80,7 +106,7 @@ EOF
 
 
 The default login for quay is quay/password.
-### CRC - Setting the Registry as Trusted (ony for CRC)
+#### CRC - Setting the Registry as Trusted (ony for CRC)
 ```bash
  ssh -i ~/.crc/machines/crc/id_rsa -o StrictHostKeyChecking=no core@$(crc ip) << EOF
   sudo echo " " | sudo tee -a /etc/containers/registries.conf

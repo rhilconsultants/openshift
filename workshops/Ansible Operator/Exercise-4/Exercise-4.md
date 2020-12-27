@@ -43,13 +43,6 @@ $ export OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/
 $ curl -Lo ${HOME}/bin/operator-sdk ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
 
 ```
-OLD
-```bash
-$ mkdir -p ${HOME}/bin
-$ export RELEASE_VERSION=v1.2.0
-$ curl -L -o operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
-$ chmod +x ${HOME}/bin/operator-sdk
-```
 
 Now make sure you are using the right operator-sdk:
 ```bash
@@ -255,7 +248,7 @@ $ sed -i "s/docker /podman /g" Makefile
 For this workshop, we will use the same namespace as in the previous exercises and we will expose /metrics endpoint without any authn/z:
 ```bash
 $ sed -i -e "s/namespace:.*/namespace: project-${USER}/" \
-    -e "s/namePrefix:.*/namePrefix: project-user1-operator-/" \
+    -e "s/namePrefix:.*/namePrefix: project-${USER}-operator-/" \
     -e "s/- manager_auth_proxy_patch.yaml/#&/" config/default/kustomization.yaml
 ```
 The first step is to build the operator image:
@@ -335,13 +328,20 @@ metadata:
 spec:
   size: 3
 ```
-First login to OpenShift with the ${USER}-client:
+### Image Permission
+If we are using the internal OpenShift registry, we must allow the default service account in the project that we will use to pull images from the ${USER} respository in the registry by running:
+```bash
+$ oc project ${USER}-client
+$ oc policy add-role-to-group system:image-puller system:serviceaccounts:${USER}-client --namespace=${USER}
+```
+
+Log in to OpenShift with the ${USER}-client:
 ```bash
 $ oc login --username ${USER}-client --password 'OcpPa$$w0rd' api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 ```
 Create a new project for our testing:
 ```bash
-$ oc new-project ${USER}-client
+$ oc project ${USER}-client
 ```
 
 Now run use the “oc create” command to create the proper CR:
@@ -358,14 +358,22 @@ NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
 ${USER}hellogo-sample-hellogo   3/3     3            3           43s
 ```
 ## TESTING
-
+Verify that the route was created:
+```bash
+$ oc get routes
+```
+The output should be of the form:
+```
+NAME                          HOST/PORT                                                   PATH   SERVICES                      PORT   TERMINATION   WILDCARD
+${USER}hellogo-sample-hellogo   ${USER}hellogo-sample-hellogo-${USER}-client.apps-crc.testing          ${USER}hellogo-sample-hellogo   8080                 None
+```
 Test your hello-go application with the newly created route:
 ```bash
-$ curl $(oc get routes | awk '/hellog/{print $2}')/testing
+$ curl $(oc get routes | awk '/hellog/{print $2}')/testing-app-created-by-my-operator
 ```
 The output should be:
 ```
-Hello, you requested: /testing
+Hello, you requested: /testing-app-created-by-my-operator
 ```
 ## Custom Variables
 
