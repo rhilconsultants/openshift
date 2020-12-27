@@ -531,3 +531,5 @@ Can you explain why ?
 ## Command line interface Summery
 
 In this exercise we create the very basic resource we need to run a stateless application. We have created a Pod and a matching deployment. followed by a service and a route to expose everything to the world.
+
+If you have more time you can move on to [Extra](Exercise-3-Extra.md) 
