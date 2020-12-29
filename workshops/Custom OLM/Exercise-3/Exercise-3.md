@@ -10,7 +10,7 @@ $ oc -n openshift-marketplace cp $(oc get pods -n openshift-marketplace | awk '/
 $ chmod +x ${HOME}/bin/opm
 ```
 
-### Option 2: build the opm Command
+### Option 2: Build the opm Command
 Build the **opm** command as follows:
 ```bash
 $ cd /tmp
@@ -97,7 +97,7 @@ Due to a potential change in annotation expections, edit the file `bundle/metada
 ```
 In one copy of the line, change `channels.v1` to `channel.default.v1`.
 
-
+## Build the Bundle
 Build the bundle and push it to the registry:
 ```bash
 $ make bundle-build BUNDLE_IMG=${REGISTRY}/${USER}/hellogo-operator-bundle:v0.0.1
@@ -105,7 +105,7 @@ $ podman push ${REGISTRY}/${USER}/hellogo-operator-bundle:v0.0.1
 ```
 If the Quay registry is being used for this workshop, log in via the web UI, select the `hellogo-operator-bundle` repository, press on the gear icon on the page that opened, press the `Make Public` button and then press `OK` in the pop-up. 
 
-## Building an index of Operators using `opm`
+## Building an Index of Operators using `opm`
 
 Now that you have published the container image containing your manifests, how do you actually make the bundle available to other users' Kubernetes clusters so that the Operator Lifecycle Manager can install the operator? This is where the bulk of the `operator-registry` project comes in. OLM has the concept of [CatalogSources](https://operator-framework.github.io/olm-book/docs/glossary.html#catalogsources) which define a reference to what packages are available to install onto a cluster. To make your bundle available, you can add the bundle to a container image which the CatalogSource points to. This image contains a database of pointers to bundle images that OLM can pull and extract the manifests from in order to install an operator. So, to make your operator available to OLM, you can generate an index image via opm with your bundle reference included:
 Add an index as follows:
