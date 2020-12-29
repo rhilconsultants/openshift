@@ -85,6 +85,12 @@ spec:
       app: hellogo
 EOF
 ```
+We will run our Ansible task in a namespace called project-${USER}. If we are using the internal OpenShift registry, we must allow the default service account in the project to pull images from the ${USER} respository in the registry by running:
+```bash
+$ oc project project-${USER}
+$ oc policy add-role-to-group system:image-puller system:serviceaccounts:project-${USER} --namespace=${USER}
+```
+
 Update tasks file Hello-go-role/tasks/main.yml to create the hello-go deployment using the k8s module:
 ```yaml
 $ cat > roles/Hello-go-role/tasks/main.yml <<EOF
@@ -110,7 +116,6 @@ EOF
 ```
 Now we can run the Ansible playbook to deploy your hello-go application on OpenShift:
 ```bash
-$ oc project ${USER}
 $ podman run --rm --name ose-openshift -tu `id -u` \
     -v ${HOME}/ose-openshift/inventory:/tmp/inventory:Z,ro  \
     -e INVENTORY_FILE=/tmp/inventory \

@@ -20,22 +20,74 @@ Ensure that users configure environment variables for login to OpenShift:
 $ oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 ```
 
-## Installing Quay
-Install the Quay operator via the Web UI to a project named `quay-enterprise`.
-
-Log in to quay.io using the Red Hat provided password and create a secret:
+## Registry for the Workshop
+The workshop is registry agnostic. That being said, whatever registry is use, it must be accessible and specified as unsecure in OpenShift.
+### Option 1: Using the OpenShift Internal Registry
+#### Exposing the Internal Registry
+Set up an environment variable REGISTRY as follows:
 ```bash
-$ docker login -u="redhat+quay" -p="<REDACTED>" quay.io
-$ oc create secret generic redhat-pull-secret \
---from-file=".dockerconfigjson=${HOME}/.docker/config.json" --type='kubernetes.io/dockerconfigjson'
+REGISTRY="$(oc get routes -n openshift-image-registry -o json | jq -r '.items[].spec | select(.to.name=="image-registry") | .host')"
+```
+Check the value of `REGISTRY`. If it was not set, you may need to expost the registry service before running the command.
+
+#### Setting the Registry as Trusted
+We will set the external registry name as trusted so that it can be used internally as well.
+
+Check that all nodes are in a `Ready` state:
+```bash
+$ oc get nodes
+```
+Add the registry as trusted:
+```bash
+$ oc patch --type=merge --patch="{\"spec\":{\"registrySources\":{\"insecureRegistries\":[\"${REGISTRY}\"]}}}" image.config.openshift.io/cluster
+```
+The machine-config-operator will push this change to all nodes. As the change is pushed out, nodes will change status to `NotReady,SchedulingDisabled`. Wait for all nodes to be `Ready`.
+#### Configuring a Secret
+TBD
+
+### Option 2: Using a Quay Registry
+#### Installing Quay
+Configure environment variables:
+```bash
+$ QUAY_NAMESPACE="quay-enterprise"
+$ QUAY_NAME="quay"
+$ CLUSTER_DOMAIN=$(oc get route -n openshift-authentication oauth-openshift -o=jsonpath='{.spec.host}' | sed "s/oauth-openshift\.//")
+$ REGISTRY="${QUAY_NAME}-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN}"
+$ echo ${REGISTRY}
 ```
 
+#### Install the Quay Operator
+Create a project named `quay-enterprise`:
+```bash
+$ oc new-project ${QUAY_NAMESPACE}
+```
+Log in to quay.io using the Red Hat provided password and create a secret:
+```bash
+$ podman login -u="redhat+quay" -p="<REDACTED>" quay.io
+$ oc create secret generic redhat-pull-secret --from-file=".dockerconfigjson=${XDG_RUNTIME_DIR}/containers/auth.json" --type='kubernetes.io/dockerconfigjson'
+```
+Install the Quay operator via the Web UI to the project named `quay-enterprise`.
+![QuayInstall](images/redhatquay.png)
+Wait for `Status` state `Succeeded`:
+![WaitForSucceed](images/redhatquaysucceeded.png)
+
+#### Setting the Registry as Trusted
+Note that Quay does not appear to recover from this change, therefore, it must be run before Quay is created.
+
+Check that all nodes are in a `Ready` state:
+```bash
+$ oc get nodes
+```
+Add the registry as trusted:
+```bash
+$ oc patch --type=merge --patch="{\"spec\":{\"registrySources\":{\"insecureRegistries\":[\"${REGISTRY}\"]}}}" image.config.openshift.io/cluster
+```
+The machine-config-operator will push this change to all nodes. As the change is pushed out, nodes will change status to `NotReady,SchedulingDisabled`. Wait for all nodes to be `Ready`.
+
+#### Create the Quay Instance
 Create the Quay instance by running the following:
 
 ```bash
-$ CLUSTER_DOMAIN=$(oc get route -n openshift-authentication oauth-openshift -o=jsonpath='{.spec.host}' | sed "s/oauth-openshift\.//")
-$ QUAY_NAME="quay"
-$ QUAY_NAMESPACE="quay-enterprise"
 $ oc create -f - <<EOF
 apiVersion: redhatcop.redhat.io/v1alpha1
 kind: QuayEcosystem
@@ -46,44 +98,30 @@ spec:
   quay:
     imagePullSecretName: redhat-pull-secret
     externalAccess:
-      hostname: ${QUAY_NAME}-quay-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN}
+      hostname: ${QUAY_NAME}-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN}
 EOF
 ```
-Obtain the name of the registry that will be used during the workshop:
-```bash
-$ REGISTRY=$(echo ${QUAY_NAME}-quay-${QUAY_NAMESPACE}.${CLUSTER_DOMAIN})
-$ echo ${REGISTRY}
-```
 
-Add the registry as "trusted" in the file `/etc/containers/registries.conf` as follows:
-### CRC
+
+
+
+The default login for quay is quay/password.
+#### CRC - Setting the Registry as Trusted (ony for CRC)
 ```bash
  ssh -i ~/.crc/machines/crc/id_rsa -o StrictHostKeyChecking=no core@$(crc ip) << EOF
   sudo echo " " | sudo tee -a /etc/containers/registries.conf
   sudo echo "[[registry]]" | sudo tee -a /etc/containers/registries.conf
   sudo echo "  location = \"${REGISTRY}\"" | sudo tee -a /etc/containers/registries.conf
   sudo echo "  insecure = true" | sudo tee -a /etc/containers/registries.conf
-  sudo echo "  blocked = false" | sudo tee -a /etc/containers/registries.conf
-  sudo echo "  mirror-by-digest-only = false" | sudo tee -a /etc/containers/registries.conf
   sudo echo "  prefix = \"\"" | sudo tee -a /etc/containers/registries.conf
   sudo systemctl restart crio
   sudo systemctl restart kubelet
 EOF
 ```
-### Other OpenShift
-```
-[registries.insecure]
-registries = ['<name of registry from above>']
-```
 
-You may need to restart the following services:
-```bash
-# systemctl restart crio
-# systemctl restart kubelet
-```
-
-Log into Quay (quay/password) and create accounts for course users, "ubi8" and "openshift3".
 ## Downloading Red Hat Images
+Log in to the registry and create accounts for course users(1-n), "ubi8" and "openshift3".
+
 Use the step below for the registry that will be used for the workshop.
 ### Log in to the Red Hat Registry
 ```bash
@@ -120,7 +158,7 @@ $ skopeo copy docker://registry.redhat.io/openshift3/ose-ansible docker://${REGI
 $ podman login -u ubi8 -p ubi8ubi8 ${REGISTRY}
 $ skopeo copy docker://registry.redhat.io/ubi8/go-toolset docker://${REGISTRY}/ubi8/go-toolset
 ```
-Manually set the `Repository Visibility` to `public`.
+**IMPORTANT:** Manually set the `Repository Visibility` to `public` for both images.
 
 <!--
 The image quay.io/operator-framework/ansible-operator is downloaded in Exercise-4. This image appears to download:
