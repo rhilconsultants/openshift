@@ -13,11 +13,11 @@ At present, there is no image that can be used to build an operator. We will cre
 ```bash
 $ mkdir ~/buildimage && cd ~/buildimage
 $ cat > Dockerfile <<EOF
-FROM quay.io/buildah/stable:latest
+FROM quay.io/podman/stable:latest
 RUN yum -y install make git && yum clean all
 EOF
-$ buildah bud -t ${REGISTRY}/${USER}/buildah-make .
-$ buildah push ${REGISTRY}/${USER}/buildah-make
+$ podman build -t ${REGISTRY}/${USER}/operator-sdk-build-tools .
+$ podman push ${REGISTRY}/${USER}/operator-sdk-build-tools
 ```
 
 ## Git Repository
@@ -109,16 +109,20 @@ kind: Task
 metadata:
   name: ${USER}-build-hellogo-operator-task
 spec:
+  params:
+    - name: TLSVERIFY
+      description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
+      default: "false"
   resources:
     inputs:
-      - name: sourcegit
+      - name: source
         type: git
     outputs:
       - name: builtimage
         type: image
   steps:
-    - name: checkout-build-push
-      image: ${REGISTRY}/${USER}/buildah-make:latest
+    - name: build
+      image: ${REGISTRY}/${USER}/operator-sdk-build-tools:latest
       workingDir: /workspace/source/
       securityContext:
         privileged: true
@@ -133,11 +137,24 @@ spec:
       command: ["/bin/bash" ,"-c"]
       args:
         - |-
-          echo "source="\$(resources.inputs.sourcegit.url)
-          echo "IMG="\$(resources.outputs.builtimage.url)
-          git clone \$(resources.inputs.sourcegit.url)
-          cd *
-          make docker-build docker-push IMG=\$(resources.outputs.builtimage.url)
+          make docker-build IMG=\$(resources.outputs.builtimage.url)
+    - name: push
+      image: ${REGISTRY}/${USER}/operator-sdk-build-tools:latest
+      workingDir: /workspace/source/
+      securityContext:
+        privileged: true
+      env:
+      - name: REGISTRY_AUTH_FILE
+        value: /workspace/authjson/auth.json
+      volumeMounts:
+      - name: varlibcontainers
+        mountPath: /var/lib/containers
+      - name: authjson
+        mountPath: /workspace/authjson
+      command: ["/bin/bash" ,"-c"]
+      args:
+        - |-
+          podman push --tls-verify=\$(params.TLSVERIFY) \$(resources.outputs.builtimage.url)
   volumes:
   - name: varlibcontainers
     persistentVolumeClaim:
@@ -154,6 +171,10 @@ $ oc create secret docker-registry regcred \
                     --docker-username=${USER} \
                     --docker-password=$(oc whoami -t) \
                     --docker-email=${USER}@devnull.com
+```
+Link the secret to the default pull credentials:
+```bash
+$ oc secrets link default regcred --for=pull
 ```
 Create a `ServiceAccount` to use the secret:
 ```bash
@@ -172,32 +193,55 @@ Allow access to the build image created earlier by running:
 $ oc policy add-role-to-user system:image-puller -z ${USER}-serviceaccount
 ```
 -->
-
-Test the task by creating a `TaskRun`:
+### Creating Operator-Bundle Images
+### Creating an Index of Operators
+## Create a Pipeline and PipelineRun
+Create a pipeline as follows:
 ```bash
 $ oc create -f - <<EOF
 apiVersion: tekton.dev/v1beta1
-kind: TaskRun
+kind: Pipeline
 metadata:
-  name: ${USER}-build-image-from-git-source
+  name: ${USER}-build-hellogo-operator-pipeline
 spec:
-  serviceAccountName: ${USER}-serviceaccount
-  taskRef:
-    name: ${USER}-build-hellogo-operator-task
   resources:
-    inputs:
-      - name: sourcegit
-        resourceRef:
-          name: git-${USER}-hellogo-operator
-    outputs:
-      - name: builtimage
-        resourceRef:
-          name: image-${USER}-hellogo-operator
+  - name: source
+    type: git
+  - name: builtimage
+    type: image
+  tasks:
+  - name: build-hellogo-operator
+    taskRef:
+      name: ${USER}-build-hellogo-operator-task
+    resources:
+      inputs:
+        - name: source
+          resource: source
+      outputs:
+        - name: builtimage
+          resource: builtimage
 EOF
 ```
-### Creating a Manifest
-### Creating Operator-Bundle Images
-### Creating an Index of Operators
-### Running Tests (operator-sdk scorecard)
+
+Create a PipelineRun as follows:
+```bash
+$ oc create -f - <<EOF
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: ${USER}-build-hellogo-operator-pipeline-run
+spec:
+  serviceAccountName: ${USER}-serviceaccount
+  pipelineRef:
+    name: ${USER}-build-hellogo-operator-pipeline
+  resources:
+    - name: source
+      resourceRef:
+        name: git-${USER}-hellogo-operator
+    - name: builtimage
+      resourceRef:
+        name: image-${USER}-hellogo-operator
+EOF
+```
 ## Creating a Git Web Hook Trigger
-## Creating a Pipeline Run
+## Test the Web Hook
