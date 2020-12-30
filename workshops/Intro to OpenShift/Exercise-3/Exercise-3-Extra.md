@@ -121,7 +121,7 @@ $ oc create configmap index-file --from-file=index.html
 configmap/index-file created
 ```
 
-And Make sure our ConfigMap created.
+And Make sure our ConfigMap was created.
 
 ```bash
 $ oc get configmap
