@@ -164,7 +164,7 @@ spec:
       name: authjson
 EOF
 ```
-Before you can execute your TaskRun, you must create a secret to push your image to your desired image registry:
+Create a secret to pull images from the image registry:
 ```bash
 $ oc create secret docker-registry regcred \
                     --docker-server=${REGISTRY} \
@@ -172,10 +172,7 @@ $ oc create secret docker-registry regcred \
                     --docker-password=$(oc whoami -t) \
                     --docker-email=${USER}@devnull.com
 ```
-Link the secret to the default pull credentials:
-```bash
-$ oc secrets link default regcred --for=pull
-```
+
 Create a `ServiceAccount` to use the secret:
 ```bash
 $ oc create -f - <<EOF
@@ -187,12 +184,11 @@ secrets:
   - name: regcred
 EOF
 ```
-<!--
-Allow access to the build image created earlier by running:
+Link the secret to the default pull credentials:
 ```bash
-$ oc policy add-role-to-user system:image-puller -z ${USER}-serviceaccount
+$ oc secrets link ${USER}-serviceaccount regcred --for=pull
 ```
--->
+
 ### Creating Operator-Bundle Images
 ### Creating an Index of Operators
 ## Create a Pipeline and PipelineRun
