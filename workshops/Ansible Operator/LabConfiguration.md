@@ -285,10 +285,7 @@ EOF
 Log in to the registry and create accounts for course users(1-n), "ubi8" and "openshift3".
 
 Use the step below for the registry that will be used for the workshop.
-### Log in to the Red Hat Registry
-```bash
-# podman login registry.redhat.io
-```
+
 ### Download Red Hat Images to Local Registry
 Access to a number of images used in this course requires a Red Hat account. Download them to the local OpenShift registry as follows:
 
@@ -311,6 +308,7 @@ create a new registry authentication file :
 # echo '{"auths":{{}' > ~/.registry/auths.json
 ```
 
+### Log in to the Red Hat Registry
 Use podman to login to both registries 
 ```bash
 # export REGISTRY_AUTH_FILE="~/.registry/auths.json"
