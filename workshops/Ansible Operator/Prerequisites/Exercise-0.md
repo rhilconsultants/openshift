@@ -1,4 +1,35 @@
 # Exercise 0 - Workshop Configuration
+
+## Setting up tmux
+
+for those of you who don't know tmux in a very powerful tool which allows us to run terminal manipulation in various forms. In our case we would want to slip the screen to 3 parts (vertical middle and 2 horizontal on the top side) to enable us better monitoring on all the process.
+
+Here is how we do it :
+
+first modify the tmux configuration file :
+
+```bash
+$ cat > ~/.tmux.conf << EOF
+unbind C-b
+set -g prefix C-a
+bind -n C-Left select-pane -L
+bind -n C-Right select-pane -R
+bind -n C-Up select-pane -U
+bind -n C-Down select-pane -D
+EOF
+```
+
+now start a tmux session :
+
+```bash
+$ tmux new-session -s ocp
+```
+
+next we will split the screen by clicking on CTRL+a then '"'.
+Now we will Navigate to the top bar by CTRL+UP (the ARROW UP)
+and create another slip horizontally by running CTRL+a then "%"
+To navigate between them you can run CTRL+ARROW and the arrows. 
+
 ## Logging in to OpenShift
 First let’s log in to the cluster (login credentials placed in the sheets file under ocp user and ocp password):
 ```bash
@@ -34,3 +65,6 @@ Create an environment variable for the registry that will be used in this worksh
 $ echo "REGISTRY=${REGISTRY}" >> ~/.bashrc
 $ source ~/.bashrc
 ```
+
+
+
