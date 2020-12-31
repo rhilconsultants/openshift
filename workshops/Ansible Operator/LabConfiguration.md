@@ -4,7 +4,7 @@
 To install Go, run the following as the root user:
 
 ```bash
-# yum install -y golang.x86_64
+# dnf install -y golang.x86_64
 ```
 
 ## Install OpenShift and Container Image Commands:
@@ -291,13 +291,51 @@ Use the step below for the registry that will be used for the workshop.
 ```
 ### Download Red Hat Images to Local Registry
 Access to a number of images used in this course requires a Red Hat account. Download them to the local OpenShift registry as follows:
+
+First we need to create A kubeconfig to make sure we do not run over the "system:admin" account
+
 ```bash
-# oc login -u kubeadmin
-# REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')"
+# mkdir -p /root/cluster/auth/
+# touch /root/cluster/auth/kubeconfig
+# export KUBECONFIG="/root/cluster/auth/kubeconfig"
+```
+
+Now login to Openshift as a cluster admin account with token:
+```bash
+# oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
+```
+
+create a new registry authentication file :
+```bash
+# mkdir -p ~/.registry/
+# echo '{"auths":{{}' > ~/.registry/auths.json
+```
+
+Use podman to login to both registries 
+```bash
+# export REGISTRY_AUTH_FILE="~/.registry/auths.json"
+# podman login registry.redhat.io
+# podman login $REGISTRY
+```
+
+Once you logged in into both registries we can continue with the image Download 
+
+```bash
 # oc new-project openshift3
-# skopeo copy docker://registry.redhat.io/openshift3/ose-ansible docker://${REGISTRY}/openshift3/ose-ansible
+# skopeo copy --authfile $REGISTRY_AUTH_FILE docker://registry.redhat.io/openshift3/ose-ansible docker://${REGISTRY}/openshift3/ose-ansible
 # oc new-project ubi8
-# skopeo copy docker://registry.redhat.io/ubi8/go-toolset docker://${REGISTRY}/ubi8/go-toolset
+# skopeo copy --authfile $REGISTRY_AUTH_FILE docker://registry.redhat.io/ubi8/go-toolset docker://${REGISTRY}/ubi8/go-toolset
+```
+
+Now make sure authenticated users have access to those images
+```bash
+# oc adm policy add-role-to-group system:image-puller system:authenticated -n ubi8
+Warning: Group 'system:authenticated' not found
+clusterrole.rbac.authorization.k8s.io/system:image-puller added: "system:authenticated"
+
+# oc adm policy add-role-to-group system:image-puller system:authenticated -n openshift3
+Warning: Group 'system:authenticated' not found
+clusterrole.rbac.authorization.k8s.io/system:image-puller added: "system:authenticated"
 ```
 
 The image quay.io/operator-framework/ansible-operator is downloaded in Exercise-4. This image appears to download:
@@ -315,11 +353,12 @@ Create users:
 Access to a number of images used in this course requires a Red Hat account. Download them to the local OpenShift registry as follows:
 ```bash
 # REGISTRY="<route to registry in use>"
-# podman login -u openshift3 -p openshift3 ${REGISTRY}
-# skopeo copy docker://registry.redhat.io/openshift3/ose-ansible docker://${REGISTRY}/openshift3/ose-ansible
-# podman login -u ubi8 -p ubi8ubi8 ${REGISTRY}
-# skopeo copy docker://registry.redhat.io/ubi8/go-toolset docker://${REGISTRY}/ubi8/go-toolset
+# skopeo copy --authfile $REGISTRY_AUTH_FILE docker://registry.redhat.io/openshift3/ose-ansible\
+ docker://${REGISTRY}/openshift3/ose-ansible
+# skopeo copy --authfile $REGISTRY_AUTH_FILE docker://registry.redhat.io/ubi8/go-toolset\
+ docker://${REGISTRY}/ubi8/go-toolset
 ```
+
 **IMPORTANT:** Manually set the `Repository Visibility` to `public` for both images.
 
 <!--
@@ -338,8 +377,8 @@ Optional Images:
 # export OS=$(uname | awk '{print tolower($0)}')
 # export OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/latest/download
 # curl -Lo ${HOME}/bin/operator-sdk ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
-
 ```
+
 ## Generate RPM directory
 in Exercise 3 the users will need access to the /usr/share/workshop/RPMs/* directory in order to add the RPM required for python3-openshift.  
 All we need to do is to enable EPEL
