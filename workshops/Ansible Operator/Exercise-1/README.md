@@ -33,6 +33,10 @@ $ cd hello-go
 ```
 Inside the hello-go/cmd/hello directory, create a file named hello.go with the following Go code:
 
+First we will create the file
+```bash
+$ touch cmd/hello/hello.go
+```
     
 ```go
 package main

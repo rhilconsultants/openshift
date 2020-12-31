@@ -1,4 +1,4 @@
-# Exercise 0 - Workshop Configuration
+# Prerequisites - Workshop Configuration
 
 ## Setting up tmux
 
