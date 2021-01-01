@@ -37,6 +37,7 @@ First we will create the file
 ```bash
 $ touch cmd/hello/hello.go
 ```
+And Now for the code :
     
 ```go
 package main

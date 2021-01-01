@@ -40,6 +40,9 @@ Different registries are used in this workshop. Your instructor will direct you 
 Log in to the internal OpenShift registry by running:
 ```bash
 $ REGISTRY="default-route-openshift-image-registry.apps.$OCP_CLUSTER.$OCP_DOMAIN"
+$ export REGISTRY_AUTH_FILE="~/.registry/auths.json"
+$ mkdir -p ~/.registry/
+$ echo '{"auths":{{}}' > ~/.registry/auths.json
 $ podman login -u $(oc whoami) -p $(oc whoami -t) ${REGISTRY}
 ```
 The output should be:
