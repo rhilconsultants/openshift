@@ -78,9 +78,11 @@ And let’s create a new Dockerfile and edit it:
 $ cat > Dockerfile << EOF
 FROM centos
 
-ENV __doozer=update BUILD_RELEASE=2 BUILD_VERSION=v3.11.346 OS_GIT_MAJOR=3 OS_GIT_MINOR=11 OS_GIT_PATCH=346 OS_GIT_TREE_STATE=clean OS_GIT_VERSION=3.11.346-2 SOURCE_GIT_TREE_STATE=clean 
-ENV __doozer=merge OS_GIT_COMMIT=f65cc70 SOURCE_DATE_EPOCH=1607700712 SOURCE_GIT_COMMIT=f65cc700d2483fd9a485a7bd6cd929cbbed1b772 SOURCE_GIT_TAG=openshift-ansible-3.11.346-1 SOURCE_GIT_URL=https://github.com/openshift/openshift-ansible
-ENV DEFAULT_LOCAL_TMP=/tmp
+ENV __doozer=update BUILD_RELEASE=2 BUILD_VERSION=v3.11.346 OS_GIT_MAJOR=3 OS_GIT_MINOR=11 OS_GIT_PATCH=346 
+ENV OS_GIT_TREE_STATE=clean OS_GIT_VERSION=3.11.346-2 SOURCE_GIT_TREE_STATE=clean 
+ENV __doozer=merge OS_GIT_COMMIT=f65cc70 SOURCE_DATE_EPOCH=1607700712 
+ENV SOURCE_GIT_COMMIT=f65cc700d2483fd9a485a7bd6cd929cbbed1b772 SOURCE_GIT_TAG=openshift-ansible-3.11.346-1 
+ENV SOURCE_GIT_URL=https://github.com/openshift/openshift-ansible
 
 MAINTAINER Your Name
 
@@ -98,7 +100,8 @@ RUN INSTALL_PKGS="python3-openshift.noarch ansible python3-cryptography openssl 
  && yum clean all
 
 RUN mkdir -p /opt/app-root/src
-RUN echo 'remote_tmp     = /tmp' >> /etc/ansible/ansible.cfg  && echo 'local_tmp      = /tmp' >> /etc/ansible/ansible.cfg
+RUN echo 'remote_tmp     = /tmp' >> /etc/ansible/ansible.cfg  \
+    && echo 'local_tmp      = /tmp' >> /etc/ansible/ansible.cfg
 
 
 ENV USER_UID=1001 \
@@ -122,10 +125,10 @@ CMD [ "/usr/bin/run-ansible.sh" ]
 LABEL \
         name="openshift3/ose-ansible" \
         summary="OpenShift's installation and configuration tool" \
-        description="A containerized openshift-ansible image to let you run playbooks to install, upgrade, maintain and check an OpenShift cluster" \
+        description="A containerized ose-openshift image to let you run playbooks" \
         url="https://github.com/openshift/openshift-ansible" \
         io.k8s.display-name="openshift-ansible" \
-        io.k8s.description="A containerized openshift-ansible image to let you run playbooks to install, upgrade, maintain and check an OpenShift cluster" \
+        io.k8s.description="A containerized ose-openshift image to let you run playbooks on OpenShift" \
         io.openshift.expose-services="" \
         io.openshift.tags="openshift,install,upgrade,ansible" \
         com.redhat.component="aos3-installation-container" \
@@ -138,7 +141,6 @@ LABEL \
         io.openshift.maintainer.product="OpenShift Container Platform" \
         io.openshift.build.commit.id="f65cc700d2483fd9a485a7bd6cd929cbbed1b772" \
         io.openshift.build.source-location="https://github.com/openshift/openshift-ansible" \
-        io.openshift.build.commit.url="https://github.com/openshift/openshift-ansible/commit/f65cc700d2483fd9a485a7bd6cd929cbbed1b772"
 
 EOF
 ```
