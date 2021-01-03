@@ -26,51 +26,54 @@ $ cd ~/ose-openshift
 ```
 Now Create a shell script :
 ```bash
-$ cat > run-ansible.sh << EOF
-#!/bin/bash
+$ echo '#!/bin/bash
 
 ANSIBLE_ENV_VARS=""
 
-if [[ -z "/tmp/inventory" ]]; then
-echo "No inventory file provided (environment value INVENTORY)"
-exit 1;
+if [[ -z "$INVENTORY" ]]; then
+  echo "No inventory file provided (environment value INVENTORY)"
+  exit 1;
 else
-ANSIBLE_ENV_VARS=" INVENTORY=/tmp/inventory"
+  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS} INVENTORY=${INVENTORY}"
 fi
 
-if [[ -z "-v" ]]; then
-echo "no OPTS option provided (OPTS environment value)"
+if [[ -z "$OPTS" ]]; then
+  echo "no OPTS option provided (OPTS environment value)"
 else
-ANSIBLE_ENV_VARS=" OPTS=-v"
+  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS} OPTS=${OPTS}"
 
 fi 
 
-if [[ -z "XbmtEV0DRLe33Zn7fwmMfHEdqdNspejGZFaise-qs1c" ]]; then 
-echo "No Kubernetes Authentication key provided (K8S_AUTH_API_KEY environment value)"
+if [[ -z "$K8S_AUTH_API_KEY" ]]; then 
+  echo "No Kubernetes Authentication key provided (K8S_AUTH_API_KEY environment value)"
 else 
-ANSIBLE_ENV_VARS=" K8S_AUTH_API_KEY=XbmtEV0DRLe33Zn7fwmMfHEdqdNspejGZFaise-qs1c"
+  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS} K8S_AUTH_API_KEY=${K8S_AUTH_API_KEY}"
 fi
 
-if [[ -z "https://api.cluster-56f8.56f8.sandbox318.opentlc.com:6443" ]]; then
-echo "no Kubernetes API provided (K8S_AUTH_HOST environment value)"
+if [[ -z "${K8S_AUTH_HOST}" ]]; then
+  echo "no Kubernetes API provided (K8S_AUTH_HOST environment value)"
 else
-ANSIBLE_ENV_VARS="  K8S_AUTH_HOST=https://api.cluster-56f8.56f8.sandbox318.opentlc.com:6443"
+  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS}  K8S_AUTH_HOST=${K8S_AUTH_HOST}"
 fi
 
-if [[ -z "true" ]]; then
-  echo "No validation flag provided (Default: K8S_AUTH_VALIDATE_CERTS=true)"
+if [[ -z "${K8S_AUTH_VALIDATE_CERTS}" ]]; then
+    echo "No validation flag provided (Default: K8S_AUTH_VALIDATE_CERTS=true)"
 else
-ANSIBLE_ENV_VARS=" K8S_AUTH_VALIDATE_CERTS=true"
+  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS} K8S_AUTH_VALIDATE_CERTS=${K8S_AUTH_VALIDATE_CERTS}"
 fi  
 
-if [[ -z $"/opt/app-root/ose-ansible/playbook.yaml" ]]; then
-echo "No Playbook file provided... exiting"
-exit 1
-else
- ansible-playbook /opt/app-root/ose-ansible/playbook.yaml
-fi
+if [[ -z $"$PLAYBOOK_FILE" ]]; then
+  echo "No Playbook file provided... exiting"
+  exit 1
+else  
+  $ANSIBLE_ENV_VARS ansible-playbook $PLAYBOOK_FILE
+fi' > run-ansible.sh
+```
 
-EOF
+Make it As executable :
+
+```bash
+$ chmod a+x run-ansible.sh
 ```
 
 And let’s create a new Dockerfile and edit it:
@@ -137,10 +140,10 @@ LABEL \
         architecture="x86_64" \
         atomic.run="once" \
         License="GPLv2+" \
-        vendor="Red Hat" \
+        vendor="CentOS" \
         io.openshift.maintainer.product="OpenShift Container Platform" \
         io.openshift.build.commit.id="f65cc700d2483fd9a485a7bd6cd929cbbed1b772" \
-        io.openshift.build.source-location="https://github.com/openshift/openshift-ansible" \
+        io.openshift.build.source-location="https://github.com/openshift/openshift-ansible"
 
 EOF
 ```
