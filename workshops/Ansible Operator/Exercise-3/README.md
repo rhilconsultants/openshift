@@ -158,10 +158,16 @@ $ podman images
 **(What do you see wrong with this image and method ???)**
 
 
-
 ## Running the Container 
 
 Next, we'll use the Ansible k8s modules to leverage existing Kubernetes and OpenShift Resource files. Let's take use the hello-go deployment example.
+
+** NOTE **
+for internal registry update the REGISTRY inventory
+```bash
+$ export REGISTRY="image-registry.openshift-image-registry.svc:5000"
+```
+
 
 ```yaml
 $ cat > roles/Hello-go-role/templates/hello-go-deployment.yml.j2 <<EOF
