@@ -18,28 +18,134 @@ Now that we know that we need to update our image we need to provide the proper 
 
 ### Create an ose-openshift Image
 
-The RPMs you need are in /usr/share/workshop/RPMS
+We are going to create a New Image of ose-ansible by building an image with the appropriate package along with a small shell script to define the variables and run the playbook 
 
 First go to your ose-openshift directory:
 ```bash
 $ cd ~/ose-openshift
 ```
-Now Copy the RPMs from the share Directory:
+Now Create a shell script :
 ```bash
-$ cp /usr/share/workshop/RPMs/* .
+$ cat > run-ansible.sh << EOF
+#!/bin/bash
+
+ANSIBLE_ENV_VARS=""
+
+if [[ -z "/tmp/inventory" ]]; then
+echo "No inventory file provided (environment value INVENTORY)"
+exit 1;
+else
+ANSIBLE_ENV_VARS=" INVENTORY=/tmp/inventory"
+fi
+
+if [[ -z "-v" ]]; then
+echo "no OPTS option provided (OPTS environment value)"
+else
+ANSIBLE_ENV_VARS=" OPTS=-v"
+
+fi 
+
+if [[ -z "XbmtEV0DRLe33Zn7fwmMfHEdqdNspejGZFaise-qs1c" ]]; then 
+echo "No Kubernetes Authentication key provided (K8S_AUTH_API_KEY environment value)"
+else 
+ANSIBLE_ENV_VARS=" K8S_AUTH_API_KEY=XbmtEV0DRLe33Zn7fwmMfHEdqdNspejGZFaise-qs1c"
+fi
+
+if [[ -z "https://api.cluster-56f8.56f8.sandbox318.opentlc.com:6443" ]]; then
+echo "no Kubernetes API provided (K8S_AUTH_HOST environment value)"
+else
+ANSIBLE_ENV_VARS="  K8S_AUTH_HOST=https://api.cluster-56f8.56f8.sandbox318.opentlc.com:6443"
+fi
+
+if [[ -z "true" ]]; then
+  echo "No validation flag provided (Default: K8S_AUTH_VALIDATE_CERTS=true)"
+else
+ANSIBLE_ENV_VARS=" K8S_AUTH_VALIDATE_CERTS=true"
+fi  
+
+if [[ -z $"/opt/app-root/ose-ansible/playbook.yaml" ]]; then
+echo "No Playbook file provided... exiting"
+exit 1
+else
+ ansible-playbook /opt/app-root/ose-ansible/playbook.yaml
+fi
+
+EOF
 ```
 
 And let’s create a new Dockerfile and edit it:
 ```bash
 $ cat > Dockerfile << EOF
-FROM ${REGISTRY}/openshift3/ose-ansible
+FROM centos
+
+ENV __doozer=update BUILD_RELEASE=2 BUILD_VERSION=v3.11.346 OS_GIT_MAJOR=3 OS_GIT_MINOR=11 OS_GIT_PATCH=346 OS_GIT_TREE_STATE=clean OS_GIT_VERSION=3.11.346-2 SOURCE_GIT_TREE_STATE=clean 
+ENV __doozer=merge OS_GIT_COMMIT=f65cc70 SOURCE_DATE_EPOCH=1607700712 SOURCE_GIT_COMMIT=f65cc700d2483fd9a485a7bd6cd929cbbed1b772 SOURCE_GIT_TAG=openshift-ansible-3.11.346-1 SOURCE_GIT_URL=https://github.com/openshift/openshift-ansible
+ENV DEFAULT_LOCAL_TMP=/tmp
+
+MAINTAINER Your Name
 
 USER root
-WORKDIR /opt/app-root/
-COPY python* .
-RUN yum install -y python* && rm -f python*
+
+# Playbooks, roles, and their dependencies are installed from packages.
+RUN INSTALL_PKGS="python3-openshift.noarch ansible python3-cryptography openssl iproute httpd-tools"  \
+ && yum repolist > /dev/null  \
+ && : 'removed yum-config-manager'  \
+ && : 'removed yum-config-manager'  \
+# && yum install -y java-1.8.0-openjdk-headless  \
+ && yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
+ && yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS \
+# && rpm -q $INSTALL_PKGS $x86_EXTRA_RPMS  \
+ && yum clean all
+
+RUN mkdir -p /opt/app-root/src
+RUN echo 'remote_tmp     = /tmp' >> /etc/ansible/ansible.cfg  && echo 'local_tmp      = /tmp' >> /etc/ansible/ansible.cfg
+
+
+ENV USER_UID=1001 \
+    DEFAULT_LOCAL_TMP=/tmp \
+    HOME=/opt/app-root/src \
+    WORK_DIR=/opt/app-root/src \
+    ANSIBLE_CONFIG=/etc/ansible/ansible.cfg \
+    OPTS="-v"
+
+# Add image scripts and files for running as a system container
+# COPY root /
+
+COPY run-ansible.sh /usr/bin/
+
+USER ${USER_UID}
+
+WORKDIR ${WORK_DIR}
+ENTRYPOINT [ "/usr/bin/run-ansible.sh" ]
+CMD [ "/usr/bin/run-ansible.sh" ]
+
+LABEL \
+        name="openshift3/ose-ansible" \
+        summary="OpenShift's installation and configuration tool" \
+        description="A containerized openshift-ansible image to let you run playbooks to install, upgrade, maintain and check an OpenShift cluster" \
+        url="https://github.com/openshift/openshift-ansible" \
+        io.k8s.display-name="openshift-ansible" \
+        io.k8s.description="A containerized openshift-ansible image to let you run playbooks to install, upgrade, maintain and check an OpenShift cluster" \
+        io.openshift.expose-services="" \
+        io.openshift.tags="openshift,install,upgrade,ansible" \
+        com.redhat.component="aos3-installation-container" \
+        version="v3.11.346" \
+        release="2" \
+        architecture="x86_64" \
+        atomic.run="once" \
+        License="GPLv2+" \
+        vendor="Red Hat" \
+        io.openshift.maintainer.product="OpenShift Container Platform" \
+        io.openshift.build.commit.id="f65cc700d2483fd9a485a7bd6cd929cbbed1b772" \
+        io.openshift.build.source-location="https://github.com/openshift/openshift-ansible" \
+        io.openshift.build.commit.url="https://github.com/openshift/openshift-ansible/commit/f65cc700d2483fd9a485a7bd6cd929cbbed1b772"
+
 EOF
 ```
+
+*NOTE* 
+we are using here a centos base image for simplicity but in normal workloads we will need to use ubi to build our needed container.
+
 Build the container:
 ```bash
 $ buildah bud -f Dockerfile -t ose-openshift .
@@ -51,12 +157,7 @@ $ podman images
 ```
 **(What do you see wrong with this image and method ???)**
 
-### Clean up
 
-Remove the RPMs from the folder
-```bash
-$ rm -f ~/ose-openshift/*.rpm
-```
 
 ## Running the Container 
 

@@ -195,7 +195,6 @@ In some cases the environment is using a self signed for the Openshift API:
 # update-ca-trust extract
 ```
 
-
 Check that all nodes are in a `Ready` state:
 ```bash
 # oc get nodes
@@ -314,7 +313,7 @@ Now login to Openshift as a cluster admin account with token:
 create a new registry authentication file :
 ```bash
 # mkdir -p ~/.registry/
-# echo '{"auths":{{}}' > ~/.registry/auths.json
+# echo '{"auths":{}}' > ~/.registry/auths.json
 ```
 
 ### Log in to the Red Hat Registry
@@ -411,6 +410,16 @@ Create accounts for:
 ## OpenShift Projects
 Create OpenShift projects owned by ${USER}:
 * project-${USER}
+* ${USER}
+
+```bash
+# for int in {1..20}; do
+oc new-project user${int}
+oc adm policy add-role-to-user admin user${int} -n user${int}
+oc new-project project-user${int}
+oc adm policy add-role-to-user admin user${int} -n project-user${int}
+done
+```
 
 ## OpenShift Roles
 For each user:
