@@ -139,7 +139,7 @@ All we need to do now is to sign the certificate and update OpenShift
 -extensions 'req_ext' -extfile <(cat wildcard_answer.txt)
 ```
 
-##### Updating OpenShift
+##### Updating OpenShift wildcard
 
 Now that we have the certificate and key of our new wildcard first we need to update OpenShift with the CA certificate and then the with the certificate and key
 
@@ -186,6 +186,14 @@ Finally patch the ingress controller operator to use the router certificate as t
 -n openshift-ingress-operator
 ```
 
+##### Extract OpenShift api certificate
+
+In some cases the environment is using a self signed for the Openshift API:
+```bash
+# cat ~/.kube/config | grep certificate-authority-data | awk '{print $2}' | base64 -d > openshift.crt
+# cp openshift.crt /etc/pki/ca-trust/source/anchors/
+# update-ca-trust extract
+```
 
 Check that all nodes are in a `Ready` state:
 ```bash
@@ -285,10 +293,7 @@ EOF
 Log in to the registry and create accounts for course users(1-n), "ubi8" and "openshift3".
 
 Use the step below for the registry that will be used for the workshop.
-### Log in to the Red Hat Registry
-```bash
-# podman login registry.redhat.io
-```
+
 ### Download Red Hat Images to Local Registry
 Access to a number of images used in this course requires a Red Hat account. Download them to the local OpenShift registry as follows:
 
@@ -308,9 +313,10 @@ Now login to Openshift as a cluster admin account with token:
 create a new registry authentication file :
 ```bash
 # mkdir -p ~/.registry/
-# echo '{"auths":{{}' > ~/.registry/auths.json
+# echo '{"auths":{}}' > ~/.registry/auths.json
 ```
 
+### Log in to the Red Hat Registry
 Use podman to login to both registries 
 ```bash
 # export REGISTRY_AUTH_FILE="~/.registry/auths.json"
@@ -372,24 +378,28 @@ Optional Images:
 
 ## Download the Operator SDK
 ```bash
-# mkdir ${HOME}/bin
 # export ARCH=$(case $(arch) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(arch) ;; esac)
 # export OS=$(uname | awk '{print tolower($0)}')
 # export OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/latest/download
-# curl -Lo ${HOME}/bin/operator-sdk ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
+# curl -Lo /usr/local/bin/operator-sdk ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
+# chmod a+x /usr/local/bin/operator-sdk
 ```
 
 ## Generate RPM directory
 in Exercise 3 the users will need access to the /usr/share/workshop/RPMs/* directory in order to add the RPM required for python3-openshift.  
 All we need to do is to enable EPEL
 ```bash
-# dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+# dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 ``` 
 
 Use --downloadonly with the dnf command :
 ```bash
 # mkdir /usr/share/workshop/RPMs/
 # dnf install -y python3-openshift --downloadonly --downloaddir=/usr/share/workshop/RPMs/
+```
+The Student may need it for testing so install it on the Bastion
+```bash
+# dnf install -y python3-openshift
 ```
 
 ## OpenShift Accounts
@@ -400,6 +410,16 @@ Create accounts for:
 ## OpenShift Projects
 Create OpenShift projects owned by ${USER}:
 * project-${USER}
+* ${USER}
+
+```bash
+# for int in {1..20}; do
+oc new-project user${int}
+oc adm policy add-role-to-user admin user${int} -n user${int}
+oc new-project project-user${int}
+oc adm policy add-role-to-user admin user${int} -n project-user${int}
+done
+```
 
 ## OpenShift Roles
 For each user:
