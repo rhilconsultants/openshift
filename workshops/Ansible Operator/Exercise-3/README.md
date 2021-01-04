@@ -28,45 +28,43 @@ Now Create a shell script :
 ```bash
 $ echo '#!/bin/bash
 
-ANSIBLE_ENV_VARS=""
-
 if [[ -z "$INVENTORY" ]]; then
   echo "No inventory file provided (environment value INVENTORY)"
-  exit 1;
+  INVENTORY=/etc/ansible/hosts
 else
-  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS} INVENTORY=${INVENTORY}"
+  export INVENTORY=${INVENTORY}
 fi
 
 if [[ -z "$OPTS" ]]; then
   echo "no OPTS option provided (OPTS environment value)"
 else
-  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS} OPTS=${OPTS}"
+  export OPTS=${OPTS}
 
 fi 
 
 if [[ -z "$K8S_AUTH_API_KEY" ]]; then 
   echo "No Kubernetes Authentication key provided (K8S_AUTH_API_KEY environment value)"
 else 
-  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS} K8S_AUTH_API_KEY=${K8S_AUTH_API_KEY}"
+  export K8S_AUTH_API_KEY=${K8S_AUTH_API_KEY}
 fi
 
 if [[ -z "${K8S_AUTH_HOST}" ]]; then
   echo "no Kubernetes API provided (K8S_AUTH_HOST environment value)"
 else
-  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS}  K8S_AUTH_HOST=${K8S_AUTH_HOST}"
+   export  K8S_AUTH_HOST=${K8S_AUTH_HOST}
 fi
 
 if [[ -z "${K8S_AUTH_VALIDATE_CERTS}" ]]; then
     echo "No validation flag provided (Default: K8S_AUTH_VALIDATE_CERTS=true)"
 else
-  ANSIBLE_ENV_VARS="${ANSIBLE_ENV_VARS} K8S_AUTH_VALIDATE_CERTS=${K8S_AUTH_VALIDATE_CERTS}"
+   export K8S_AUTH_VALIDATE_CERTS=${K8S_AUTH_VALIDATE_CERTS}
 fi  
 
 if [[ -z $"$PLAYBOOK_FILE" ]]; then
   echo "No Playbook file provided... exiting"
   exit 1
-else  
-  $ANSIBLE_ENV_VARS ansible-playbook $PLAYBOOK_FILE
+else
+   ansible-playbook $PLAYBOOK_FILE
 fi' > run-ansible.sh
 ```
 
@@ -78,7 +76,6 @@ $ chmod a+x run-ansible.sh
 
 And let’s create a new Dockerfile and edit it:
 ```bash
-$ cat > Dockerfile << EOF
 FROM centos
 
 ENV __doozer=update BUILD_RELEASE=2 BUILD_VERSION=v3.11.346 OS_GIT_MAJOR=3 OS_GIT_MINOR=11 OS_GIT_PATCH=346 
@@ -93,14 +90,14 @@ USER root
 
 # Playbooks, roles, and their dependencies are installed from packages.
 RUN INSTALL_PKGS="python3-openshift.noarch ansible python3-cryptography openssl iproute httpd-tools"  \
- && yum repolist > /dev/null  \
- && : 'removed yum-config-manager'  \
+ && dnf repolist > /dev/null  \
+ && : ';removed yum-config-manager'  \
  && : 'removed yum-config-manager'  \
 # && yum install -y java-1.8.0-openjdk-headless  \
- && yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
- && yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS \
+ && dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
+ && dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS \
 # && rpm -q $INSTALL_PKGS $x86_EXTRA_RPMS  \
- && yum clean all
+ && dnf clean all
 
 RUN mkdir -p /opt/app-root/src
 RUN echo 'remote_tmp     = /tmp' >> /etc/ansible/ansible.cfg  \
@@ -145,7 +142,6 @@ LABEL \
         io.openshift.build.commit.id="f65cc700d2483fd9a485a7bd6cd929cbbed1b772" \
         io.openshift.build.source-location="https://github.com/openshift/openshift-ansible"
 
-EOF
 ```
 
 *NOTE* 
@@ -172,7 +168,6 @@ for internal registry update the REGISTRY inventory
 ```bash
 $ export REGISTRY="image-registry.openshift-image-registry.svc:5000"
 ```
-
 
 ```yaml
 $ cat > roles/Hello-go-role/templates/hello-go-deployment.yml.j2 <<EOF
@@ -226,17 +221,24 @@ state: present
 size: 1
 EOF
 ```
+
+Create an src directory 
+```bash
+$ mkdir ${HOME}/ose-openshift/src/
+```
+
 Now we can run the Ansible playbook to deploy your hello-go application on OpenShift:
 ```bash
-$ podman run --rm --name ose-openshift -tu `id -u` \
-    -v ${HOME}/ose-openshift/inventory:/tmp/inventory:Z,ro  \
-    -e INVENTORY_FILE=/tmp/inventory \
+$ podman run --rm --name ose-openshift \
     -e OPTS="-v" \
+    -v ${HOME}/ose-openshift/src/:/opt/app-root/src/:Z,rw \
     -v ${HOME}/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
     -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
+    -e INVENTORY=/opt/app-root/ose-ansible/inventory \
     -e K8S_AUTH_API_KEY=$(oc whoami -t) \
+    -e DEFAULT_LOCAL_TMP=/tmp/ \
     -e K8S_AUTH_HOST=$(oc whoami --show-server) \
-    -e K8S_AUTH_VALIDATE_CERTS=true \
+    -e K8S_AUTH_VALIDATE_CERTS=false \
     ose-openshift
 ```
 
@@ -288,15 +290,16 @@ spec:
 ```
 Running the Playbook again will read the variable hellogo_replicas and use the provided value to customize the hello-go DeploymentConfig.
 ```bash
-$ podman run --rm --name ose-openshift -tu `id -u` \
-    -v ~/ose-openshift/inventory:/tmp/inventory:Z,ro  \
-    -e INVENTORY_FILE=/tmp/inventory \
+$ podman run --rm --name ose-openshift \
     -e OPTS="-v" \
-    -v ~/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
+    -v ${HOME}/ose-openshift/src/:/opt/app-root/src/:Z,rw \
+    -v ${HOME}/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
     -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
+    -e INVENTORY=/opt/app-root/ose-ansible/inventory \
     -e K8S_AUTH_API_KEY=$(oc whoami -t) \
+    -e DEFAULT_LOCAL_TMP=/tmp/ \
     -e K8S_AUTH_HOST=$(oc whoami --show-server) \
-    -e K8S_AUTH_VALIDATE_CERTS=true \
+    -e K8S_AUTH_VALIDATE_CERTS=false \
     ose-openshift
 ```
 After running the Playbook, the cluster will scale the number of hellogo pods to meet the new requested replica count of 2. 
