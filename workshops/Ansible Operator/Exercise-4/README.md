@@ -41,7 +41,7 @@ $ export ARCH=$(case $(arch) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 
 $ export OS=$(uname | awk '{print tolower($0)}')
 $ export OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/latest/download
 $ curl -Lo ${HOME}/bin/operator-sdk ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
-
+$ chmod a+x ${HOME}/bin/operator-sdk
 ```
 
 Now make sure you are using the right operator-sdk:
@@ -52,6 +52,11 @@ The output should be:
 ```
  ~/bin/operator-sdk
  ```
+If the output is deferent just update the PATH environment variable :
+```bash
+$ export PATH="${HOME}/bin:${PATH}"
+$ echo 'export PATH="${HOME}/bin:${PATH}"' >> ~/.bashrc
+```
 
 ## WorkFlow
 
