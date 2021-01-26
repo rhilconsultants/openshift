@@ -156,7 +156,7 @@ spec:
             - containerPort: 8080
           env:
           - name: GO_PORT
-            value: 8080
+            value: '8080'
           - name: HELLO_WORKDIR
             value: '/opt/app-root/'
           - name: HELLO_FILENAME
@@ -278,7 +278,7 @@ spec:
             - containerPort: 8080
           env:
           - name: GO_PORT
-            value: 8080
+            value: '8080'
           - name: HELLO_WORKDIR
             value: '/opt/app-root/'
           - name: HELLO_FILENAME
