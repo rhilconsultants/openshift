@@ -57,7 +57,7 @@ then give the file a simple filename like users.csv
 
 copy the file to the bastion :
 ```bash
-# scp users.csv <your-daomain>@bastion.${GUID}.example.opentlc.com:/tmp/
+# scp users.csv <user-login>@bastion.${GUID}.example.opentlc.com:/tmp/
 ```
 
 Now (as root) install sqlite

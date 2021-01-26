@@ -120,6 +120,17 @@ Or just logout and login back to the Bastion Server.
 
 In this section we will how to create a pod and how to create a deployment which controls the Pods.
 
+
+### Set the environment variable
+
+Sense we just logged out and logged in we need to reset our environment variables :
+
+```bash
+$ export NAMESPACE=$(oc project -q)‎
+$ export UUID=""
+$ export REGISTRY="default-route-openshift-image-registry.apps.cluster-${UUID}.${UUID}.example.opentlc.com"
+```
+
 ### creating Pods
 
 as you know the POD is the smallest unit in our OpenShift Cluster so let's start by creating our first pod. 
