@@ -315,16 +315,27 @@ The output should be of the form:
     replicaset.apps/${USER}-hellogo-operator-controller-manager-55bfdf7795   1         1         1       4m55s-
 
 ### Create RBAC Rules for the Custom Resource
-Create a read/write RBAC role for the custom resource by running:
+By default, the `operator-sdk` generates scaffolding for an operator with `cluster` wide privileges.
 
-(Ask the Instructor)
+Create an RBAC ClusterRole with read/write permissions for the custom resource by running:
 ```bash
 $ oc create -f config/rbac/${USER}hellogo_editor_role.yaml
 ```
-Allow a user to access the RBAC role:
-(Ask the Instructor)
+The ClusterRole can be assigned to individual users as follows:
 ```bash
-$ oc adm policy add-cluster-role-to-group ${USER}hellogo-editor-role system:authenticated
+$ oc adm policy add-cluster-role-to-user ${USER}hellogo-editor-role ${USER}
+```
+Alternatively, an RBAC `group` could be created with the ClusterRole permissions, and `users` can be assigned to the group. For example, create a new group named `hellogo-users`:
+```bash
+$ oc adm groups new hellogo-users
+```
+Add the ClusterRole permission to the group:
+```bash
+$ oc adm policy add-cluster-role-to-group ${USER}hellogo-editor-role hellogo-users
+```
+Add users to the group:
+```bash
+$ oc adm groups add-users hellogo-users user1
 ```
 
 ## Using the Operator
