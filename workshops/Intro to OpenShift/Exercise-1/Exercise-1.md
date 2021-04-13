@@ -220,7 +220,6 @@ In the window where container run was executed you will see the logged requests.
 ```bash
 $ POD_UID=$(podman ps | grep hello-go | awk '{print $1}')
 $ podman logs ${POD_UID}
-```
 2025/11/12 22:31:00 Starting to listen on port 8080
 2025/11/12 22:31:07 Received request for path: /testing
 ```
@@ -237,13 +236,21 @@ $ podman stop hello-go
 
 ### Configuring Access to the Registry
 
+When working with a registry you would want podman to have a login files for all the registries.  
+For that podman has an environment variable called "REGISTRY_AUTH_FILE" so let's go ahead and set it up:
+
+```bash
+$ mkdir ~/.registries
+$ echo '{"auths":{}}' > ~/.registries/auths.json
+$ export REGISTRY_AUTH_FILE="/home/$USER/.registries/auths.json"
+```
 
 Now log in to the registry, providing your username and password:
 ```bash
 $ podman login -u $(oc whoami) -p $(oc whoami -t) ${REGISTRY}
 ```
 The output should be:
-```
+```bash
 Login Succeeded!
 ```
 
