@@ -57,7 +57,7 @@ then give the file a simple filename like users.csv
 
 copy the file to the bastion :
 ```bash
-# scp users.csv <your-daomain>@bastion.${GUID}.example.opentlc.com:/tmp/
+# scp users.csv <user-login>@bastion.${GUID}.example.opentlc.com:/tmp/
 ```
 
 Now (as root) install sqlite
@@ -128,3 +128,4 @@ give execute permission and run the script :
 All the users should be able to login with their given username.
 
 ## Create the go-toolset image
+
