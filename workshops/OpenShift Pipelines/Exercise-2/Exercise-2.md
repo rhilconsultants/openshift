@@ -79,7 +79,7 @@ For that we are going to create our PVC as follow :
       namespace: $NAMESPACE
     spec:
       accessModes:
-        - ReadWriteMany
+        - ReadWriteOnce
       resources:
         requests:
           storage: 3Gi
@@ -141,7 +141,7 @@ our task should look like :
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud --storage-driver vfs -f Dockerfile -t $(resources.outputs.image.url) .
+              buildah bud --storage-driver vfs -f Containerfile -t $(resources.outputs.image.url) .
       volumes:
       - name: varlibcontainers
         persistentVolumeClaim:
@@ -282,12 +282,11 @@ The PVC should look as follow :
       namespace: ${NAMESPACE}
     spec:
       accessModes:
-        - ReadWriteMany
+        - ReadWriteOnce
       resources:
         requests:
           storage: 5Gi
       volumeMode: Filesystem
-      storageClassName: managed-nfs-storage
     EOF
 
 And create it:
@@ -401,7 +400,7 @@ Before we are creating the pipeline run we do need to update (in our case we wil
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
-              buildah bud --storage-driver vfs -f Dockerfile -t monkey-app .
+              buildah bud --storage-driver vfs -f Containerfile -t monkey-app .
     ##################### Workspace Definition ##################
       workspaces:
       - name: pipeline-ws1
