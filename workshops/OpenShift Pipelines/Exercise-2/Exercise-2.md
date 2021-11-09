@@ -133,8 +133,6 @@ our task should look like :
         - name: build
           image: quay.io/buildah/stable:v1.11.0
           workingDir: /workspace/source/
-          securityContext:
-            privileged: true
           volumeMounts:
           - name: varlibcontainers
             mountPath: /var/lib/containers
@@ -395,8 +393,6 @@ Before we are creating the pipeline run we do need to update (in our case we wil
         - name: build
           image: quay.io/buildah/stable:v1.11.0
           workingDir: /workspace/source/
-          securityContext:
-            privileged: true
           command: ["/bin/bash" ,"-c"]
           args:
             - |-
