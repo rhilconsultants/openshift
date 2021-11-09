@@ -144,8 +144,6 @@ Take the output and put in where the trienge brakets are :
 
 Now we will setup a few variable:
 
-    # export OCP_DOMAIN="infra.local"
-    # export OCP_CLUSTER="ocp4"
     # MY_REGISTRY="default-route-openshift-image-registry.apps.${OCP_CLUSTER}.${OCP_DOMAIN}"
 
 And create the File
@@ -168,7 +166,8 @@ To make life easier for podman we can set an Environment variable for our config
 
     # export REGISTRY_AUTH_FILE="/home/$USER/.docker/config.json"
 
-Next we will create a secret and add the file to our namespace 
+#### For External Registries  
+we will create a secret and add the file to our namespace  
 
     # oc create secret generic --from-file=.dockerconfigjson=${REGISTRY_AUTH_FILE} \
     --type=kubernetes.io/dockerconfigjson pullsecret -n $NAMESPACE

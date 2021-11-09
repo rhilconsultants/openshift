@@ -52,8 +52,10 @@ to generate it just run the following command:
 
 ### Cluster login
 
-    # export OCP_DOMAIN="infra.local"
-    # export OCP_CLUSTER="ocp4"
+The Instractor will provide the Cluster details 
+
+    # export OCP_DOMAIN="????"
+    # export OCP_CLUSTER="???"
     # oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
 
 ### tmux
@@ -76,6 +78,8 @@ First modify the tmux configuration file as follows:
 Now start a tmux session:
 
     # tmux new-session -s tkn
+
+#### Spliting the screen (NOT Mandatory)
 
 Next we will split the screen by clicking on CTRL+a then '"'.  
 Now we will Navigate to the top bar by CTRL+UP (the ARROW UP)  
