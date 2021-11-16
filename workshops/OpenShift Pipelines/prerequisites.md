@@ -22,6 +22,7 @@ First create the ${HOME}/bin Directory
 
     # mkdir ${HOME}/bin
     # export PATH="${HOME}/bin:${PATH}"
+    # echo 'export PATH="${HOME}/bin:${PATH}"' >> ~/.bashrc
 
 To download `oc` we need to do is to download the latest `oc` binary with the following command:
 
