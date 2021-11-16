@@ -204,6 +204,7 @@ Add it to the cluster :
 
 And we are going to give the service account extra credentials to make sure everything goes right!
 
+    # export GOGS_USER="???" # (from the Instracture speardsheet)
     # export NAMESPACE=$(oc project -q)
     # oc adm policy add-role-to-user admin system:serviceaccount:${NAMESPACE}:monkey -n ${NAMESPACE}
 
@@ -223,7 +224,7 @@ create the event listener :
           interceptors:
             - cel:
                 filter: >-
-                  body.repository.full_name == '${USER}/monkey-app' &&
+                  body.repository.full_name == '${GOGS_USER}/monkey-app' &&
                   body.ref.startsWith('refs/heads/master')
           bindings:
             - ref: monkey-trigger-binding
@@ -311,7 +312,7 @@ Now we will change the directory name to "old"
 
 And clone our new repository
 
-    # git clone http://$GOGS_URL/${USER}/monkey-app.git
+    # git clone http://$GOGS_URL/${GOGS_USER}/monkey-app.git
 
 (take a few second an think about why we are doing this)
 
@@ -322,8 +323,8 @@ And clone our new repository
 
 First Add your credentials :
 
-    # git config --global user.email ${USER}@infra.local
-    # git config --global user.name ${USER}
+    # git config --global user.email ${GOGS_USER}@infra.local
+    # git config --global user.name ${GOGS_USER}
 
 Now let's update our new repository over the gogs server
 
@@ -335,8 +336,8 @@ And run an initial commit
 
 for convenience sake we will add our username and password to our git configuration (not recommended in Production environment )
 
-    # export PASS='OcpPa$$w0rd' (also not recommended)
-    # sed -i "s/http:\/\/gogs/http:\/\/${USER}:${PASS}\@gogs/" .git/config
+    # export PASS='???' (From the Instracture spreadsheet)
+    # sed -i "s/http:\/\/gogs/http:\/\/${GOGS_USER}:${PASS}\@gogs/" .git/config
 
 Now that our repository is up 2 date we can change the pipeline source named image :
 
@@ -352,7 +353,7 @@ Now that our repository is up 2 date we can change the pipeline source named ima
         - name: revision
           value: master
         - name: url
-          value: http://gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
+          value: http://gogs.rhil-workshop.duckdns.org/${GOGS_USER}/monkey-app.git
     EOF
 
 And apply the changes :
