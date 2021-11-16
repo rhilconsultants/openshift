@@ -269,8 +269,9 @@ Now we will configure the gogs webhook :
 
 Now that everything is in place let's go to gogs and update the webhook to send a POST massage to our listener :
 
-in Your favorite browser open the gogs link :  
-https://gogs.rhil-workshop.duckdns.org/
+in Your favorite browser open the gogs link (Localtion is in the Instracture spreadsheet) :
+
+    # export GOGS_URL="????"
 
 Now Register with your given username and password.
 
@@ -310,7 +311,7 @@ Now we will change the directory name to "old"
 
 And clone our new repository
 
-    # git clone http://gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
+    # git clone http://$GOGS_URL/${USER}/monkey-app.git
 
 (take a few second an think about why we are doing this)
 
