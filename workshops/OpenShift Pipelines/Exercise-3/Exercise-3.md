@@ -79,7 +79,7 @@ An EventListener creates a Deployment and Service that listen for events. When t
 
 ## Getting dirty
 
-Now that we are failure with the important concepts , let's create a trigger that will start the monkey build pipeline once there is a change in the git master branch.  
+Now that we are familier  with the important concepts , let's create a trigger that will start the monkey build pipeline once there is a change in the git master branch.  
 We will use our pipelines and tasks that we used up until this point and create a trigger for them.
 
 First let's make sure we are on the right directory
