@@ -316,7 +316,7 @@ And clone our new repository
 
     # cd monkey-app-old/
     # cp -R src/ ../monkey-app/
-    # cp Dockerfile ../monkey-app/
+    # cp Containerfile ../monkey-app/
     # cd ../monkey-app/
 
 First Add your credentials :
