@@ -226,7 +226,7 @@ create the event listener :
                   body.repository.full_name == '${USER}/monkey-app' &&
                   body.ref.startsWith('refs/heads/master')
           bindings:
-            - name: monkey-trigger-binding
+            - ref: monkey-trigger-binding
           template:
             name: monkey-trigger-template
     EOF
