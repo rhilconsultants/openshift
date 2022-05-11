@@ -22,34 +22,43 @@ The 2 tools are
 
 First create the ${HOME}/bin Directory
 
-    # mkdir ${HOME}/bin
-    # export PATH="${HOME}/bin:${PATH}"
-    # echo 'export PATH="${HOME}/bin:${PATH}"' >> ~/.bashrc
+```bash
+$ mkdir ${HOME}/bin
+$ export PATH="${HOME}/bin:${PATH}"
+$ echo 'export PATH="${HOME}/bin:${PATH}"' >> ~/.bashrc
+```
 
 To download `oc` we need to do is to download the latest `oc` binary with the following command:
 
-    # export OCP_RELEASE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt \
-    | grep 'Name:' | awk '{print $NF}')
-    # wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-${OCP_RELEASE}.tar.gz
-    # tar -xzf openshift-client-linux-${OCP_RELEASE}.tar.gz -C ~/bin/
+```bash
+$ export OCP_RELEASE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt \
+| grep 'Name:' | awk '{print $NF}')
 
-### Auth Complete
+$ echo $OCP_RELEASE
+$ wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-${OCP_RELEASE}.tar.gz
+$ tar -xzf openshift-client-linux-${OCP_RELEASE}.tar.gz -C ~/bin/
+```
+### oc bash auto completion
 
-In order to utilize the bash auto completion in our environment we need to run a few simple commands which are part of the package itself.  
+> In order to utilize the bash auto completion in our environment we need to run a few simple commands which are part of the package itself.  
 
-to generate it just run the following command:
+To generate it just run the following command:
 
-    # oc completion bash > ~/.bash_completion
+```bash
+$ oc completion bash > ~/.bash_completion
+```
 
-** Now logout, login and test the command with the TAB key **
+**Now logout, login and test the command with the TAB key**
 
 ### Cluster login
 
-The Instractor will provide the Cluster details 
+> NOTE: The Instractor will provide the Cluster details
 
-    # export OCP_DOMAIN="????" ( example : sandbox661.opentlc.com )
-    # echo 'OCP_DOMAIN="???"' >> ~/.bashrc
-    # oc login api.cluster-${GUID}.${GUID}.$OCP_DOMAIN:6443
+```bash
+# export OCP_DOMAIN="????" ( example : sandbox661.opentlc.com )
+# echo 'OCP_DOMAIN="???"' >> ~/.bashrc
+# oc login api.cluster-${GUID}.${GUID}.$OCP_DOMAIN:6443
+```
 
 ### tmux
 
@@ -59,24 +68,26 @@ Here is how we do it:
 
 First modify the tmux configuration file as follows:
 
-    # cat > ~/.tmux.conf << EOF
-    unbind C-b
-    set -g prefix C-a
-    bind -n C-Left select-pane -L
-    bind -n C-Right select-pane -R
-    bind -n C-Up select-pane -U
-    bind -n C-Down select-pane -D
-    EOF
-
+```bash
+$ cat > ~/.tmux.conf << EOF
+unbind C-b
+set -g prefix C-a
+bind -n C-Left select-pane -L
+bind -n C-Right select-pane -R
+bind -n C-Up select-pane -U
+bind -n C-Down select-pane -D
+EOF
+```
 Now start a tmux session:
 
-    # tmux new-session -s ocp
+```bash
+tmux new-session -s ocp
+```
 
 #### Spliting the screen (NOT Mandatory)
 
-Next we will split the screen by clicking on CTRL+a then '"'.  
-Now we will Navigate to the top bar by CTRL+UP (the ARROW UP)  
-and create another slip horizontally by running CTRL+a then "%"  
+Now we will split the screen by clicking on CTRL+a then '"'.  
+Next we will Navigate to the top bar by CTRL+UP (the ARROW UP) and create another slip horizontally by running CTRL+a then "%"  
 To navigate between them you can run CTRL+ARROW and the arrows.  
 
 Now you are ready for work :)  
@@ -85,5 +96,7 @@ Now you are ready for work :)
 
 In Exercise 1, on the top left run watch for `taskrun` and on the right run watch for `tasks`:
 
-    # watch -n 1 "oc get pods"
-    # watch -n 1 "oc get events"
+```bash
+$ watch -n 1 "oc get pods"
+$ watch -n 1 "oc get events"
+```
