@@ -5,6 +5,14 @@ In this Exercise We will deploy our carinfo application but the application deve
 
 We are going to prove them wrong!!!
 
+# Clear old deployments 
+
+First let's delete the deployments from the last exercise :
+```bash
+# oc delete deployment loop-curl-statistics
+# oc delete deployment ubi-minimal
+```
+
 # deploying the application
 
 Our application is composed of 3 tears.
@@ -124,9 +132,9 @@ spec:
         - name: DB_USER
           value: carinfo
         - name: DB_PASSWORD
-              value: CarInfoPass
-            - name: SET_DELAY
-              value: “yes”
+          value: CarInfoPass
+        - name: SET_DELAY
+          value: "yes"
         - name: DB_HOST
           value: mariadb
 EOF
@@ -211,8 +219,24 @@ If you approve the way the route is shown then go ahead and create it
 The deployment team gave use a way to test the application so let’s go ahead and run the following command :
 ```bash
 # ROUTE=$(echo -n 'https://' && oc get route frontend -o jsonpath='{.spec.host}')
-# curl -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query
+# curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
 ```
-Use the tools we talked about today to find out where is the issue.
+
+Rememeber the statistics file from the previus exercise ... let's run the same command with it :
+
+```bash
+# cd ~/curl-statistics
+# curl -w "@loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
+```
+Use the tools we talked about today (oc sniff) to find out where is the issue.
+
+let's generate a pcap file and analyze the pcap file with wireshark.  
+Open 3 more session and run the ksniff for each of the pods
+  - for the frontend filter port 8080
+  - for the dbapi filter port 8080
+  - for the database filter port 3306
+
+build a bash script that will run all the commands together to 3 diffrent files.
+Now run the curl command again and copy them to wireshark (with scp/winscp)
 
 Good luck 

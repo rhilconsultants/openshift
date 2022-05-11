@@ -57,7 +57,15 @@ Now we need to push the image to a registry which is available:
 ```bash
 # HOST="default-route-openshift-image-registry.apps.cluster-${GUID}.${GUID}.${OCP_DOMAIN}"
 # REGISTRY="${HOST}/${NAMESPACE}"
+# echo 
 # podman tag localhost/admin-tools ${REGISTRY}/admin-tools
+```
+
+save everything to bashrc
+```bash
+# echo "NAMESPACE=$NAMESPACE" >> ~/.bashrc
+# echo "HOST=$HOST" >> ~/bashrc
+# echo "REGISTRY=$REGISTRY" >> ~/.bashrc
 ```
 
 Let’s login to the registry:
