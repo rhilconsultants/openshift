@@ -71,7 +71,7 @@ spec:
         persistentVolumeClaim:
           claimName: mariadb-pv-claim
 EOF
-
+```
 
 And the service to access the database 
 
