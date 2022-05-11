@@ -4,6 +4,8 @@ I like to be prepared and have all the tools I need with me when I am debugging 
 image and install some CLI tools (even if some of them do not make sense).
 first we need to build a small daemon to run in the background when the pod is running.
 
+## From the Base Image
+
 ```bash
 $ mkdir /tmp/admin-tools
 $ cd /tmp/admin-tools
@@ -25,28 +27,26 @@ $ chmod a+x run.sh
 
 And now we need to build the image With A Dockerfile should look like this :
 ```bash
-$ cat > Dockerfile << EOF
-FROM ubi8/ubi
+# cat > Containerfile << EOF
+FROM quay.io/centos/centos:stream
+
 MAINTAINER Red Hat Israel "Back to ROOT!!!!"
 USER root
 
-RUN dnf install -y curl telnet tcpdump nmap-ncat wireshark-cli && yum clean all
+RUN dnf install -y curl tcpdump nmap-ncat wireshark-cli && dnf clean all
 WORKDIR /opt/app-root/
 COPY run.sh .
-RUN gpasswd -a 1001 wireshark
-USER 1001
+RUN gpasswd -a nobody wireshark
+USER nobody
 
 ENTRYPOINT ["/opt/app-root/run.sh"]
-RUN ["/opt/app-root/run.sh"]
 EOF
 ```
 
 (this procedure will work with ubi8 and local repository as well):
-```bash
-$ buildah bud -f Dockerfile -t admin-tools
 
-#Option 2:
-$ podman build -f Dockerfile -t admin-tools
+```bash
+# buildah bud -f Containerfile -t admin-tools
 ```
 
 Obtain your namespace
@@ -70,6 +70,14 @@ And push the image to the registry
 ```bash
 $ podman push ${HOST}/${NAMESPACE}/admin-tools
 ````
+
+## Copying from Quay 
+
+In case the build failds or hangs we can copy the Image from quay with skopeo
+
+```bash
+# skopeo 
+```
 
 Once the process is complete we can use this image on the node we want to debug.
 Running the image

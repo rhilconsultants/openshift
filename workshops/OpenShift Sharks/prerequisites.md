@@ -8,6 +8,8 @@ In order to start working with OpenShift you Need to have the following basic sk
 
 ## OpenShift Cluster
 
+Login to our LAB bastion server using your SSH client (the username will be provided by the instracture)
+
 ## OpenShift tools   
 
 Before we start we need to download the right tools in order to work.
