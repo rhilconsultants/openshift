@@ -35,7 +35,7 @@ USER root
 RUN dnf install -y iputils curl tcpdump nmap-ncat wireshark-cli && dnf clean all
 WORKDIR /opt/app-root/
 COPY run.sh .
-RUN gpasswd -a 1001 wireshark
+RUN useradd -u 1001 -g wireshark user
 USER 1001
 
 ENTRYPOINT ["/opt/app-root/run.sh"]
@@ -63,9 +63,9 @@ Now we need to push the image to a registry which is available:
 
 save everything to bashrc
 ```bash
-# echo "NAMESPACE=$NAMESPACE" >> ~/.bashrc
-# echo "HOST=$HOST" >> ~/bashrc
-# echo "REGISTRY=$REGISTRY" >> ~/.bashrc
+# echo "export NAMESPACE=$NAMESPACE" >> ~/.bashrc
+# echo "export HOST=$HOST" >> ~/bashrc
+# echo "export REGISTRY=$REGISTRY" >> ~/.bashrc
 ```
 
 Let’s login to the registry:
@@ -75,7 +75,7 @@ Let’s login to the registry:
 
 And push the image to the registry
 ```bash
-# podman push ${HOST}/${NAMESPACE}/admin-tools
+# podman push ${REGISTRY}/admin-tools
 ```
 
 Once the process is complete we can use this image on a POD we want to debug.
