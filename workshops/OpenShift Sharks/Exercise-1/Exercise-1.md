@@ -7,14 +7,14 @@ first we need to build a small daemon to run in the background when the pod is r
 ## From the Base Image
 
 ```bash
-# mkdir ~/admin-tools
-# cd ~/admin-tools
+$ mkdir ~/admin-tools
+$ cd ~/admin-tools
 ```
 
 We will build that small daemon first with a simple bush script :
 
 ```bash
-# cat > run.sh << EOF
+$ cat > run.sh << EOF
 #!/bin/bash
 tail -f /dev/null
 EOF
@@ -22,12 +22,12 @@ EOF
 
 Make sure it is an executable :
 ```bash
-# chmod a+x run.sh
+$ chmod a+x run.sh
 ```
 
 And now we need to build the image With A Dockerfile should look like this :
 ```bash
-# cat > Containerfile << EOF
+$ cat > Containerfile << EOF
 FROM quay.io/centos/centos:stream
 MAINTAINER Red Hat Israel "Back to ROOT!!!!"
 USER root
@@ -45,37 +45,41 @@ EOF
 (this procedure will work with ubi8 and local repository as well):
 
 ```bash
-# buildah bud -f Containerfile -t admin-tools
+$ buildah bud -f Containerfile -t admin-tools
+```
+#### Option 2
+```bash
+$ podman build -f Containerfile -t admin-tools
 ```
 
 Obtain your namespace
 ```bash
-# NAMESPACE=$(oc project -q)
+$ NAMESPACE=$(oc project -q)
 ```
 
 Now we need to push the image to a registry which is available:
 ```bash
-# HOST="default-route-openshift-image-registry.apps.cluster-${GUID}.${GUID}.${OCP_DOMAIN}"
-# REGISTRY="${HOST}/${NAMESPACE}"
-# echo 
-# podman tag localhost/admin-tools ${REGISTRY}/admin-tools
+$ HOST="default-route-openshift-image-registry.apps.cluster-${GUID}.${GUID}.${OCP_DOMAIN}"
+$ REGISTRY="${HOST}/${NAMESPACE}"
+$ echo $REGISTRY
+$ podman tag localhost/admin-tools ${REGISTRY}/admin-tools
 ```
 
 save everything to bashrc
 ```bash
-# echo "export NAMESPACE=$NAMESPACE" >> ~/.bashrc
-# echo "export HOST=$HOST" >> ~/bashrc
-# echo "export REGISTRY=$REGISTRY" >> ~/.bashrc
+$ echo "export NAMESPACE=$NAMESPACE" >> ~/.bashrc
+$ echo "export HOST=$HOST" >> ~/bashrc
+$ echo "export REGISTRY=$REGISTRY" >> ~/.bashrc
 ```
 
 Let’s login to the registry:
 ```bash
-# podman login -u $(oc whoami) -p (oc whoami -t) $HOST
+$ podman login -u $(oc whoami) -p (oc whoami -t) $HOST
 ```
 
 And push the image to the registry
 ```bash
-# podman push ${REGISTRY}/admin-tools
+$ podman push ${REGISTRY}/admin-tools
 ```
 
 Once the process is complete we can use this image on a POD we want to debug.
@@ -85,7 +89,7 @@ Running the POD
 We will build a very small image to run as a Pod :
 
 ```bash
-# cat > Containerfile.minimal << EOF
+$ cat > Containerfile.minimal << EOF
 FROM ubi8/ubi-minimal
 
 WORKDIR /opt/app-root/
@@ -98,31 +102,31 @@ EOF
 
 Let's build the Image 
 ```bash
-# buildah bud -f Containerfile.minimal -t ${REGISTRY}/ubi-minimal && buildah push ${REGISTRY}/ubi-minimal 
+$ buildah bud -f Containerfile.minimal -t ${REGISTRY}/ubi-minimal && buildah push ${REGISTRY}/ubi-minimal 
 ```
 
 Now let's create the deployment :
 ```bash
-# oc create deployment ubi-minimal --image=${REGISTRY}/ubi-minimal --dry-run=client -o yaml
+$ oc create deployment ubi-minimal --image=${REGISTRY}/ubi-minimal --dry-run=client -o yaml
 ```
 And apply it 
 ```bash
-# oc create deployment ubi-minimal --image=${REGISTRY}/ubi-minimal 
+$ oc create deployment ubi-minimal --image=${REGISTRY}/ubi-minimal 
 ``` 
 
 Now we can run the debug with our new image :
 
 ```bash
-# oc debug $(oc get pod -o name | grep minimal) --image=${HOST}/${NAMESPACE}/admin-tools
+$ oc debug $(oc get pod -o name | grep minimal) --image=${HOST}/${NAMESPACE}/admin-tools
 ````
 
 Once you are in debug mode you can see the IP of the Pod and run the tools we installed on it.
 
 try capturing the network interface :
 ```bash
-# ip addr show
+$ ip addr show
 ```
 Now we can exit the debug mode :
 ```bash
-#exit
+$ exit
 ```
