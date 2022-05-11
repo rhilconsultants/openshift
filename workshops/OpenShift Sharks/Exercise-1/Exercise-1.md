@@ -29,6 +29,7 @@ And now we need to build the image With A Dockerfile should look like this :
 ```bash
 $ cat > Containerfile << EOF
 FROM quay.io/centos/centos:stream
+
 MAINTAINER Red Hat Israel "Back to ROOT!!!!"
 USER root
 
