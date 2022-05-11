@@ -27,7 +27,7 @@ $ chmod a+x run.sh
 
 And now we need to build the image With A Dockerfile should look like this :
 ```bash
-# cat > Containerfile << EOF
+$ cat > Containerfile << EOF
 FROM quay.io/centos/centos:stream
 
 MAINTAINER Red Hat Israel "Back to ROOT!!!!"
@@ -46,12 +46,17 @@ EOF
 (this procedure will work with ubi8 and local repository as well):
 
 ```bash
-# buildah bud -f Containerfile -t admin-tools
+# Option 1:
+$ buildah bud -f Containerfile -t admin-tools
+
+# Option 2:
+$ podman build -f Containerfile -t admin-tools
+
 ```
 
 Obtain your namespace
 ```bash
-$ NAMESPACE=$(oc project -q)
+$ NAMESPACE=$(oc project -q) && echo $NAMESPACE
 ```
 
 Now we need to push the image to a registry which is available:
@@ -59,11 +64,12 @@ Now we need to push the image to a registry which is available:
 $ HOST=$(oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
 $ REGISTRY="${HOST}/${NAMESPACE}"
 $ podman tag localhost/admin-tools ${REGISTRY}/admin-tools
+$ podman images | grep ${REGISTRY}/admin-tools
 ```
 
 Let’s login to the registry:
 ```bash
-$ podman login -u $(oc whoami) -p (oc whoami -t) $HOST
+$ podman login -u $(oc whoami) -p $(oc whoami -t) $HOST
 ```
 
 And push the image to the registry
@@ -71,12 +77,17 @@ And push the image to the registry
 $ podman push ${HOST}/${NAMESPACE}/admin-tools
 ````
 
+Verify with Skopeo
+```bash
+$ skopeo inspect docker://${HOST}/${NAMESPACE}/admin-tools
+```
+
 ## Copying from Quay 
 
 In case the build failds or hangs we can copy the Image from quay with skopeo
 
 ```bash
-# skopeo 
+$ skopeo 
 ```
 
 Once the process is complete we can use this image on the node we want to debug.
@@ -96,14 +107,17 @@ Now we can run the debug with our new image :
 
 ```bash
 $ oc debug node/<node> --image=${HOST}/${NAMESPACE}/admin-tools
-````
+
+[DebugContainer]$ chroot /host
+[DebugContainer]$ bash
+```
 
 we can look interfaces with a simple ip command :
 ```bash
-$ ip addr show | grep -B2 <IP Address>
+[DebugContainer]$ ip addr show | grep -B2 <IP Address>
 ```
 
 Now that we have the interface name we can start running the network debug on that interface.
 ```bash
-$ tshark -i <interface> 'tcpdump filgters'
+[DebugContainer]$ tshark -i <interface> 'tcpdump filgters'
 ```
