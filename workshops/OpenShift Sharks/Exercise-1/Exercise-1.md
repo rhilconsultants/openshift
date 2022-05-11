@@ -4,6 +4,8 @@ I like to be prepared and have all the tools I need with me when I am debugging 
 image and install some CLI tools (even if some of them do not make sense).
 first we need to build a small daemon to run in the background when the pod is running.
 
+## From the Base Image
+
 ```bash
 # mkdir ~/admin-tools
 # cd ~/admin-tools
@@ -33,17 +35,17 @@ USER root
 RUN dnf install -y curl tcpdump nmap-ncat wireshark-cli && dnf clean all
 WORKDIR /opt/app-root/
 COPY run.sh .
-RUN gpasswd -a 1001 wireshark
+RUN gpasswd -a nobody wireshark
 USER nobody
 
 ENTRYPOINT ["/opt/app-root/run.sh"]
-RUN ["/opt/app-root/run.sh"]
 EOF
 ```
 
 (this procedure will work with ubi8 and local repository as well):
+
 ```bash
-# buildah bud -f Dockerfile -t admin-tools
+# buildah bud -f Containerfile -t admin-tools
 ```
 
 Obtain your namespace
@@ -67,6 +69,14 @@ And push the image to the registry
 ```bash
 # podman push ${HOST}/${NAMESPACE}/admin-tools
 ````
+
+## Copying from Quay 
+
+In case the build failds or hangs we can copy the Image from quay with skopeo
+
+```bash
+# skopeo 
+```
 
 Once the process is complete we can use this image on the node we want to debug.
 Running the image
