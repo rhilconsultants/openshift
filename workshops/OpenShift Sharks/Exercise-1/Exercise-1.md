@@ -25,16 +25,16 @@ Make sure it is an executable :
 
 And now we need to build the image With A Dockerfile should look like this :
 ```bash
-# cat > Dockerfile << EOF
-FROM ubi8/ubi
+# cat > Containerfile << EOF
+FROM quay.io/centos/centos:stream
 MAINTAINER Red Hat Israel "Back to ROOT!!!!"
 USER root
 
-RUN dnf install -y curl telnet tcpdump nmap-ncat wireshark-cli && yum clean all
+RUN dnf install -y curl tcpdump nmap-ncat wireshark-cli && dnf clean all
 WORKDIR /opt/app-root/
 COPY run.sh .
 RUN gpasswd -a 1001 wireshark
-USER 1001
+USER nobody
 
 ENTRYPOINT ["/opt/app-root/run.sh"]
 RUN ["/opt/app-root/run.sh"]
