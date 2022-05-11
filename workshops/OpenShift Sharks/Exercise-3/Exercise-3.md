@@ -106,9 +106,14 @@ Now let’s create an image for our Pod to use. We will start with the Container
 
 ```bash
 # cat > Containerfile.loop << EOF
-FROM ubi8/ubi-minimalCOPY run.sh /opt/app-root/ 
-RUN chmod a+x /opt/app-root/run.shENTRYPOINT ["/opt/app-root/run.sh"]
-CMD ["/opt/app-root/run.sh"] EOF
+FROM ubi8/ubi-minimal
+
+COPY run.sh /opt/app-root/ 
+RUN chmod a+x /opt/app-root/run.sh
+
+ENTRYPOINT ["/opt/app-root/run.sh"]
+CMD ["/opt/app-root/run.sh"] 
+EOF
 ```
 
 And let’s go ahead and build the image
