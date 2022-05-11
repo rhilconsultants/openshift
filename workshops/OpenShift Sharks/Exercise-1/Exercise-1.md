@@ -33,11 +33,11 @@ FROM quay.io/centos/centos:stream
 MAINTAINER Red Hat Israel "Back to ROOT!!!!"
 USER root
 
-RUN dnf install -y curl tcpdump nmap-ncat wireshark-cli && dnf clean all
+RUN dnf install -y iputils curl tcpdump nmap-ncat wireshark-cli && dnf clean all
 WORKDIR /opt/app-root/
 COPY run.sh .
-RUN gpasswd -a nobody wireshark
-USER nobody
+RUN gpasswd -a 1001 wireshark
+USER 1001
 
 ENTRYPOINT ["/opt/app-root/run.sh"]
 EOF
@@ -46,7 +46,7 @@ EOF
 (this procedure will work with ubi8 and local repository as well):
 
 ```bash
-# buildah bud -f Containerfile -t admin-tools
+# podman build -f Containerfile -t admin-tools
 ```
 
 Obtain your namespace
@@ -56,9 +56,17 @@ $ NAMESPACE=$(oc project -q)
 
 Now we need to push the image to a registry which is available:
 ```bash
-$ HOST=$(oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
-$ REGISTRY="${HOST}/${NAMESPACE}"
-$ podman tag localhost/admin-tools ${REGISTRY}/admin-tools
+# HOST="default-route-openshift-image-registry.apps.cluster-${GUID}.${GUID}.${OCP_DOMAIN}"
+# REGISTRY="${HOST}/${NAMESPACE}"
+# echo 
+# podman tag localhost/admin-tools ${REGISTRY}/admin-tools
+```
+
+save everything to bashrc
+```bash
+# echo "NAMESPACE=$NAMESPACE" >> ~/.bashrc
+# echo "HOST=$HOST" >> ~/bashrc
+# echo "REGISTRY=$REGISTRY" >> ~/.bashrc
 ```
 
 Let’s login to the registry:
@@ -68,42 +76,54 @@ $ podman login -u $(oc whoami) -p (oc whoami -t) $HOST
 
 And push the image to the registry
 ```bash
-$ podman push ${HOST}/${NAMESPACE}/admin-tools
-````
-
-## Copying from Quay 
-
-In case the build failds or hangs we can copy the Image from quay with skopeo
-
-```bash
-# skopeo 
+# podman push ${HOST}/${NAMESPACE}/admin-tools
 ```
 
-Once the process is complete we can use this image on the node we want to debug.
-Running the image
-Before we run the command we need to see on which IP address the node is listening on:
+Once the process is complete we can use this image on a POD we want to debug.
+
+Running the POD
+
+We will build a very small image to run as a Pod :
+
 ```bash
-$ oc get nodes -o wide
+# cat > Containerfile.minimal << EOF
+FROM ubi8/ubi-minimal
+
+WORKDIR /opt/app-root/
+COPY run.sh /opt/app-root/run.sh
+USER nobody
+
+ENTRYPOINT ["/opt/app-root/run.sh"]
+EOF
 ```
 
-The Server IP should be on the Internal IP column so we can catch it with a simple grep and awk command with the node we want to debug:
+Let's build the Image 
 ```bash
-$ oc get nodes -o wide | grep <node> | awk '{print $6}'
+# buildah bud -f Containerfile.minimal -t ${REGISTRY}/ubi-minimal && buildah push ${REGISTRY}/ubi-minimal 
 ```
 
-Save the output a side (we will need it later).
+Now let's create the deployment :
+```bash
+# oc create deployment ubi-minimal --image=${REGISTRY}/ubi-minimal --dry-run=client -o yaml
+```
+And apply it 
+```bash
+# oc create deployment ubi-minimal --image=${REGISTRY}/ubi-minimal 
+``` 
+
 Now we can run the debug with our new image :
 
 ```bash
-$ oc debug node/<node> --image=${HOST}/${NAMESPACE}/admin-tools
+# oc debug $(oc get pod -o name | grep minimal) --image=${HOST}/${NAMESPACE}/admin-tools
 ````
 
-we can look interfaces with a simple ip command :
-```bash
-$ ip addr show | grep -B2 <IP Address>
-```
+Once you are in debug mode you can see the IP of the Pod and run the tools we installed on it.
 
-Now that we have the interface name we can start running the network debug on that interface.
+try capturing the network interface :
 ```bash
-$ tshark -i <interface> 'tcpdump filgters'
+# ip addr show
+```
+Now we can exit the debug mode :
+```bash
+#exit
 ```
