@@ -10,7 +10,7 @@ which enables us to run an interface capture from the pod itself to our running 
 The Install process is fairly simple , all we need to do it to download the zip file (the corrent version is 1.6)
 
 ```bash
-# cd ~/bin/
+# cd ~/bin
 # wget https://github.com/eldadru/ksniff/releases/download/v1.6.2/ksniff.zip
 ```
 
@@ -44,6 +44,5 @@ By default ksniff will attempt to start a local instance of the Wireshark GUI. Y
 Example using tshark:
 
 ```bash
-# oc sniff <pod-name> -f "port 8080" -o - | tshark -r -
+# oc sniff $(oc get pods | grep minimal | awk '{print $1}') -p --image=$REGISTRY/admin-tools -o - | tshark -r -
 ```
-

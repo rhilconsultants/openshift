@@ -25,6 +25,12 @@ In some cases running the command once it not enough, you want to create a graph
 
 The script is a basically a shell script so we can build a loop with our favorite shell and run the curl command in it.
 
+In our home dir 
+```bash
+# mkdir ~/curl-statistics
+# cd ~/curl-statistics
+```
+
 Let’s go ahead and create the format file. First create the file named loop_curl_statistics.txt
 
 ```bash
@@ -72,12 +78,12 @@ For our example I am going to user BASH :
            
 if [[ -z $DESTINATION_URL ]]; then
    echo "No DESTINATION_URL variable was defined"
-   exit(0);                                      
+   exit 0;                                      
 fi         
   
 if [[ -z $TIME_INTERVAL ]]; then 
     echo "No TIME_INTERVAL variable is set" 
-    exit(1)                                 
+    exit 1;                                 
 fi          
   
 while true; do
@@ -119,7 +125,8 @@ EOF
 And let’s go ahead and build the image
 
 ```bash
-# buildah bud -f Containerfile.loop -t loop-curl-statisticsSTEP 1/5: FROM ubi8/ubi-minimal
+# buildah bud -f Containerfile.loop -t loop-curl-statistics
+STEP 1/5: FROM ubi8/ubi-minimal
 Resolved "ubi8/ubi-minimal" as an alias (/etc/containers/registries.conf.d/000-shortnames.conf)
 Trying to pull registry.access.redhat.com/ubi8-minimal:latest...
 Getting image source signatures

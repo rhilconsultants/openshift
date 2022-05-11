@@ -47,9 +47,9 @@ to generate it just run the following command:
 
 The Instractor will provide the Cluster details 
 
-    # export OCP_DOMAIN="????"
-    # export OCP_CLUSTER="???"
-    # oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
+    # export OCP_DOMAIN="????" ( example : sandbox661.opentlc.com )
+    # echo 'OCP_DOMAIN="???"' >> ~/.bashrc
+    # oc login api.cluster-${GUID}.${GUID}.$OCP_DOMAIN:6443
 
 ### tmux
 
