@@ -46,16 +46,17 @@ EOF
 (this procedure will work with ubi8 and local repository as well):
 
 ```bash
+# Option 1:
 $ buildah bud -f Containerfile -t admin-tools
-```
-#### Option 2
-```bash
+
+# Option 2:
 $ podman build -f Containerfile -t admin-tools
+
 ```
 
 Obtain your namespace
 ```bash
-$ NAMESPACE=$(oc project -q)
+$ NAMESPACE=$(oc project -q) && echo $NAMESPACE
 ```
 
 Now we need to push the image to a registry which is available:
@@ -64,6 +65,7 @@ $ HOST="default-route-openshift-image-registry.apps.cluster-${GUID}.${GUID}.${OC
 $ REGISTRY="${HOST}/${NAMESPACE}"
 $ echo $REGISTRY
 $ podman tag localhost/admin-tools ${REGISTRY}/admin-tools
+$ podman images | grep ${REGISTRY}/admin-tools
 ```
 
 save everything to bashrc
@@ -75,7 +77,7 @@ $ echo "export REGISTRY=$REGISTRY" >> ~/.bashrc
 
 Let’s login to the registry:
 ```bash
-$ podman login -u $(oc whoami) -p (oc whoami -t) $HOST
+$ podman login -u $(oc whoami) -p $(oc whoami -t) $HOST
 ```
 
 And push the image to the registry
@@ -85,11 +87,13 @@ $ podman push ${REGISTRY}/admin-tools
 
 Once the process is complete we can use this image on a POD we want to debug.
 
-Running the POD
+
+Running the Pod
 
 We will build a very small image to run as a Pod :
 
 ```bash
+
 $ cat > Containerfile.minimal << EOF
 FROM ubi8/ubi-minimal
 
@@ -123,11 +127,12 @@ $ oc debug $(oc get pod -o name | grep minimal) --image=${HOST}/${NAMESPACE}/adm
 
 Once you are in debug mode you can see the IP of the Pod and run the tools we installed on it.
 
-try capturing the network interface :
 ```bash
 $ ip addr show
 ```
+
 Now we can exit the debug mode :
 ```bash
 $ exit
 ```
+
