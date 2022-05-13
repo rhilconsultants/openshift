@@ -52,12 +52,13 @@ $ oc completion bash > ~/.bash_completion
 
 ### Cluster login
 
-> NOTE: The Instractor will provide the Cluster details
+> NOTE: The Instractor will provide the Cluster details, the userX stand for the number provided by the instructor
 
 ```bash
 # export OCP_DOMAIN="????" ( example : sandbox661.opentlc.com )
 # echo 'OCP_DOMAIN="???"' >> ~/.bashrc
-# oc login api.cluster-${GUID}.${GUID}.$OCP_DOMAIN:6443
+# oc login --username=userX --password=openshift --server=https://api.cluster-${GUID}.${GUID}.$OCP_DOMAIN:6443
+# oc project userX
 ```
 
 ### tmux
@@ -67,6 +68,8 @@ For those of you who don't know tmux in a very powerful tool which allows us to 
 Here is how we do it:
 
 First modify the tmux configuration file as follows:
+
+#### For Linux Users
 
 ```bash
 $ cat > ~/.tmux.conf << EOF
@@ -78,6 +81,20 @@ bind -n C-Up select-pane -U
 bind -n C-Down select-pane -D
 EOF
 ```
+
+#### For Windows & MAC Users
+
+```bash
+$ cat > ~/.tmux.conf << EOF
+unbind C-b
+set -g prefix C-a
+bind -n M-Left select-pane -L
+bind -n M-Right select-pane -R
+bind -n M-Up select-pane -U
+bind -n M-Down select-pane -D
+EOF
+```
+
 Now start a tmux session:
 
 ```bash
