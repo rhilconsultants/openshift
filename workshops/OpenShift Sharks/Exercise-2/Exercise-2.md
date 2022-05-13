@@ -10,8 +10,8 @@ which enables us to run an interface capture from the pod itself to our running 
 The Install process is fairly simple , all we need to do it to download the zip file (the corrent version is 1.6)
 
 ```bash
-# cd ~/bin
-# wget https://github.com/eldadru/ksniff/releases/download/v1.6.2/ksniff.zip
+$ cd ~/bin
+$ wget https://github.com/eldadru/ksniff/releases/download/v1.6.2/ksniff.zip
 ```
 
 and then unzip it and install it with the make command :
@@ -43,14 +43,41 @@ $ oc sniff <POD_NAME>
 * `LOCAL_TCPDUMP_FILE`: **_Optional_**. If specified, ksniff will use this path as the local path of the static tcpdump binary.
 * `REMOTE_TCPDUMP_FILE`: **_Optional_**. If specified, ksniff will use the specified path as the remote path to upload static tcpdump to.
 
-## Piping output to stdout
+### Piping output to stdout
 
 By default ksniff will attempt to start a local instance of the Wireshark GUI. You can integrate with other tools using the `-o` switch to pipe packet cap data to stdout.
 
 Example using tshark:
 
 ```bash
-# oc sniff $(oc get pods | grep minimal | awk '{print $1}') -p --image=$REGISTRY/admin-tools -o - | tshark -r -
+$ oc sniff $(oc get pods | grep minimal | awk '{print $1}') -f 'port 443' -p --image=$REGISTRY/admin-tools -o - | tshark -r -
 ```
-We will not see any traffic but if no errors appear on the screen then you can just cancel the run (CTRL+c) and move on.
+(quit and kill the snifff Pod)
 
+### Save the output to a file
+
+In case we want to save the capture to a file all we need to do is change the "-o -" to "-o filename.pcap"
+
+```bash
+$ oc sniff $(oc get pods | grep minimal | awk '{print $1}') -f 'port 443' -p --image=$REGISTRY/admin-tools -o google.pcap 
+```
+
+One a new session (use tmux).
+Run the debug again and try to running curl to google
+
+```bash
+$ oc debug $(oc get pod -o name | grep minimal) --image=${HOST}/${NAMESPACE}/admin-tools
+$ curl https://www.google.com
+```
+
+If you see the google.pcap is bigger the zero then you are good to go (exit the debug and kill the sniff Pod)
+
+Copy the file to your workstation (scp/winscp)
+
+Open it with wireshark
+
+```bash
+$ wireshark -r google.pcap
+```
+
+Go over the lines a little bit and close it for now .
