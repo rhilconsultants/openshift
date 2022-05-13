@@ -10,8 +10,8 @@ which enables us to run an interface capture from the pod itself to our running 
 The Install process is fairly simple , all we need to do it to download the zip file (the corrent version is 1.6)
 
 ```bash
-$ cd ~/bin/
-$ wget https://github.com/eldadru/ksniff/releases/download/v1.6.2/ksniff.zip
+# cd ~/bin
+# wget https://github.com/eldadru/ksniff/releases/download/v1.6.2/ksniff.zip
 ```
 
 and then unzip it and install it with the make command :
@@ -21,10 +21,17 @@ $ unzip ksniff.zip
 > **NOTE!** In case you've downloaded the file to a different directory you need to copy the kubectl-sniff file to the oc directory 
 (in our case $HOME/bin/) where the oc binary is located
 
-## Usage 
+## Usage (Don't run , just review the options
 
 ```bash
-$ oc sniff <POD_NAME> [-n <NAMESPACE_NAME>] [-c <CONTAINER_NAME>] [-i <INTERFACE_NAME>] [-f <CAPTURE_FILTER>] [-o OUTPUT_FILE] [-l LOCAL_TCPDUMP_FILE] [-r REMOTE_TCPDUMP_FILE]
+$ oc sniff <POD_NAME> 
+            [-n <NAMESPACE_NAME>] 
+            [-c <CONTAINER_NAME>] 
+            [-i <INTERFACE_NAME>] 
+            [-f <CAPTURE_FILTER>] 
+            [-o OUTPUT_FILE] 
+            [-l LOCAL_TCPDUMP_FILE] 
+            [-r REMOTE_TCPDUMP_FILE]
 ```
 
 * `POD_NAME`: **_Required_**. The name of the kubernetes pod to start capture its traffic.
@@ -43,6 +50,7 @@ By default ksniff will attempt to start a local instance of the Wireshark GUI. Y
 Example using tshark:
 
 ```bash
-$ oc sniff <pod-name> -f "port 8080" -o - | tshark -r -
+# oc sniff $(oc get pods | grep minimal | awk '{print $1}') -p --image=$REGISTRY/admin-tools -o - | tshark -r -
 ```
+We will not see any traffic but if no errors appear on the screen then you can just cancel the run (CTRL+c) and move on.
 
