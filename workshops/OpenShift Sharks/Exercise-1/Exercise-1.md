@@ -71,7 +71,7 @@ $ podman images | grep ${REGISTRY}/admin-tools
 save everything to bashrc
 ```bash
 $ echo "export NAMESPACE=$NAMESPACE" >> ~/.bashrc
-$ echo "export HOST=$HOST" >> ~/bashrc
+$ echo "export HOST=$HOST" >> ~/.bashrc
 $ echo "export REGISTRY=$REGISTRY" >> ~/.bashrc
 ```
 

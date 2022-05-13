@@ -14,3 +14,6 @@ the WorkShop will be divided into 4 Exercises
 * deploy and use the port checking tools from [Here](Extra/extra.md)
 
 After each Exercise the Instructor will run the exercise with emphasis on the important parts
+
+### Instructor
+For the Instructor , run the following commands to prepare the environment [Here](Instructor/README.md)
