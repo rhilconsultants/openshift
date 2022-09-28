@@ -164,7 +164,8 @@ Now let’s look at the directory structure of our new object:
     
     27 directories, 54 files
 
-Note: as a convention, when creating Ansible operators, Ansible YAML files use a `.yml` suffix whereas Kubernetes/OpenShift assets use a `.yaml` suffix.
+**Note**
+As a convention, when creating Ansible operators, Ansible YAML files use a `.yml` suffix whereas Kubernetes/OpenShift assets use a `.yaml` suffix.
 
 To test the operator on OpenShift we will use a different user named `{USER}-client`.
 
@@ -331,7 +332,7 @@ The ClusterRole can be assigned to individual users as follows:
 $ oc adm policy add-cluster-role-to-user ${USER}hellogo-editor-role $(oc whoami)
 ```
 
-** OPTIONAL ** 
+**OPTIONAL** 
 
 Alternatively, an RBAC `group` could be created with the ClusterRole permissions, and `users` can be assigned to the group. For example, create a new group named `hellogo-users`:
 ```bash
@@ -373,7 +374,7 @@ EOF
 ```
 ### Image Permission
 
-** NOTE **
+**NOTE**
 This section is only relevant if you are building a cluster scope Operator , for namespace scope you can skip this step
 
 If we are using the internal OpenShift registry, we must allow the default service account in the project that we will use to pull images from the ${USER} repository in the registry by running:

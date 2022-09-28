@@ -130,7 +130,7 @@ ENTRYPOINT [ "/usr/bin/run-ansible.sh" ]
 CMD [ "/usr/bin/run-ansible.sh" ]
 ```
 
-*NOTE* 
+**NOTE** 
 we are using here a pyhton-3.8 base image for simplicity but in normal workloads we will need to use ubi to build our needed container.
 
 Build the container:
@@ -159,7 +159,8 @@ Next, we'll use the Ansible k8s modules to leverage existing Kubernetes and Open
 
 ### Create the YAML Files
 
-** NOTE **
+**NOTE**
+
 for internal registry update the REGISTRY inventory
 ```bash
 $ export REGISTRY="image-registry.openshift-image-registry.svc:5000"
