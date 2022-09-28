@@ -21,7 +21,7 @@ $ unzip ksniff.zip
 > **NOTE!** In case you've downloaded the file to a different directory you need to copy the kubectl-sniff file to the oc directory 
 (in our case $HOME/bin/) where the oc binary is located
 
-## Usage (Don't run , just review the options
+## Usage (Don't run , just review the options).
 
 ```bash
 $ oc sniff <POD_NAME> 
@@ -50,7 +50,8 @@ By default ksniff will attempt to start a local instance of the Wireshark GUI. Y
 Example using tshark:
 
 ```bash
-$ oc sniff $(oc get pods | grep minimal | awk '{print $1}') -f 'port 443' -p --image=$REGISTRY/admin-tools -o - | tshark -r -
+$ oc sniff $(oc get pods | grep minimal | awk '{print $1}') -f 'port 443' -p \
+   --tcpdump-image=$REGISTRY/admin-tools --image=$REGISTRY/admin-tools -o - | tshark -r -
 ```
 (quit and kill the snifff Pod)
 

@@ -24,6 +24,7 @@ First go to your ose-openshift directory:
 ```bash
 $ cd ~/ose-openshift
 ```
+
 Now Create a shell script :
 ```bash
 $ echo '#!/bin/bash
@@ -46,6 +47,11 @@ if [[ -z "$K8S_AUTH_API_KEY" ]]; then
   echo "No Kubernetes Authentication key provided (K8S_AUTH_API_KEY environment value)"
 else 
   export K8S_AUTH_API_KEY=${K8S_AUTH_API_KEY}
+fi
+
+if [[ -z "${K8S_AUTH_KUBECONFIG}" ]]; then
+   echo "NO K8S_AUTH_KUBECONFIG environment variable configured"
+   exit 1
 fi
 
 if [[ -z "${K8S_AUTH_HOST}" ]]; then
@@ -76,54 +82,21 @@ $ chmod a+x run-ansible.sh
 
 And let’s create a new Dockerfile and edit it:
 ```bash
-FROM centos
+FROM python:3.8-slim
 
-ENV __doozer=update BUILD_RELEASE=2 BUILD_VERSION=v3.11.346 OS_GIT_MAJOR=3 OS_GIT_MINOR=11 OS_GIT_PATCH=346 
-ENV OS_GIT_TREE_STATE=clean OS_GIT_VERSION=3.11.346-2 SOURCE_GIT_TREE_STATE=clean 
-ENV __doozer=merge OS_GIT_COMMIT=f65cc70 SOURCE_DATE_EPOCH=1607700712 
-ENV SOURCE_GIT_COMMIT=f65cc700d2483fd9a485a7bd6cd929cbbed1b772 SOURCE_GIT_TAG=openshift-ansible-3.11.346-1 
-ENV SOURCE_GIT_URL=https://github.com/openshift/openshift-ansible
+# RUN adduser --disabled-password -u 1001 --home /opt/app-root/ slim
 
-MAINTAINER Your Name
-
-USER root
-
-# Playbooks, roles, and their dependencies are installed from packages.
-RUN INSTALL_PKGS="python3-openshift.noarch ansible python3-cryptography openssl iproute httpd-tools"  \
- && dnf repolist > /dev/null  \
- && : ';removed yum-config-manager'  \
- && : 'removed yum-config-manager'  \
-# && yum install -y java-1.8.0-openjdk-headless  \
- && dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
- && dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS \
-# && rpm -q $INSTALL_PKGS $x86_EXTRA_RPMS  \
- && dnf clean all
-
-RUN mkdir -p /opt/app-root/src
-RUN echo 'remote_tmp     = /tmp' >> /etc/ansible/ansible.cfg  \
-    && echo 'local_tmp      = /tmp' >> /etc/ansible/ansible.cfg
-
-
-ENV USER_UID=1001 \
-    DEFAULT_LOCAL_TMP=/tmp \
-    HOME=/opt/app-root/src \
-    WORK_DIR=/opt/app-root/src \
-    ANSIBLE_CONFIG=/etc/ansible/ansible.cfg \
-    OPTS="-v"
-
-# Add image scripts and files for running as a system container
-# COPY root /
-
+ENV HOME=/opt/app-root/ \
+    PATH="${PATH}:/root/.local/bin"
+RUN mkdir /opt/app-root/src && mkdir /opt/app-root/.kube/
+COPY kubeconfig /opt/app-root/.kube/config.json
 COPY run-ansible.sh /usr/bin/
 
-USER ${USER_UID}
-
-WORKDIR ${WORK_DIR}
-ENTRYPOINT [ "/usr/bin/run-ansible.sh" ]
-CMD [ "/usr/bin/run-ansible.sh" ]
+RUN pip install pip --upgrade
+RUN pip install ansible openshift kubernetes 
 
 LABEL \
-        name="openshift3/ose-ansible" \
+        name="openshift/ose-ansible" \
         summary="OpenShift's installation and configuration tool" \
         description="A containerized ose-openshift image to let you run playbooks" \
         url="https://github.com/openshift/openshift-ansible" \
@@ -142,12 +115,17 @@ LABEL \
         io.openshift.build.commit.id="f65cc700d2483fd9a485a7bd6cd929cbbed1b772" \
         io.openshift.build.source-location="https://github.com/openshift/openshift-ansible"
 
+WORKDIR /opt/app-root/
+
+ENTRYPOINT [ "/usr/bin/run-ansible.sh" ]
+CMD [ "/usr/bin/run-ansible.sh" ]
 ```
 
 *NOTE* 
-we are using here a centos base image for simplicity but in normal workloads we will need to use ubi to build our needed container.
+we are using here a pyhton-3.8 base image for simplicity but in normal workloads we will need to use ubi to build our needed container.
 
 Build the container:
+
 ```bash
 $ buildah bud -f Dockerfile -t ose-openshift .
 ```
@@ -156,18 +134,28 @@ If everything went well, you should see the new image in your registry:
 ```bash
 $ podman images
 ```
+
 **(What do you see wrong with this image and method ???)**
 
 
 ## Running the Container 
 
+### Create a new namesapce :
+
+```bash
+$ $ oc new-project project-${USER}
+```
+
 Next, we'll use the Ansible k8s modules to leverage existing Kubernetes and OpenShift Resource files. Let's take use the hello-go deployment example.
+
+### Create the YAML Files
 
 ** NOTE **
 for internal registry update the REGISTRY inventory
 ```bash
 $ export REGISTRY="image-registry.openshift-image-registry.svc:5000"
 ```
+If you are using different registry just change the image path to the corrent registry
 
 ```yaml
 $ cat > roles/Hello-go-role/templates/hello-go-deployment.yml.j2 <<EOF
@@ -194,8 +182,15 @@ EOF
 ```
 We will run our Ansible task in a namespace called project-${USER}. If we are using the internal OpenShift registry, we must allow the default service account in the project to pull images from the ${USER} respository in the registry by running:
 ```bash
-$ oc project project-${USER}
-$ oc policy add-role-to-group system:image-puller system:serviceaccounts:project-${USER} --namespace=${USER}
+$ oc policy add-role-to-user admin system:serviceaccounts:project-${USER} --namespace=${USER}
+```
+
+First update the inventory file for our internal connection :
+```bash
+$ cat > inventory << EOF
+[localhost]
+127.0.0.1 ansible_connection=local ansible_host=localhost ansible_python_interpreter=/usr/bin/python3
+EOF
 ```
 
 Update tasks file Hello-go-role/tasks/main.yml to create the hello-go deployment using the k8s module:
@@ -203,7 +198,7 @@ Update tasks file Hello-go-role/tasks/main.yml to create the hello-go deployment
 $ cat > roles/Hello-go-role/tasks/main.yml <<EOF
 ---
 - name: set hello-go deployment to {{ state }}
-  k8s:
+  kubernetes.core.k8s:
     state: "{{ state }}"
     definition: "{{ lookup('template', 'hello-go-deployment.yml.j2') | from_yaml }}"
     namespace: project-${USER}
@@ -222,10 +217,21 @@ size: 1
 EOF
 ```
 
-Create an src directory 
+Create an src directory
+
 ```bash
 $ mkdir ${HOME}/ose-openshift/src/
 ```
+
+### Copy kubeconfig
+
+For simple access we will copy the kubeconfig from out corrent working profile so the ansible playbook will be able to use it :
+
+```bash
+$ cp ~/.kube/config.json /ose-openshift/kubeconfig
+```
+
+### Running the Image
 
 Now we can run the Ansible playbook to deploy your hello-go application on OpenShift:
 ```bash
@@ -234,6 +240,7 @@ $ podman run --rm --name ose-openshift \
     -v ${HOME}/ose-openshift/src/:/opt/app-root/src/:Z,rw \
     -v ${HOME}/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
     -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
+    -e K8S_AUTH_KUBECONFIG=/opt/app-root/ose-ansible/kubeconfig \
     -e INVENTORY=/opt/app-root/ose-ansible/inventory \
     -e K8S_AUTH_API_KEY=$(oc whoami -t) \
     -e DEFAULT_LOCAL_TMP=/tmp/ \
@@ -243,9 +250,11 @@ $ podman run --rm --name ose-openshift \
 ```
 
 You can see the hello-go deployment created in your namespace.
+
 ```bash
 $ oc get all -n project-${USER}
 ```
+
 The output should be similar to the following:
 ```
 NAME                               READY   STATUS    RESTARTS   AGE
@@ -261,12 +270,15 @@ replicaset.apps/hellogo-pod-6888f96bd8   1         1         1       11m
 Next, let's make it possible to customize the replica count for our hello-go deployment by adding an hellogo_replicas variable to the DeploymentConfig template and setting the variable value dynamically using Ansible.
 
 Modify the variables file `roles/Hello-go-role/defaults/main.yml`, setting size: 2:
+
 ```yaml
 ---
 state: present
 size: 2
 ```
+
 Modify the roles/Hello-go-role/templates/hello-go-deployment.yml.j2 deployment template to read replicas from the hellogo_replicas variable rather than the fixed size of 1:
+
 ```yaml
 kind: Deployment
 apiVersion: v1
@@ -288,13 +300,16 @@ spec:
     matchLabels:
       app: hellogo
 ```
+
 Running the Playbook again will read the variable hellogo_replicas and use the provided value to customize the hello-go DeploymentConfig.
+
 ```bash
 $ podman run --rm --name ose-openshift \
     -e OPTS="-v" \
     -v ${HOME}/ose-openshift/src/:/opt/app-root/src/:Z,rw \
     -v ${HOME}/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
     -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
+    -e K8S_AUTH_KUBECONFIG=/opt/app-root/ose-ansible/kubeconfig \
     -e INVENTORY=/opt/app-root/ose-ansible/inventory \
     -e K8S_AUTH_API_KEY=$(oc whoami -t) \
     -e DEFAULT_LOCAL_TMP=/tmp/ \
@@ -302,6 +317,7 @@ $ podman run --rm --name ose-openshift \
     -e K8S_AUTH_VALIDATE_CERTS=false \
     ose-openshift
 ```
+
 After running the Playbook, the cluster will scale the number of hellogo pods to meet the new requested replica count of 2. 
 ```bash
 $ oc get pods -n project-${USER}
@@ -329,6 +345,7 @@ spec:
       targetPort: 8080
 EOF
 ```
+
 And now the route yaml:
 ```yaml
 $ cat > hello-go-route.yaml << EOF
@@ -347,10 +364,12 @@ spec:
   wildcardPolicy: None
 EOF
 ```
+
 Now create the service and route resources:
 ```bash
 $ oc create -f hello-go-service.yaml -f hello-go-route.yaml
 ```
+
 ### Testing the Deployment
 
 Create an environment variable with the route to the application's service:
@@ -358,10 +377,12 @@ Create an environment variable with the route to the application's service:
 $ ROUTE=$(oc get route hellogo-route -n project-${USER} -o=jsonpath='{.spec.host}')
 $ echo ${ROUTE}
 ```
+
 Now access the hello-go application:
 ```bash
 $ curl ${ROUTE}/testingInsideOpenShift
 ```
+
 The output should be:
 ```
 Hello, you requested: /testingInsideOpenShift
