@@ -27,20 +27,20 @@ The script is a basically a shell script so we can build a loop with our favorit
 
 In our home dir 
 ```bash
-# mkdir ~/curl-statistics
-# cd ~/curl-statistics
+$ mkdir ~/curl-statistics
+$ cd ~/curl-statistics
 ```
 
 Let’s go ahead and create the format file. First create the file named loop_curl_statistics.txt
 
 ```bash
-# touch loop_curl_statistics.txt
+$ touch loop_curl_statistics.txt
 ```
 
 Next give it the following content :
 
 ```bash
-# cat > loop_curl_statistics.txt << EOF
+$ cat > loop_curl_statistics.txt << EOF
      time_namelookup:  %{time_namelookup}s\n
         time_connect:  %{time_connect}s\n
      time_appconnect:  %{time_appconnect}s\n
@@ -55,7 +55,7 @@ EOF
 Now let’s use it as a test run :
 
 ```bash
-# curl -w "@loop_curl_statistics.txt" -o /dev/null -s "http://google.com/"
+$ curl -w "@loop_curl_statistics.txt" -o /dev/null -s "http://google.com/"
 ```
 
 A good output from out test should be something like :
@@ -71,10 +71,10 @@ A good output from out test should be something like :
           time_total:  0.232847s
 ```
 
-For our example I am going to user BASH :
+For our example I am going to use BASH scripting :
 
 ```bash
-# echo '#!/bin/bash
+$ echo '#!/bin/bash
            
 if [[ -z $DESTINATION_URL ]]; then
    echo "No DESTINATION_URL variable was defined"
@@ -96,7 +96,7 @@ done
 Now that the script is in place let’s make it executable :
 
 ```bash
-# chmod a+x run.sh
+$ chmod a+x run.sh
 ```
 
 In our test case we would want to run this loop with in an OpenShift (Or Kubernetes) Cluster to check external service. In order to achieve that we need to run the script in a pod and make sure we give in all the needed environment variables.
@@ -105,13 +105,13 @@ In our example we may want to change the loop_curl_statistics.txt file as we go 
 
 
 ```bash
-# oc create configmap loop-curl-statistics --from-file=loop_curl_statistics.txt=loop_curl_statistics.txt
+$ oc create configmap loop-curl-statistics --from-file=loop_curl_statistics.txt=loop_curl_statistics.txt
 ```
 
 Now let’s create an image for our Pod to use. We will start with the Containerfile :
 
 ```bash
-# cat > Containerfile.loop << EOF
+$ cat > Containerfile.loop << EOF
 FROM ubi8/ubi-minimal
 
 COPY run.sh /opt/app-root/ 
@@ -125,7 +125,7 @@ EOF
 And let’s go ahead and build the image
 
 ```bash
-# buildah bud -f Containerfile.loop -t loop-curl-statistics
+$ buildah bud -f Containerfile.loop -t loop-curl-statistics
 STEP 1/5: FROM ubi8/ubi-minimal
 Resolved "ubi8/ubi-minimal" as an alias (/etc/containers/registries.conf.d/000-shortnames.conf)
 Trying to pull registry.access.redhat.com/ubi8-minimal:latest...
@@ -155,21 +155,21 @@ Successfully tagged localhost/loop-curl-statistics:latest
 Once the process is complete you can make sure you see the image :
 
 ```bash
-# podman image list | grep loop-curl-statistics
+$ podman image list | grep loop-curl-statistics
 localhost/loop-curl-statistics                   latest      7ddc792ffa21  13 seconds ago  104 MB
 ```
 
 Re Tag it and push in to your registry 
 ```bash
-# podman tag localhost/loop-curl-statistics:latest ${REGISTRY}/loop-curl-statistics:latest
-# podman push ${REGISTRY}/loop-curl-statistics:latest
+$ podman tag localhost/loop-curl-statistics:latest ${REGISTRY}/loop-curl-statistics:latest
+$ podman push ${REGISTRY}/loop-curl-statistics:latest
 ```
 
 Now that the image and the configMap are in our registry we can go ahead and build our deployment.
 First create the following file :
 
 ```bash
-# cat > loop-curl-deployment.yaml << EOF 
+$ cat > loop-curl-deployment.yaml << EOF 
 apiVersion: apps/v1 
 kind: Deployment
 metadata:
@@ -212,11 +212,11 @@ EOF
 
 and deploy it :
 ```bash
-# oc apply -f loop-curl-deployment.yaml
+$ oc apply -f loop-curl-deployment.yaml
 ```
 
 Now to view our statistics we can run the logs command and see the results :
 ```bash
-# oc logs $(oc get pods -o name | grep loop-curl-statistics)
+$ oc logs $(oc get pods -o name | grep loop-curl-statistics)
 ```
 In our example we will use it to display the latency
