@@ -84,7 +84,7 @@ $ chmod a+x run-ansible.sh
 For simple access we will copy the kubeconfig from out corrent working profile so the ansible playbook will be able to use it :
 
 ```bash
-$ cp ~/.kube/config.json /ose-openshift/kubeconfig
+$ cp ~/.kube/config.json ~/ose-openshift/kubeconfig
 ```
 
 #### the Dockerfile 
