@@ -97,7 +97,7 @@ FROM python:3.8-slim
 
 ENV HOME=/opt/app-root/ \
     PATH="${PATH}:/root/.local/bin"
-RUN mkdir /opt/app-root/src && mkdir /opt/app-root/.kube/
+RUN mkdir -p /opt/app-root/src && mkdir /opt/app-root/.kube/
 COPY kubeconfig /opt/app-root/.kube/config.json
 COPY run-ansible.sh /usr/bin/
 
@@ -114,14 +114,14 @@ LABEL \
         io.openshift.expose-services="" \
         io.openshift.tags="openshift,install,upgrade,ansible" \
         com.redhat.component="aos3-installation-container" \
-        version="v3.11.346" \
-        release="2" \
+        version="v4" \
+        release="8" \
         architecture="x86_64" \
         atomic.run="once" \
         License="GPLv2+" \
-        vendor="CentOS" \
+        vendor="Slim" \
         io.openshift.maintainer.product="OpenShift Container Platform" \
-        io.openshift.build.commit.id="f65cc700d2483fd9a485a7bd6cd929cbbed1b772" \
+        io.openshift.build.commit.id="f65cc700d2483fd9a485a7bd6cd929cbb111111" \
         io.openshift.build.source-location="https://github.com/openshift/openshift-ansible"
 
 WORKDIR /opt/app-root/
