@@ -164,7 +164,8 @@ Now let’s look at the directory structure of our new object:
     
     27 directories, 54 files
 
-Note: as a convention, when creating Ansible operators, Ansible YAML files use a `.yml` suffix whereas Kubernetes/OpenShift assets use a `.yaml` suffix.
+**Note**
+As a convention, when creating Ansible operators, Ansible YAML files use a `.yml` suffix whereas Kubernetes/OpenShift assets use a `.yaml` suffix.
 
 To test the operator on OpenShift we will use a different user named `{USER}-client`.
 
@@ -270,11 +271,16 @@ $ sed -i -e "s/namespace:.*/namespace: project-${USER}/" \
 ```
 The first step is to build the operator image:
 ```bash
-$ make docker-build IMG=${REGISTRY}/${USER}/hellogo-operator:v0.0.1
+$ make docker-build IMG=${REGISTRY}/project-${USER}/hellogo-operator:v0.0.1
 ```
+In case you are hiting an error , run the following command for a fix :
+```bash
+$ sed -i 's/-r\ ${HOME}\/requirements.yml/-r\ ${HOME}\/requirements.yml\ --force/' Dockerfile
+```
+
 The next step is to push the operator image to the registry:
 ```bash
-$ make docker-push IMG=${REGISTRY}/${USER}/hellogo-operator:v0.0.1
+$ make docker-push IMG=${REGISTRY}/project-${USER}/hellogo-operator:v0.0.1
 ```
 Note that the above two commands can be combined using: make docker-build docker-push IMG=...
 
@@ -294,7 +300,7 @@ Create a namespace ${USER}-hellogo-operator-system, create the CRC, install the 
 
 (Ask the Instructor)
 ```bash
-$ make deploy IMG=${REGISTRY}/${USER}/hellogo-operator:v0.0.1
+$ make deploy IMG=${REGISTRY}/project-${USER}/hellogo-operator:v0.0.1
 ```
 Verify that the operator is running by checking the output of:
 ```bash
@@ -323,8 +329,11 @@ $ oc create -f config/rbac/${USER}hellogo_editor_role.yaml
 ```
 The ClusterRole can be assigned to individual users as follows:
 ```bash
-$ oc adm policy add-cluster-role-to-user ${USER}hellogo-editor-role ${USER}
+$ oc adm policy add-cluster-role-to-user ${USER}hellogo-editor-role $(oc whoami)
 ```
+
+**OPTIONAL** 
+
 Alternatively, an RBAC `group` could be created with the ClusterRole permissions, and `users` can be assigned to the group. For example, create a new group named `hellogo-users`:
 ```bash
 $ oc adm groups new hellogo-users
@@ -364,6 +373,9 @@ spec:
 EOF
 ```
 ### Image Permission
+
+**NOTE**
+This section is only relevant if you are building a cluster scope Operator , for namespace scope you can skip this step
 
 If we are using the internal OpenShift registry, we must allow the default service account in the project that we will use to pull images from the ${USER} repository in the registry by running:
 ```bash
