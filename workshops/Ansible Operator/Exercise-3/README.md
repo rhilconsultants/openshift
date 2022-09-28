@@ -79,8 +79,17 @@ Make it As executable :
 ```bash
 $ chmod a+x run-ansible.sh
 ```
+#### Copy kubeconfig
 
-And let’s create a new Dockerfile and edit it:
+For simple access we will copy the kubeconfig from out corrent working profile so the ansible playbook will be able to use it :
+
+```bash
+$ cp ~/.kube/config.json /ose-openshift/kubeconfig
+```
+
+#### the Dockerfile 
+
+Let’s create a new Dockerfile and edit it:
 ```bash
 FROM python:3.8-slim
 
