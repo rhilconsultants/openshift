@@ -213,12 +213,12 @@ Add Ansible tasks that will read the `service` and `route` templates:
 ```yaml
 $ cat >> roles/${USER}hellogo/tasks/main.yml  <<EOF
 - name: set hello-go service
-  k8s:
+  kubernetes.core.k8s:
     definition: "{{ lookup('template', 'hello-go-service.yml.j2') | from_yaml }}"
     namespace:  '{{ ansible_operator_meta.namespace }}'
 
 - name: set hello-go route
-  k8s:
+  kubernetes.core.k8s:
     definition: "{{ lookup('template', 'hello-go-route.yml.j2') | from_yaml }}"
     namespace:  '{{ ansible_operator_meta.namespace }}'
 EOF
