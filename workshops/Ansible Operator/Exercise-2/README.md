@@ -177,7 +177,7 @@ $ podman images
 
 Now that we have our files in place lets make sure the Ansible container can run with our newly created files:
 ```bash
-$ podman run --rm --name ose-ansible -tu `id -u` \
+$ podman run --rm --name ose-ansible -ti \
 -v ${HOME}/ose-ansible/inventory:/tmp/inventory:Z,ro  \
 -e INVENTORY_FILE=/tmp/inventory \
 -e OPTS="-v"  \
@@ -256,13 +256,13 @@ Build the inventory file for this playbook:
 ```bash
 $ cat >> inventory <<EOF
 [localhost]
-127.0.0.1 ansible_connection=local
+127.0.0.1 ansible_connection=local ansible_host=localhost ansible_python_interpreter=/usr/bin/python3
 EOF
 ```
 
 Run playbook.yml, which will execute 'Hello-go-role':
 ```bash
-$ podman run --rm --name ose-openshift -tu `id -u` \
+$ podman run --rm --name ose-openshift -ti \
 -v $HOME/ose-openshift/inventory:/tmp/inventory:Z,ro  \
 -e INVENTORY_FILE=/tmp/inventory \
 -e OPTS="-v" \
