@@ -44,13 +44,21 @@ useradd user${int}
 done
 ```
 
-### SSH Keys
+### SSH Keys/ Reset passwords
 
 The SSH keys are stored in the spreadsheet file the student had provided their ssh keys.
 we need to create a CSV and load it to an sqlite database and then use the database to create a key
 for each user.
 
-#### download the CSV file 
+To reset the passwords for all the users 
+
+```bash
+# for int in {1..30}; do
+echo 'openshift' | passwd --stdin user${int}
+done
+```
+
+### (IN case there is A class spreadsheet) - download the CSV file 
 
 A simple task indeed , all we need to do is to open the file in google spreadsheet and click on "File --> Download --> Comma-separated value"
 then give the file a simple filename like users.csv
@@ -128,4 +136,42 @@ give execute permission and run the script :
 All the users should be able to login with their given username.
 
 ## Create the go-toolset image
+
+First download the image from registry.redhat.io
+```bash
+# podman login registry.redhat.io
+```
+
+And download the image
+```bash
+# podman pull ubi8/go-toolset
+```
+
+Now create a new project and make it public 
+```bash
+# oc new-project ubi8
+# oc adm policy add-role-to-group system:image-puller system:authenticated -n ubi8
+# oc adm policy add-role-to-user admin user1 -n ubi8
+```
+
+Login with the user1 credentials
+```bash
+# export UUID=""
+# export SANDBOX=""
+# touch ~/.kube/user1.config
+# export KUBECONFIG="/root/.kube/user1.config"
+# oc login --user user1 --password openshift --server=https://api.cluster-${UUID}.${UUID}.${SANDBOX}.opentlc.com
+# podman login -u $(oc whoami) -p $(oc whoami -t) ${REGISTRY}
+```
+
+Now Tag it to the interanl directory
+```bash 
+# export REGISTRY="default-route-openshift-image-registry.apps.cluster-${UUID}.${UUID}.${SANDBOX}.opentlc.com"
+# podman tag registry.redhat.io/ubi8/go-toolset ${REGISTRY}/ubi8/go-toolset
+```
+
+The final steps is to push it 
+```bash
+# podman push ${REGISTRY}/ubi8/go-toolset
+```
 

@@ -33,6 +33,10 @@ $ cd hello-go
 ```
 Inside the hello-go/cmd/hello directory, create a file named hello.go with the following Go code:
 
+```bash
+$ cd cmd/hello/
+$ touch hello.go
+```
     
 ```go
 package main
@@ -65,92 +69,47 @@ func main() {
 
 In the main function, Go’s http.ListenAndServe() listens on the given port, and routes incoming requests through the handler.
 
-Our HelloServer handler responds to any request by printing “Hello, you requested: %s”, with the URL path replacing the %s placeholder. This is not an amazing HTTP server, and it doesn’t do a whole lot, but it is a full- fledged Go application, which can now be compiled into a binary.
-
-### Building the Hello Go Application
-
-With the hello.go file saved, build an executable file by running the following command from the project’s root directory:
-
-```bash
-$ go build cmd/hello/hello.go
-```
-After a couple seconds, you should see a new **hello** binary file in the project’s root directory.
-
-### Runnng Hello Go
-Before we run the **hello** program locally, we will set up a unique port variable based on your USER name offset by 8000, so that our usage does not conflict with other applications running on the same host:
-
-```bash
-$ export GO_PORT="$(printf 80%02d ${USER#user})"
-$ echo $GO_PORT
-```
-
-After configuring the GO_PORT environment variable, run the application as follows:
-
-```bash
-$ ./hello
-```
-
-Now, **in another terminal (login again with ssh)**, run:
-```bash
-$ export GO_PORT="$(printf 80%02d ${USER#user})"
-$ curl http://localhost:${GO_PORT}
- ```
-You should see the following:
-```
-Hello, you requested: /
-```
-
-And if you curl another path:
-```bash
-$ curl http://localhost:${GO_PORT}/test
-```
-you’ll see:
-```
-Hello, you requested: /test
-```
-
-Amazing! 
-
-You may also note that your original terminal window is logging your curl requests:
-```
-2025/11/12 20:58:00 Starting to listen on port ${GO_PORT}
-2025/11/12 20:58:07 Received request for path: /
-2025/11/12 20:58:15 Received request for path: /test
-```
-
-It’s always nice to have applications log to standard output (stdout) and standard error (stderr), because in the cloud-native world, these logs are easy to route and store centrally. You can press Control + C to exit the Hello Go application.
-
-We’re now going to work on running it in a container, so we can get one step closer to running it on OpenShift!
+Our HelloServer handler responds to any request by printing “Hello, you requested: %s”, with the URL path replacing the %s placeholder. This is not an amazing HTTP server, and it doesn’t do a whole lot, but it is a full- fledged Go application, which can now be compiled into a binary in a container.
 
 ## Containerize the Hello Go Application
-
+  
 ### Downloading Build Image
 First we will download an image with go language tools for our OpenShift environment. Outside of this workshop environment, downloading this image is not required.
-
+  
 #### Logging in to the Internal OpenShift Registry
 Log in to the internal OpenShift registry by running:
+  
 ```bash
 $ export UUID="" ### from the Instructor 
-$ export REGISTRY="default-route-openshift-image-registry.apps.cluster-${UUID}.${UUID}.example.opentlc.com"
+$ export SANDBOX=""
+$ export REGISTRY="default-route-openshift-image-registry.apps.cluster-${UUID}.${UUID}.${SANDBOX}.opentlc.com"
 $ podman login -u $(oc whoami) -p $(oc whoami -t) ${REGISTRY}
 ```
+  
 The output should be:
 ```
 Login Succeeded!
 ```
+  
 #### Pulling the Image
+  
 To obtain the package run the following command:
 ```bash
 $ podman pull ${REGISTRY}/ubi8/go-toolset
 ```
-
-
+  
 ### Building the Hello Go Application in a Container Image
+  
 Hello Go isn’t very useful if you can only run it locally on your workstation. This app is stateless, it logs to stdout, and it fulfills a single purpose, so it is a perfect fit to containerize for a cloud-native deployment!
-
+  
 Building Go apps in Docker containers is easy. Go maintains a number of images on Docker Hub containing all the necessary tooling to build your app, and all you need to do is copy in the source and run go build.
 It’s time to create a Dockerfile to instruct Docker how to build our Hello Go app container image.
 Create a Dockerfile in the hello-go project’s root directory, and add the following:
+
+```bash
+$ cd ../../
+```
+
 ```bash
 $ cat > Dockerfile << EOF
 FROM ${REGISTRY}/ubi8/go-toolset as build
@@ -160,12 +119,12 @@ COPY cmd cmd
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" cmd/hello/hello.go
 EOF
 ```
-
+  
 If you’ve worked with Docker before, you might be wondering about the syntax of the first line.
 The first line of a Dockerfile should define the base image for the Docker container. Here, we’re building from the golang library image using the ubi8/go-toolset  tag, which will give us the latest version in the Go 1.x series of images, based on Red Hat Linux. But what about "as build"? This portion of the FROM line allows a multi-stage build. If we just built our app inside the ubi8/go-toolset  image, we would end up with at least a 1 GB Docker image. For a tiny HTTP server app like Hello Go, that’s a lot of overhead!
 Using a multi-stage build, we can build Hello Go in one container (named build using that as build statement), then copy Hello Go into a very small container for deployment.
 Append the following to the same Dockerfile to complete the multi-stage build:
-
+  
 ```bash
 $ cat >> Dockerfile << EOF
 FROM scratch
@@ -176,26 +135,30 @@ EXPOSE 8080
 ENTRYPOINT ["/bin/hello"]
 EOF
 ```
-
+  
 Building a stand-alone Go image as above will give us a final container image that’s only a 6 megabytes, which means it will be faster to upload into a container registry, and faster to pull when running it in Kubernetes.
-
+  
 We set the same workdir ( /opt/app-root ) as the build container, and then COPY the binary that
-was built ( /opt/app-root/hello ) into the final deployment container.
+was built ( /opt/app-root/hello ) into the final deployment container.  
 Finally, we EXPOSE port 8080, as it will be the port our web server listens on, and then
 we set the ENTRYPOINT to our hello binary, so Docker will run it as the sole
-process in the container when running it with all the default settings.
-
+process in the container when running it with all the default settings.  
+  
 Now we can build the container image. Run the following command inside the same
 directory as the Dockerfile:
+  
 ```bash
 $ buildah bud -f Dockerfile -t hello-go .
 ```
+
 After a couple minutes (or less if you already had the base images downloaded!), you should be able to see the hello-go container image when you run docker images:
 ```bash
 $ podman images
 REPOSITORY                                    TAG      IMAGE ID       CREATED       SIZE
 localhost/hello-go                            latest   92310a101177   4 days ago    5.43 MB
 ```
+
+
 ### Run the Image
 Now we’ll run the container image to make sure Hello Go operates in the container identically to how it operated when run directly.
 Running the container
@@ -204,19 +167,19 @@ To run the container and expose the internal port to your host, run the command:
 $ export GO_PORT="$(printf 80%02d ${USER#user})"
 $ podman run -d --name hello-go --rm -p ${GO_PORT}:8080 hello-go
 ```
-
+  
 After a second or two, the web server should be operational. In another terminal with the environment variable GO_PORT specified, run:
 ```bash
 $ export GO_PORT="$(printf 80%02d ${USER#user})"
 $ curl http://localhost:${GO_PORT}/testing
 ```
-
+  
 And you should see the following response:
 ```
 Hello, you’ve requested: /testing
 ```
 In the window where container run was executed you will see the logged requests.
-
+  
 ```bash
 $ POD_UID=$(podman ps | grep hello-go | awk '{print $1}')
 $ podman logs ${POD_UID}
@@ -224,6 +187,62 @@ $ podman logs ${POD_UID}
 2025/11/12 22:31:07 Received request for path: /testing
 ```
 
+### Copying the new binary file 
+
+In order to copy the new file we will use podman and make sure the binary is present in our local directory :
+
+```bash
+$ podman cp ${POD_UID}:/bin/hello hello
+```
+
+After a couple seconds, you should see a new **hello** binary file in the project’s root directory.
+
+### Runnng Hello Go
+Before we run the **hello** program locally, we will set up a unique port variable based on your USER name offset by 8000, so that our usage does not conflict with other applications running on the same host:
+
+```bash
+$ export GO_PORT="$(printf 80%02d ${USER#user})"
+$ echo $GO_PORT
+```
+  
+After configuring the GO_PORT environment variable, run the application as follows:
+  
+```bash
+$ ./hello
+```
+  
+Now, **in another terminal (login again with ssh)**, run:
+```bash
+$ export GO_PORT="$(printf 80%02d ${USER#user})"
+$ curl http://localhost:${GO_PORT}
+```
+  
+You should see the following:
+```
+Hello, you requested: /
+```
+  
+And if you curl another path:
+```bash
+$ curl http://localhost:${GO_PORT}/test
+```
+  
+you’ll see:
+```
+Hello, you requested: /test
+```
+  
+Amazing! 
+  
+You may also note that your original terminal window is logging your curl requests:
+```
+2025/11/12 20:58:00 Starting to listen on port ${GO_PORT}
+2025/11/12 20:58:07 Received request for path: /
+2025/11/12 20:58:15 Received request for path: /test
+```
+  
+It’s always nice to have applications log to standard output (stdout) and standard error (stderr), because in the cloud-native world, these logs are easy to route and store centrally. You can press Control + C to exit the Hello Go application.
+  
 To stop and terminate the container, press Ctrl-C in the terminal where you ran
 docker/podman run .
 
@@ -266,19 +285,19 @@ $ podman images
 REPOSITORY                                   TAG      IMAGE ID       CREATED         SIZE
 ${REGISTRY}/project-userNN/hello-go    latest   376409b93b2c   3 minutes ago   5.43 MB
 ```
+
 ### Push the Image
 Push the image to the registry:
 ```bash
 $ podman push ${REGISTRY}/$(oc project -q)/hello-go
 ```
-
+  
 Once the Push has completed we can go ahead and delete all the images :
 
 ```bash
 $ podman image list | grep -v REPOSITORY | awk '{print $3}' | xargs podman image rm --force
 ```
 
-
+  
 ## Hello Go Application Summary
 Many tools in the Kubernetes ecosystem are written in Go. You might not be a master of the Go language after building and running this application in a container, but you at least know the basics, and could even put ‘Go programmer’ on your resumé now (just kidding!).
-

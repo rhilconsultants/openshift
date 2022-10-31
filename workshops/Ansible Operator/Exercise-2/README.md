@@ -9,7 +9,7 @@
   * Download the ose-ansible Image
   * Ansible Image Testing
   * Running the Container 
-* Ansible Kubernetes Module
+  * Ansible Kubernetes Module
   * Running the k8s Ansible Modules Locally
 
 
@@ -18,13 +18,6 @@
 
 In today’s world it is much easier to just run a container then to install an application on our laptops, for that reason Red Hat has developed a container for running Ansible with the Kubernetes module.
 
-### Download the ose-ansible Image
-Log in to the registry as specified in Exercise-0.
-
-Download the ose-ansible image for this workshop by running the following command:
-```bash
-$ podman pull ${REGISTRY}/openshift3/ose-ansible
-```
 ### Ansible Image Testing
 
 Now that we obtain the image that we need, let's run it with a small test run to make sure everything is working properly:
@@ -40,7 +33,7 @@ From your Home Directory
 $ mkdir ~/ose-ansible && cd ~/ose-ansible
 $ cat >> inventory <<EOF
 [localhost]
-127.0.0.1 ansible_connection=local
+127.0.0.1 ansible_connection=local ansible_host=localhost ansible_python_interpreter=/usr/bin/python3
 EOF
 ```
 Every playbook starts with a play, which is a root level list item, with at least one key, hosts. To run a playbook against the local machine, you can set the following line at the beginning of the playbook:
@@ -92,6 +85,94 @@ $ cat > main.yaml << EOF
 EOF
 ```
 
+### Create an ose-ansible Image
+
+We are going to create a New Image of ose-ansible by building an image with the appropriate package along with a small shell script to define the variables and run the playbook 
+
+Now Create a shell script :
+```bash
+$ echo '#!/bin/bash
+
+if [[ -z "$INVENTORY" ]]; then
+  echo "No inventory file provided (environment value INVENTORY)"
+  INVENTORY=/etc/ansible/hosts
+else
+  export INVENTORY=${INVENTORY}
+fi
+
+if [[ -z "$OPTS" ]]; then
+  echo "no OPTS option provided (OPTS environment value)"
+else
+  export OPTS=${OPTS}
+
+fi 
+
+if [[ -z $"$PLAYBOOK_FILE" ]]; then
+  echo "No Playbook file provided... exiting"
+  exit 1
+else
+   ansible-playbook $PLAYBOOK_FILE
+fi' > run-ansible.sh
+```
+
+Make it As executable :
+
+```bash
+$ chmod a+x run-ansible.sh
+```
+
+#### the Dockerfile 
+
+Let’s create a new Dockerfile and edit it:
+```bash
+FROM python:3.8-slim
+
+# RUN adduser --disabled-password -u 1001 --home /opt/app-root/ slim
+
+ENV HOME=/opt/app-root/ \
+    PATH="${PATH}:/root/.local/bin"
+RUN mkdir -p /opt/app-root/src
+COPY run-ansible.sh /usr/bin/
+
+RUN pip install pip --upgrade
+RUN pip install ansible 
+
+LABEL \
+        name="openshift/ose-ansible" \
+        summary="OpenShift's installation and configuration tool" \
+        description="A containerized ose-openshift image to let you run playbooks" \
+        url="https://github.com/openshift/openshift-ansible" \
+        io.k8s.display-name="openshift-ansible" \
+        io.k8s.description="A containerized ose-openshift image to let you run playbooks on OpenShift" \
+        io.openshift.expose-services="" \
+        io.openshift.tags="openshift,install,upgrade,ansible" \
+        com.redhat.component="aos3-installation-container" \
+        version="v4" \
+        release="8" \
+        architecture="x86_64" \
+        atomic.run="once" \
+        License="GPLv2+" \
+        vendor="Slim" \
+        io.openshift.maintainer.product="OpenShift Container Platform" \
+        io.openshift.build.commit.id="f65cc700d2483fd9a485a7bd6cd929cbb111111" \
+        io.openshift.build.source-location="https://github.com/openshift/openshift-ansible"
+
+WORKDIR /opt/app-root/
+
+ENTRYPOINT [ "/usr/bin/run-ansible.sh" ]
+CMD [ "/usr/bin/run-ansible.sh" ]
+```
+Build the container:
+
+```bash
+$ buildah bud -f Dockerfile -t ${REGISTRY}/${USER}/ose-ansible .
+```
+
+If everything went well, you should see the new image in your registry:
+```bash
+$ podman images
+```
+
 ### Running the Container 
 
 Now that we have our files in place lets make sure the Ansible container can run with our newly created files:
@@ -102,7 +183,7 @@ $ podman run --rm --name ose-ansible -tu `id -u` \
 -e OPTS="-v"  \
 -v ${HOME}/ose-ansible/:/opt/app-root/ose-ansible/:Z,ro \
 -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/main.yaml \
-${REGISTRY}/openshift3/ose-ansible
+${REGISTRY}/${USER}/ose-ansible
 ```
 Expected Output: 
 
@@ -153,6 +234,7 @@ The output should be:
 ```
 - Role Hello-go-role was created successfully
 ```
+
 Modify tasks file Hello-go-role/tasks/main.yml to contain the Ansible shown below:
 ```yaml
 $ cat > roles/Hello-go-role/tasks/main.yml <<EOF
@@ -169,6 +251,7 @@ $ cat > roles/Hello-go-role/tasks/main.yml <<EOF
         namespace: project-${USER}
 EOF
 ```
+
 Build the inventory file for this playbook:
 ```bash
 $ cat >> inventory <<EOF
@@ -185,8 +268,9 @@ $ podman run --rm --name ose-openshift -tu `id -u` \
 -e OPTS="-v" \
 -v $HOME/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
 -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
-${REGISTRY}/openshift3/ose-ansible
+${REGISTRY}/${USER}/ose-ansible
 ```
+
 #### ERROR !!
 Whoops! The output will be similar to the following:
 ```
