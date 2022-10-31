@@ -245,7 +245,7 @@ $ cp ~/.kube/config.json /ose-openshift/kubeconfig
 
 Now we can run the Ansible playbook to deploy your hello-go application on OpenShift:
 ```bash
-$ podman run --rm --name ose-openshift \
+$ podman run -ti --rm --name ose-openshift \
     -e OPTS="-v" \
     -v ${HOME}/ose-openshift/src/:/opt/app-root/src/:Z,rw \
     -v ${HOME}/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
@@ -314,7 +314,7 @@ spec:
 Running the Playbook again will read the variable hellogo_replicas and use the provided value to customize the hello-go DeploymentConfig.
 
 ```bash
-$ podman run --rm --name ose-openshift \
+$ podman run -ti --rm --name ose-openshift \
     -e OPTS="-v" \
     -v ${HOME}/ose-openshift/src/:/opt/app-root/src/:Z,rw \
     -v ${HOME}/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
