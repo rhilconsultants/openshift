@@ -1,396 +1,393 @@
+
 # Exercise 4
 
-## Before we Begin
+Welcome to Exercise 4 in our workshop. In this part we will talk about Infrastructure As Code and how can we utilizes it within a pipeline.  
 
-In this Exercise we will create a Custom Image module and use it in a pipeline(Task).
-The Object of the Exercise is to show how simple it is to create a new image module and start using within the pipeline so we will have a good showcase to our customers how easy it is to create a new module.  
+## Concepts
 
-### The Exercise use case 
+First we will go over a few very important concepts that will help us understand the process much better.  Once we understand all the concepts  we will build a Lister and a Web hook to monitor for changes in our GIT server and deploy an new changes that may be (after commit)
 
-In this case we will create a Custom image which we will use as our module image. In our case we will use the tools we had downloaded in our prerequisites section in order to create and deploy a simple application (the monkey-app) with a listener to our Monkey git repository which we will eventually are creating a full CI/CD for our Monkey application 
+### IAC
 
-## building an Image
+BY Definition :  
+"Infrastructure as code (IaC) is the process of managing and provisioning computer data centers through   machine-readable definition files, rather than physical hardware configuration or interactive configuration tools. The IT infrastructure managed by this process comprises both physical equipment, such as  bare-metal servers, as well as virtual machines, and associated configuration resources. The definitions may be in a version control system (GIT). It can use either scripts or declarative definitions, rather than manual processes, but the term is more often used to promote declarative approaches."  
+
+#### We can't talk about IAC without DevOps
+
+### DevOps
+
+DevOps is a set of practices that combines software development (Dev) and IT operations (Ops). It aims to shorten the systems development life cycle and provide continuous delivery with high software quality.  DevOps is complementary with Agile software development; several DevOps aspects came from Agile methodology. 
+
+#### IAC and DevOps Relationship
+
+IaC can be a key attribute of enabling best practices in DevOps – Developers become more involved in defining configuration and **Ops teams get involved earlier in the development process**.
+
+Automation in general aims to take the confusion and error-prone aspect of manual processes and make it more efficient, and productive  
+
+While building an Application we are getting:
+
+  - Automation
+  - flexibility 
+  - less downtime
+  - overall cost effective
+  - reduce the complexity
+  - collaboration
+
+#### to work in a complete automation way we need to work with API/Webhook
+
+### API 
+
+An application programming interface (API) is a computing interface which defines interactions between multiple software intermediaries. It defines the kinds of calls or requests that can be made, how to make them, the data formats that should be used, the conventions to follow, etc.  
+It can also provide extension mechanisms so that users can extend existing functionality in various ways and to varying degrees.[1] An API can be entirely custom, specific to a component, or it can be designed based on an industry-standard to ensure interoperability. Through information hiding, APIs enable modular programming, which allows users to use the interface independently of the implementation.  
+
+### WebHook
+
+A webhook in web development is a method of augmenting or altering the behavior of a web page or web application with custom callbacks. These callbacks may be maintained, modified, and managed by third-party users and developers who may not necessarily be affiliated with the originating website or application. The term "webhook" was coined by Jeff Lindsay in 2007 from the computer programming term hook.[1]
+
+The format is usually JSON. The request is done as an HTTP POST request. 
+
+### TDD
+
+Test-driven development (TDD) is a software development process that relies on the repetition of a very short development cycle: requirements are turned into very specific test cases, then the code is improved so that the tests pass. This is opposed to software development that allows code to be added that is not proven to meet requirements.  
+
+When working with the TDD process the main focus is on the testing and then on the software build , which makes the CI process to much more reliable.  
+
+## Tekton Triggers
+
+<img align="center" alt="Tekton-triggers" src="tekton-triggers.png" width="25%" height="25%">
+
+Up until this point we talked about concepts and methods. Now we will get down to business and talk about how Tekton can help use utilize those concepts in a CI/CD process.  
+Before getting started, let’s discuss some of the features of Tekton Triggers. In a nutshell, Tekton Triggers allows users to create resource templates that get instantiated when an event is received. Additionally, fields from event payloads can be injected into these resource templates as runtime information. This enables users to automatically create template PipelineRun or TaskRun resources when an event is received.
+
+  1. **Trigger Template**
+  2. **Trigger Binding**
+  3. **Event Listener**
+
+### Trigger Template
+
+A TriggerTemplate declares a blueprint for each Kubernetes resource you want to create when an event is received. Each TriggerTemplate has parameters that can be substituted anywhere within the blueprint you define. In general, you will have one TriggerTemplate for each of your Tekton Pipelines. In this tutorial, you create a TriggerTemplate for your build-and-deploy PipelineRun because you want to create a build-and-deploy PipelineRun every time you receive a pull request event.
+
+### Trigger Binding
+
+A TriggerBinding describes what information you want to extract from an event to pass to your TriggerTemplate. Each TriggerBinding essentially declares the parameters that get passed to the TriggerTemplate at runtime (when an event is received). In general, you will have one TriggerBinding for each type of event that you receive. In this tutorial, you will create a TriggerBinding for the GitHub pull request event in order to build and deploy the code in the pull request.
+
+### Event Listener
+
+An EventListener creates a Deployment and Service that listen for events. When the EventListener receives an event, it executes a specified TriggerBinding and TriggerTemplate. In this tutorial, the EventListener will receive pull request events from GitHub and execute the TriggerBinding and TriggerTemplate to create a build-and-deploy PipelineRun.
+
+<img alt="workflow" src="Tekton_triggers_resources.png" width="100%" height="100%">
+
+## Getting dirty
+
+Now that we are familier  with the important concepts , let's create a trigger that will start the monkey build pipeline once there is a change in the git master branch.  
+We will use our pipelines and tasks that we used up until this point and create a trigger for them.
+
+First let's make sure we are on the right directory
+
+    # mkdir -p ~/Tekton/Ex3 && cd ~/Tekton/Ex3
   
-Let's build a container image which holds the 2 tools and we are going to use the container to run a pod and connect to is so we will be able to use the tools from it 
+A good place to start is the Trigger Template which holds what we already have created.
 
-### the Dockerfile
 
-First let's create the directory
+    # echo 'apiVersion: triggers.tekton.dev/v1alpha1
+    kind: TriggerTemplate
+    metadata:
+      name: monkey-trigger-template
+    spec:
+      params:
+      - name: SERVICE_ACCOUNT
+        description: The ServiceAccount under which to run the Pipeline.
+    ############################### Resource Section ################
+      resourceTemplates:
+      - apiVersion: tekton.dev/v1alpha1
+        kind: PipelineRun
+        metadata:
+          name: pipeline-run-build-monkey-ws-$(uid)
+        spec:
+          serviceAccountName: $(params.SERVICE_ACCOUNT)
+          pipelineRef:
+            name: pipeline-build-monkey-ws
+          resources:
+          - name: image
+            resourceRef:
+              name: monkey-app
+          - name: source
+            resourceRef:
+              name: monkey-app-git
+          workspaces:
+          - name: pipeline-ws1
+            persistentVolumeClaim:
+              claimName: container-build-ws-pvc' > monkey-trigger-template.yaml
 
-    # mkdir ~/Tekton/ubi-pipeline
-    # cd ~/Tekton/ubi-pipeline
+As you can see, the TriggerTemplate, is very similar to the PipelineRun resource you created in the previous step. The only difference is that instead of hardcoding everything, there are a few parameters defined that specify information by a TriggerBinding at runtime. You can create multiple resources from the TriggerTemplate, but you only need to create one PipelineRun for your Monkey pipeline.
 
-Copy the 2 binaries we need to our new directory
+Now we will create the template :
 
-    # cp ~/bin/oc ~/bin/tkn .
+    # oc create -f monkey-trigger-template.yaml
 
-Now we will craete a simple endless command to run in the background so the image will not fail.
+Next we will create a simple trigger binding which will set all the params :
 
-    # cat > run.sh << EOF
-    #!/bin/bash
-    tail -f /dev/null
+    # cat > monkey-trigger-binding.yaml << EOF
+    apiVersion: triggers.tekton.dev/v1alpha1
+    kind: TriggerBinding
+    metadata:
+      name: monkey-trigger-binding
+    spec:
+      params:
+      - name: SERVICE_ACCOUNT
+        value: pipeline
     EOF
 
-and we will make it executable 
+create it :
 
-    # chmod a+x run.sh
+    # oc create -f monkey-trigger-binding.yaml
 
-Now create a Dockerfile and copy the binaries to the new image
+Our Event Listener needs a service account with the right permissions in order to execute our pipeline. For that we are going to create a service account , create a role and create a role binding for that service account :
 
-    # cat > Dockerfile << EOF
-    FROM ubi8/ubi-minimal
-    ENV KUBECONFIG=/opt/root-app/kubeconfig
-    USER root
-    COPY run.sh kubeconfig /opt/root-app/
-    COPY tkn oc /usr/bin
-    USER 1001
-    ENTRYPOINT ["/opt/root-app/run.sh"]
-    EOF
+Let's start with the service account :
 
-### Creating a Service Account and kubeconfig
-
-In order to provide the right permissions for our automation in Openshift we need to create a service account for authentication provide it the expected permissions and create an authentication file (kubeconfig).
-
-Let's make our working directory 
-
-    # mkdir ~/Tekton/Ex4 && cd ~/Tekton/Ex4
-
-#### Service account
-
-Now let's create a service account in our namespace :
-
-    # cat >> ubi-pipeline-sa.yaml << EOF
+    # cat > service-account.yaml << EOF
     apiVersion: v1
     kind: ServiceAccount
     metadata:
-      name: ubi-tekton
+      name: monkey
     EOF
 
-And create it :
+Create the service account :
 
-    # oc create -f ubi-pipeline-sa.yaml
+    # oc create -f service-account.yaml
 
-#### Permissions 
+next we will craete the role :
 
-To make things easy we will give the service account admin permissions on our namespace :
-
-    # oc adm policy add-role-to-user admin system:serviceaccount:project-${USER}:ubi-tekton -n project-${USER}
-
-#### Generate Kubeconfig
-
-Fetch the name of the secrets used by the service account. This can be found by running the following command:
-
-    # oc describe serviceAccounts ubi-tekton
-
-Fetch the token from the secret.  
-
-    # TOKEN_NAME=$(oc describe serviceAccounts ubi-tekton | grep Tokens | awk '{print $2}')
-
-Using the Mountable secrets value, you can get the token used by the service account. Run the following command to extract this information:
-
-    # oc describe secrets ${TOKEN_NAME}
-
-and save the token to a variable :
-
-    # TOKEN=$(oc describe secrets ${TOKEN_NAME} | grep 'token:' | awk '{print $2}')
-
-To make things easy we are going to generate the kubeconfig for our user and change it to fit the service account.  
-Let's first create the base file:
-
-    # cd ~/Tekton/ubi-pipeline
-    # oc config view --flatten --minify > kubeconfig
-
-A Quick look at the file shows how the kubeconfig file looks like :
-
-    # cat kubeconfig
-    apiVersion: v1
-    clusters:
-    - cluster:
-        insecure-skip-tls-verify: true
-        server: https://api.ocp4.infra.local:6443
-      name: api-ocp4-infra-local:6443
-    contexts:
-    - context:
-        cluster: api-ocp4-infra-local:6443
-        namespace: project-${USER}
-        user: ${USER}
-      name: project-${USER}/api-ocp4-infra-local:6443/${USER}
-    current-context: project-${USER}/api-ocp4-infra-local:6443/${USER}
-    kind: Config
-    preferences: {}
-    users:
-    - name: ${USER}
-      user:
-        token: < user token >
-
-
-And let's modify it to fit our new service account :
-
-    # cat > kubeconfig << EOF
-    apiVersion: v1
-    clusters:
-    - cluster:
-        insecure-skip-tls-verify: true
-        server: https://api.ocp4.infra.local:6443
-      name: api-ocp4-infra-local:6443
-    contexts:
-    - context:
-        cluster: api-ocp4-infra-local:6443
-        namespace: project-${USER}
-        user: ubi-tekton
-      name: ubi-tekton
-    current-context: ubi-tekton
-    kind: Config
-    preferences: {}
-    users:
-    - name: ubi-tekton
-      user:
-        token: $TOKEN
+    # cat > monkey-role.yaml << EOF
+    kind: Role
+    apiVersion: rbac.authorization.k8s.io/v1
+    metadata:
+      name: monkey
+    rules:
+    # Permissions for every EventListener deployment to function
+    - apiGroups: ["triggers.tekton.dev"]
+      resources: ["eventlisteners", "triggerbindings", "triggertemplates"]
+      verbs: ["get"]
+    - apiGroups: [""]
+      resources: ["configmaps"]
+      verbs: ["get", "list", "watch"]
+    # Permissions to create resources in associated TriggerTemplates
+    - apiGroups: ["tekton.dev"]
+      resources: ["pipelineruns"]
+      verbs: ["create"]
     EOF
 
-Test the new file by setting the environment variable and point to it :
+And add it to the cluster
 
-    # export KUBECONFIG="/home/${USER}/Tekton/ubi-pipeline/kubeconfig"
+    # oc create -f monkey-role.yaml
 
-And Run oc command to see all the pods :
+Once we have the service account and the role we can create the role binding :
 
-    # oc get pods
+    # cat > monkey-rolebinding.yaml << EOF
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: monkey
+    subjects:
+    - kind: ServiceAccount
+      name: monkey
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: monkey
+    EOF
 
-if you see all your running pipelines and the event listener pods ... you are good to go.  
+Add it to the cluster :
 
-now unset the kubeconfig
+    # oc create -f monkey-rolebinding.yaml
 
-    # unset KUBECONFIG
+And we are going to give the service account extra credentials to make sure everything goes right!
 
-### Creating the Image
-
-Now that we have a kubeconfig we can copy it to our image and use it with our oc command to create object in our cluster.  
-Once we've done that we can go ahead and create our image :
-
-    # buildah bud -f Dockerfile -t ubi-pipeline .
-
-### Pushing to the Registry
-
-set your OpenShift cluster Prefix and you current namespace:
-
-    # export CLUSTER="ocp4.infra.local"
+    # export GOGS_USER="???" # (from the Instracture speardsheet)
     # export NAMESPACE=$(oc project -q)
+    # oc adm policy add-role-to-user admin system:serviceaccount:${NAMESPACE}:monkey -n ${NAMESPACE}
 
-Now that we have our image we need to TAG it and push it to our registry
+and Now we will create the event Listener and a route to make sure our git webhook can send a an HTTP POST command to out event Listener in order to trigger the pipeline
 
-    # podman tag localhost/ubi-pipeline default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
+create the event listener :
 
-    # podman push default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
-    (You may need to login before you can push)
-You can see how did we logged in in [Exercise 1](../Exercise-1/Exercise-1.md)
-
-### Deploying on Openshift 
-
-Now that the image is ready let's create a working directory and deploy it :
-
-    # cd ~/Tekton/Ex4/
-
-All that is left is to create a deployment for our image :
-
-    # cat > deployment.yaml << EOF
-    apiVersion: apps/v1
-    kind: Deployment
+    # cat > monkey-eventlistener.yaml << EOF
+    apiVersion: triggers.tekton.dev/v1alpha1
+    kind: EventListener
     metadata:
-      name: ubi-pipeline
+      name: monkey-eventlistener
     spec:
-      selector:
-        matchLabels:
-          app: ubi-pipeline
-      replicas: 1
-      template:
-        metadata:
-          labels:
-            app: ubi-pipeline
-        spec:
-          containers:
-            - name: ubi-pipeline
-              image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/ubi-pipeline
+      serviceAccountName: monkey
+      triggers:
+        - name: monkey-source-to-image
+          interceptors:
+            - cel:
+                filter: >-
+                  body.repository.full_name == '${GOGS_USER}/monkey-app' &&
+                  body.ref.startsWith('refs/heads/master')
+          bindings:
+            - ref: monkey-trigger-binding
+          template:
+            name: monkey-trigger-template
     EOF
 
-And deploy it :
+Add it to our Cluster :
 
-    # oc create -f deployment.yaml
+    # oc create -f monkey-eventlistener.yaml
 
-and look if the pod is running successfully :
+And Finally we will add the route :
 
-    # oc get pods | grep ubi
-
-After the deployment we can use the web console to login or use the oc command to get the pod terminal access
-
-    # POD_ID=$(oc get pods -n $NAMESPACE -o name | grep ubi-pipeline | awk -F \/ '{print $2}')
-    # oc rsh ${POD_ID}
-
-Run get pod  (oc get pods) command to see that it's working and continue to the next section.
-
-
-## The IAC Pipeline
-
-Now that we have everything ready we can build the pipeline with the following tasks :
-
-  1. PipelineResource : our git Repository
-  2. task for deploying all of the YAML files in the deployment directory (App + Service)
-  3. create a task for TDD 
-  3. creating the listener
-
-
-Create the deployment fie in the git repository :
-
-    # mkdir ~/Tekton/monkey-app/deploy
-    # cat > ~/Tekton/monkey-app/deploy/deployment.yaml << EOF
-    kind: Deployment
-    apiVersion: apps/v1
-    metadata:
-      name: monkey-app
-      namespace: project-${USER}
-    spec:
-      template:
-        metadata:
-          labels:
-            app: monkey-app
-        spec:
-          containers:
-            - name: monkey-app
-              image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest
-              ports:
-              - containerPort: 8080
-      replicas: 1
-      selector:
-        matchLabels:
-          app: monkey-app
-    EOF
-
-
-Create the service YAML file
-
-    # cat > ~/Tekton/monkey-app/deploy/service.yaml << EOF
-    apiVersion: v1
-    kind: Service
-    metadata:
-      name: monkey-app
-      namespace: project-${USER}
-    spec:
-      selector:
-        app: monkey-app
-      ports:
-        - protocol: TCP
-          port: 8080
-          targetPort: 8080
-    EOF
-
-Create the route YAML file
-
-    # cat > ~/Tekton/monkey-app/deploy/route.yaml << EOF
+    # cat > monkey-eventlistener-route.yaml << EOF
     apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: monkey-app
-      namespace: project-${USER}
+      labels:
+        app.kubernetes.io/managed-by: EventListener
+        app.kubernetes.io/part-of: Triggers
+        eventlistener: monkey-eventlistener
+      name: el-monkey
     spec:
       port:
-        targetPort: 8080
+        targetPort: http-listener
       to:
         kind: Service
-        name: monkey-app
+        name: el-monkey-eventlistener
         weight: 100
       wildcardPolicy: None
     EOF
+        
 
-Add a task which uses our new Image for their run and deploy everything
+Add it to our Cluster :
 
-    # cd ~/Tekton/Ex4/
-    # cat > monkey-deploy-task.yaml << EOF
+    # oc create -f monkey-eventlistener-route.yaml
+
+
+Now we will configure the gogs webhook :
+
+
+### Testing the webhook
+
+Now that everything is in place let's go to gogs and update the webhook to send a POST massage to our listener :
+
+in Your favorite browser open the gogs link (Localtion is in the Instracture spreadsheet) :
+
+    # export GOGS_URL="????"
+
+Now Register with your given username and password.
+
+<img alt="workflow" src="gogs-register.png" width="100%" height="100%">
+
+In the following screen enter your username , email and password ( Your email is username@infra.local)  
+
+<img alt="workflow" src="gogs-register-info.png" width="100%" height="100%">
+
+Once you completed the registration you can go ahead and sign in.  
+
+In your main page click on the "+" sign next to "My Repositories" 
+
+<img alt="workflow" src="gogs-main-page2.png" width="100%" height="100%">
+
+Follow the Image bellow to complete the "new repository" forum 
+
+<img alt="workflow" src="gogs-new-repository.png" width="100%" height="100%">
+
+And click on the Create button.
+
+Congrads !!! you have a new repository in our gogs application  
+The main repository page should look like : 
+
+<img alt="workflow" src="gogs-monkey-repository.png" width="100%" height="100%">
+
+Now we can copy the source code from our git repository to our gogs repository.
+
+First let's clone it to our Home directory :
+
+    # cd ~/Tekton
+    # git clone https://github.com/ooichman/monkey-app.git
+
+Now we will change the directory name to "old" 
+
+    # mv monkey-app monkey-app-old
+
+And clone our new repository
+
+    # git clone http://$GOGS_URL/${GOGS_USER}/monkey-app.git
+
+(take a few second an think about why we are doing this)
+
+    # cd monkey-app-old/
+    # cp -R src/ ../monkey-app/
+    # cp Containerfile ../monkey-app/
+    # cd ../monkey-app/
+
+First Add your credentials :
+
+    # git config --global user.email ${GOGS_USER}@infra.local
+    # git config --global user.name ${GOGS_USER}
+
+Now let's update our new repository over the gogs server
+
+    # git add -A
+
+And run an initial commit 
+
+    # git commit -a -m "init 0"
+
+for convenience sake we will add our username and password to our git configuration (not recommended in Production environment )
+
+    # export PASS='???' (From the Instracture spreadsheet)
+    # sed -i "s/http:\/\/gogs/http:\/\/${GOGS_USER}:${PASS}\@gogs/" .git/config
+
+Now that our repository is up 2 date we can change the pipeline source named image :
+
+    # cd ../Ex3
+    # cat > pipelineResource-git.yaml << EOF
     apiVersion: tekton.dev/v1alpha1
-    kind: Task
+    kind: PipelineResource
     metadata:
-      name: monkey-deploy-task
+      name: monkey-app-git
     spec:
-      resources:
-        inputs:
-          - name: source
-            type: git
-        outputs:
-          - name: image
-            type: image
-      steps:
-        - name: deploy
-          image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/ubi-pipeline
-          workingDir: /workspace/source/
-          
-          command: ["/bin/bash" ,"-c"]
-          args:
-            - |-
-              oc apply -f deploy/deployment.yaml
-              oc apply -f deploy/service.yaml
-              oc apply -f deploy/route.yaml
-      workspaces:
-      - name: pipeline-ws1
-        description: the location of the containers
-        mountPath: /var/lib/containers
+      type: git
+      params:
+        - name: revision
+          value: master
+        - name: url
+          value: http://gogs.rhil-workshop.duckdns.org/${GOGS_USER}/monkey-app.git
     EOF
 
-Create the new Task :
+And apply the changes :
 
-    # oc create -f monkey-deploy-task.yaml
+    # oc apply -f pipelineResource-git.yaml
 
-Update the pipeline with our new task :
+Now we need to setup the webhook on our gogs server , in order to to that we need to go
+to "setting" (top right) of our repository 
 
-    # cp ../Ex2/pipeline-build-monkey-ws.yaml .
+<img alt="workflow" src="gogs-settings-menu.png" width="100%" height="100%">
 
-And Add the lines :
+And then to the "Webhooks" webhook section :
 
-    - name: monkey-deploy
-        taskRef:
-          name: monkey-deploy-task
-        runAfter: 
-          - monkey-build-task
-        resources:
-          inputs:
-          - name: source
-            resource: source
-          outputs:
-          - name: image
-            resource: image
-        workspaces:
-        - name: pipeline-ws1
-          workspace: pipeline-ws1
+<img alt="workflow" src="gogs-webhooks-menu.png" width="100%" height="100%">
 
-Apply the update
+Now click on the "Add Webhook" button 
 
-    # oc apply -f pipeline-build-monkey-ws.yaml
+<img alt="workflow" src="gogs-adding-webhooks.png" width="100%" height="100%">
 
-now let's push our new files to our git and see what is happening :
+Add your route to the Payload URL and save the webhook
 
-    # cd ~/Tekton/monkey-app/
-    # git add -A
-    # git commit -a -m "Adding IAC"
+Now all we need to do is to make a change to our repository and push it.  
+The push should trigger our pipeline with the new commit.
+
+    # cd ../monkey-app
     # git push origin master
+    Counting objects: 4, done.
+    Delta compression using up to 2 threads.
+    Compressing objects: 100% (2/2), done.
+    Writing objects: 100% (3/3), 250 bytes | 0 bytes/s, done.
+    Total 3 (delta 1), reused 0 (delta 0)
+    To http://user01:OcpPa$$w0rd@gogs.rhil-workshop.duckdns.org/${USER}/monkey-app.git
+       92ff6dc..02c7955  master -> master
 
-If you see any errors you can always Test the Task is working :
+Now you should see the event trigger (you should see it in one of your tmux sessions)
 
-    # tkn task start monkey-deploy-task
-
-Watch for new pipeline runs and monitor their logs.
-
-If every went as expected your IAC process is set.
-
-### Testing 
-
-you can see the monkey-app running by checking the pods :
-
-    # oc get pod | grep monkey-app
-    monkey-app-cdb855978-v2hqd            1/1     Running     0          2m6s
-
-and you can even test the application with a Get command ( a good place to start building another task for testing ... )
-
-    # MONKEY_ROUTE=$(oc get route | grep monkey-app | awk '{print "http://"$2}')
-    # curl -X GET ${MONKEY_ROUTE}/test
-    Hello, you requested: /test
- 
-# Congratulations ...
-
-You have now completed the OpenShift Pipeline Workshop
+Now that everything is ready you can move on to [Exercise 5](../Exercise-5/Exercise-5.md)
