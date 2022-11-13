@@ -67,7 +67,7 @@ Now we will create the pipeline resource YAML file.
       - name: url
         value: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest
     EOF
--->
+
 We are going to use in our case is a PVC to store our image after it is build.
 For that we are going to create our PVC as follow:
 
@@ -96,9 +96,139 @@ Make sure that the PVC is in status "Bound" before we continue by running:
 The output should show that the "STATUS" is "Bound".
 
 Now we can start with the the build process.
-
+-->
 ### Pipeline Tasks
 
+Git Repositories
+  * Source code with `Dockerfile`
+  * Deployment YAML files
+
+We will now build a Continuous Integration `Pipeline` with the following steps:
+  * Checkout the latest source code from Git.
+  * Build the `Dockerfile` and push the resulting image to an image repository.
+  * Update the deployment files with the image tag of the newly built image.
+  * Deploy the application to OpenShift.
+
+
+Create a `Pipeline` by copying the following to a file named `ci-pipeline.yaml` and replace `<USERNAME>` with the name of the user assigned to you for this workshop:
+
+```yaml
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: ci-pipeline
+spec:
+  workspaces:
+    - name: shared-data
+  params:
+  - name: git-source-url
+    type: string
+  - name: git-cd-url
+    type: string
+  - name: image
+    type: string
+  - name: release-name
+    type: string
+  tasks:
+  - name: clone-sources
+    taskRef:
+      kind: ClusterTask
+      name: git-clone
+    params:
+      - name: url
+        value: $(params.git-source-url)
+    workspaces:
+      - name: output
+        workspace: shared-data
+  - name: build-and-push
+    taskRef:
+      kind: ClusterTask
+      name: buildah
+    params:
+      - name: IMAGE
+        value: $(params.image):$(tasks.clone-sources.results.commit)
+    workspaces:
+      - name: source
+        workspace: shared-data
+    runAfter:
+      - clone-sources
+  - name: update-deployment-repo
+    taskRef:
+      kind: ClusterTask
+      name: git-cli
+    params:
+      - name: GIT_USER_NAME
+        value: demo
+      - name: GIT_SCRIPT
+        value: "set -x; GIT_TRACE=2 GIT_CURL_VERBOSE=2 git clone $(params.git-cd-url) cd-repo;cd cd-repo;sed -i \"s@repositoryandtag:.*@repositoryandtag: $(params.image):$(tasks.clone-sources.results.commit)@\" values.yaml;git commit -a -m \"updated image tag\" --allow-empty;GIT_TRACE=2 GIT_CURL_VERBOSE=2 git push"
+    workspaces:
+      - name: source
+        workspace: shared-data
+    runAfter:
+      - build-and-push
+  - name: deploy-application
+    taskRef:
+      kind: ClusterTask
+      name: helm-upgrade-from-source
+    params:
+      - name: charts_dir
+        value: cd-repo
+      - name: release_namespace
+        value: <USERNAME>
+      - name: release_name
+        value: "$(params.release-name)"
+    workspaces:
+      - name: source
+        workspace: shared-data
+    runAfter:
+      - update-deployment-repo
+```
+
+Create the `Pipeline` by running:
+```bash
+oc create -f ci-pipeline.yaml
+```
+
+Review the `Tasks` in the OpenShift web console.
+
+Note that this `Pipeline` uses `workspaces`. These are used to pass information in a file system between `Tasks`. The storage areas are Persistent Volume Claims that need to be provided when the `Pipeline` is run.
+
+We will now create a `PipelineRun` to run the `Pipeline`. Copy the following to a file named `ci-pipeline-run.yaml` and replace `<USERNAME>` with the name of the user assigned to you for this workshop:
+```yaml
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: ci-pipeline-run
+spec:
+  # serviceAccountName: build-bot
+  pipelineRef:
+    name: ci-pipeline
+  params:
+    - name: git-source-url
+      value: https://github.com/magreenberg/httpserver-ci-demo.git
+    - name: git-cd-url
+      value: https://github.com/magreenberg/httpserver-ci-cd-demo.git
+    - name: image
+      value: image-registry.openshift-image-registry.svc:5000/<USERNAME>/httpserver
+    - name: release-name
+      value: unused-in-this-demo
+  workspaces:
+    - name: shared-data
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 5Gi
+
+```
+
+Start the `PipelineRun` by running:
+```bash
+oc create -f ci-pipeline-run.yaml
+```
+<!--
 Our `Pipeline` needs `Tasks` so that it will know what to do.
 For our `Pipeline` we need to stop and think about what it needs to do, breaking it into pieces and building a `Task` for each piece.
 
@@ -455,4 +585,5 @@ we can do in an easier with ClusterTask (Not installed in this LAB):
             name: build-push
             kind: ClusterTask
     ...
-We will wait for the rest of the Class to complete the exercise and move on to [Exercise 3](../Exercise-3/Exercise-3.md)
+    -->
+We will wait for the rest of the class to complete the exercise and move on to [Exercise 4](../Exercise-4/Exercise-4.md)
