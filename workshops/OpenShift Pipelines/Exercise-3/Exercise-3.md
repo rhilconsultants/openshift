@@ -26,7 +26,7 @@ In this part we are going to build a pipeline that will work with a git reposito
 run a task that will build a simple go application, save it to a pvc and will create the application in OpenShift.(sound simple right?)
 First let's make sure we are on the right directory
 
-    # mkdir -p ~/Tekton/Ex2 && cd ~/Tekton/Ex2
+    # mkdir -p ~/Tekton/Ex3 && cd ~/Tekton/Ex3
 
 <!--
 ### Configuring the Resource
