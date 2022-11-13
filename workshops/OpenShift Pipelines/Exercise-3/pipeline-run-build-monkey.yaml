@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: pipeline-run-build-monkey
+spec:
+  pipelineRef:
+    name: pipeline-build-monkey-ws
+  resources:
+  - name: image
+    resourceRef:
+      name: monkey-app
+  - name: source
+    resourceRef:
+      name: monkey-app-git
+  timeout: 1h0m0s
+  workspaces:
+  - name: pipeline-ws1
+    persistentVolumeClaim:
+      claimName: pipeline-workspace-pvc

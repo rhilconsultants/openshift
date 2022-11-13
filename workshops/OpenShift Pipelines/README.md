@@ -1,13 +1,29 @@
 # OpenShift Pipeline Workshop
 
-Welcome to OpenShift Pipeline (Tekton) workshop.  
-Before you begin I suggest you go over the prerequisites at [prerequisites page](prerequisites.md)
+Welcome to OpenShift Pipelines (Tekton) workshop.
+Before you begin it is suggested you review the prerequisites at [prerequisites page](prerequisites.md).
 
-the WorkShop will be divided into 4 Exercises
+The WorkShop is divided into 4 exercises:
 
-1. Intro to OpenShift Pipelines + task + params [Here](Exercise-1/Exercise-1.md)
-2. pipeline resource + pvc + pipeline  + pipeline multi tasks sequential/parallel [Here](Exercise-2/Exercise-2.md)
-3. concepts of Infrastracture as a service + source of true + pipeline Triggers + webhook [Here](Exercise-3/Exercise-3.md)
-4. Building a Custom Module for a special task [Here](Exercise-4/Exercise-4.md)
-
-After each Exercise the Instructor will run the exercise with emphasis on the important parts
+1. [Intro to OpenShift Pipelines](Exercise-1/Exercise-1.md)
+    * Tasks
+    * TaskRun
+    * Parameters
+    * `tkn` CLI
+    * ClusterTasks
+2. [Building a Pipeline](Exercise-2/Exercise-2.md).
+    * Pipelines
+    * PipelineRuns
+    * Workspaces
+    * Sequential/Parallel Tasks
+    * Finally Task
+3. [CI Pipeline](Exercise-3/Exercise-3.md)
+    * CI Pipeline
+    * IDE Plugins
+4. [Triggers and Webhooks](Exercise-4/Exercise-4.md)
+    * Tekton Templates
+    * Tekton Bindings
+    * Webhooks
+5. [Introduction to GitOps](Exercise-5/Exercise-5.md)
+    * Tekton Templates
+    * ArgoCD Automated Deployment
