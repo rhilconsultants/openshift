@@ -1,7 +1,7 @@
 
 # Exercise 4
 
-Welcome to Exercise 4 in our workshop. In this part we will talk about Infrastructure As Code and how can we utilizes it within a pipeline.  
+Welcome to Exercise 4 in our workshop. In this part we will talk about Infrastructure As Code and how can we utilizes it within a `Pipeline`.  
 
 ## Concepts
 
