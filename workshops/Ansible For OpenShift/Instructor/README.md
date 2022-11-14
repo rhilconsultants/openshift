@@ -19,7 +19,9 @@ dnf install -y jq openssl podman p7zip httpd-tools curl wget rlwrap nmap telnet 
 
 To enable Ansible with Kubernetes
 ```bash
-# dnf intall -y python3-openshift.noarch
+# dnf install -y http://mirror.centos.org/centos/8-stream/AppStream/x86_64/os/Packages/ansible-core-2.12.2-3.el8.x86_64.rpm \
+  http://mirror.centos.org/centos/8-stream/AppStream/x86_64/os/Packages/python38-resolvelib-0.5.4-5.el8.noarch.rpm
+# dnf intall -y python3-openshift.noarch ansible.noarch
 ```
 
 ### Users Management
@@ -44,7 +46,7 @@ Add the group to the soduers file
 Copy the kubeconfig from root to the user manager
 ```bash
 cp -R /root/.kube/ /home/${ADMIN_USER}/
-chown ooichman-redhat.com:admins -R /home/${ADMIN_USER}/.kube/
+chown ${ADMIN_USER}:admins -R /home/${ADMIN_USER}/.kube/
 ```
 
 Create a tmux file for each of the users :
@@ -69,7 +71,9 @@ done
 Extact the CA from OpenShift to a file :
 
 ```bash
-# oc -n openshift-authentication  rsh `oc get pods -n openshift-authentication -o name | head -1 `  cat /run/secrets/kubernetes.io/serviceaccount/ca.crt > /etc/pki/ca-trust/source/anchors/opentls.crt
+# oc -n openshift-authentication  \
+rsh `oc get pods -n openshift-authentication -o name | head -1 `  cat /run/secrets/kubernetes.io/serviceaccount/ca.crt > \
+/etc/pki/ca-trust/source/anchors/opentls.crt
 # update-ca-trust extract
 ```
 
