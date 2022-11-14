@@ -7,7 +7,6 @@ We are going to create a New Image of ose-ansible by building an image with the 
 First go to your ose-openshift directory:
 ```bash
 $ mkdir ~/ose-openshift && cd ~/ose-openshift
-
 ```
 
 Now Create a shell script :
@@ -55,7 +54,7 @@ if [[ -z $"$PLAYBOOK_FILE" ]]; then
   echo "No Playbook file provided... exiting"
   exit 1
 else
-   ansible-playbook $PLAYBOOK_FILE
+   ansible-playbook $OPTS $PLAYBOOK_FILE
 fi' > run-ansible.sh
 ```
 
@@ -69,7 +68,7 @@ $ chmod a+x run-ansible.sh
 For simple access we will copy the kubeconfig from out corrent working profile so the ansible playbook will be able to use it :
 
 ```bash
-$ cp ~/.kube/config.json ~/ose-openshift/kubeconfig
+$ cp ~/.kube/config ~/ose-openshift/kubeconfig
 ```
 
 #### the Dockerfile 
@@ -138,6 +137,11 @@ First setup the registry
 $ export REGISTRY="default-route-openshift-image-registry.apps.cluster-${UUID}.${UUID}.${SANDBOX}"
 ``` 
 
+Login to the registry 
+```bash
+$ podman login -u $(oc whoami) -p $(oc whoami -t) ${REGISTRY}
+```
+
 Now tag the iamge and push it to our internal registry
 ```bash
 $ podman tag ose-openshift ${REGISTRY}/${USER}-project/ose-openshift
@@ -161,3 +165,89 @@ $ cp ~/ose-ansible/main.yaml playbook.yaml
 $ cp -R ~/ose-ansible/roles .
 ```
 
+Create an src directory
+
+```bash
+$ mkdir ${HOME}/ose-openshift/src/
+```
+
+Running the Image
+
+Now we can run the Ansible playbook to deploy your monkey-app application on OpenShift:
+
+```bash
+$ podman run -ti --rm --name ose-openshift \
+    -e OPTS="-v" \
+    -v ${HOME}/ose-openshift/src/:/opt/app-root/src/:Z,rw \
+    -v ${HOME}/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
+    -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
+    -e K8S_AUTH_KUBECONFIG=/opt/app-root/ose-ansible/kubeconfig \
+    -e INVENTORY=/opt/app-root/ose-ansible/inventory \
+    -e K8S_AUTH_API_KEY=$(oc whoami -t) \
+    -e DEFAULT_LOCAL_TMP=/tmp/ \
+    -e K8S_AUTH_HOST=$(oc whoami --show-server) \
+    -e K8S_AUTH_VALIDATE_CERTS=false \
+    ose-openshift
+```
+
+Up until now we worked with a Pod definition , now let's change it to deployment  
+
+Create a new file for deployment
+```bash
+$ cat > role/monkey-app/template/monkey-app-deployment.yml.j2 << EOF
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: monkey-app
+spec:
+  template:
+    metadata:
+      labels:
+        app: monkey-app
+    spec:
+      containers:
+        - name: monkey-app
+          image: quay.io/two.oes/monkey-app
+          ports:
+          - containerPort: 8080
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monkey-app
+EOF
+```
+
+And replace the Pod referance with the deployment referance :
+
+```bash
+- name: set hello-go deployment to {{ state }}
+  kubernetes.core.k8s:
+    state: "{{ state }}"
+    definition: "{{ lookup('template', 'monkey-app-deployment.yml.j2') | from_yaml }}"
+    namespace: ${USER}-project
+```
+
+Now run the playbook with the updates
+
+```bash
+$ podman run -ti --rm --name ose-openshift \
+    -e OPTS="-v" \
+    -v ${HOME}/ose-openshift/src/:/opt/app-root/src/:Z,rw \
+    -v ${HOME}/ose-openshift/:/opt/app-root/ose-ansible/:Z,ro \
+    -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml \
+    -e K8S_AUTH_KUBECONFIG=/opt/app-root/ose-ansible/kubeconfig \
+    -e INVENTORY=/opt/app-root/ose-ansible/inventory \
+    -e K8S_AUTH_API_KEY=$(oc whoami -t) \
+    -e DEFAULT_LOCAL_TMP=/tmp/ \
+    -e K8S_AUTH_HOST=$(oc whoami --show-server) \
+    -e K8S_AUTH_VALIDATE_CERTS=false \
+    ose-openshift
+```
+
+Now you should see the deployment , the replicaset and the Pod 
+```bash
+$ oc get all
+```
+
+That is it,
+You can move 
