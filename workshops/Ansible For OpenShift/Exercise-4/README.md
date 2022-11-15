@@ -54,6 +54,66 @@ Now update your registry to use the internal registry :
 $ export REGISTRY="image-registry.openshift-image-registry.svc:5000"
 ```
 
+### ServiceAccount
+
+We want to control the permissions of the Ansible Playbook in regards to what resources can it create,list and delete so we need to create a new service account and then create a role and a rolebinding to give it the need permissions:
+
+```bash
+$ $ oc create sa health-check
+```
+
+Now for the we will create the role that will allow the playbook to create a pod , a service and a route so the role should look as such :
+
+Create a new Directory named “YAML”
+
+```bash
+$ mkdir YAML
+```
+
+With your favorite editor create a new file named “YAML/role.yaml” and add the following content :
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: health-check
+rules:
+- apiGroups: [""] 
+  resources: ["pods"]
+  verbs: ["create","get", "watch", "list", "update", "patch"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["create","get", "watch", "list", "update", "patch"]
+- apiGroups: [""]
+  resources: ["routes"]
+  verbs: ["create","get", "watch", "list", "update", "patch"]
+```
+
+Same step for the rolebinding :
+
+With your favorite editor create a new file named “YAML/rolebinding.yaml” and add the following content :
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: health-check
+  namespace: health-check
+subjects:
+- kind: ServiceAccount
+  name: health-check
+  namespace: health-check
+roleRef:
+  kind: Role 
+  name: health-check
+  apiGroup: rbac.authorization.k8s.io
+```
+
+Let’s create all the resources :
+```bash
+$ oc create -f YAML/role.yaml -f YAML/rolebinding.yaml
+```
+
 Here is how the cronjob should look like.  
 (we have already created the rest of the components)
 
