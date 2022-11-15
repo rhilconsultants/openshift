@@ -47,7 +47,8 @@ COPY roles /opt/app-root/
 and recreate the ose-ansible image :
 
 ```bash
-$ buildah bud -f Dockerfile -t ${REGISTRY}/${USER}-project/ose-ansible && buildah push ${REGISTRY}/${USER}-project/ose-ansible
+$ buildah bud -f Dockerfile -t ${REGISTRY}/${USER}-project/ose-ansible && \
+  buildah push ${REGISTRY}/${USER}-project/ose-ansible
 ```
 
 Now update your registry to use the internal registry :
@@ -100,7 +101,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: health-check
-  namespace: health-check
+  namespace: ${USER}-project
 subjects:
 - kind: ServiceAccount
   name: health-check
