@@ -11,6 +11,43 @@ The modules which we are going to use are :
 - ansible.builtin.wait_for
 - ansible.builtin.url
 
+First update the run-ansible.sh file and replace :
+```bash
+if [[ -z "$K8S_AUTH_API_KEY" ]]; then 
+  echo "No Kubernetes Authentication key provided (K8S_AUTH_API_KEY environment value)"
+else 
+  export K8S_AUTH_API_KEY=${K8S_AUTH_API_KEY}
+fiif [[ -z "${K8S_AUTH_KUBECONFIG}" ]]; then
+   echo "NO K8S_AUTH_KUBECONFIG environment variable configured"
+   exit 1
+fi
+```
+
+**WITH**
+
+```bash
+if [[ -f /var/run/secrets/kubernetes.io/serviceaccount/token ]]; then
+ K8S_AUTH_API_KEY=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+elif [[ -z "$K8S_AUTH_API_KEY" ]]; then 
+  echo "No Kubernetes Authentication key provided (K8S_AUTH_API_KEY environment value)"
+else 
+  export K8S_AUTH_API_KEY=${K8S_AUTH_API_KEY}
+fi
+```
+
+And Copy the roles to the image file 
+With your favorite editor (VIM obviously) copy/paste the following line to your Dockerfile (at line 7) :
+
+```bash
+COPY roles /opt/app-root/
+```
+
+and recreate the ose-ansible image :
+
+```bash
+$ buildah bud -f Dockerfile -t ${REGISTRY}/ose-ansible && buildah push ${REGISTRY}/ose-ansible
+```
+
 Here is how the cronjob should look like.  
 (we have already created the rest of the components)
 
