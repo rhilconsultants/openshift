@@ -106,6 +106,24 @@ first create the role by running the following command :
 $ ansible-galaxy init --init-path roles time-date
 ```
 
+Modify the main.yaml file as follow :
+
+```bash
+$ cat > main-role.yaml << EOF
+---
+- hosts: localhost
+  gather_facts: false
+
+  roles:
+    - name: time-date
+EOF
+```
+
+and run it again with the new playbook to get the same results :
+```bash
+$ ansible-playbook -i inventory main-role.yaml
+```
+
 #### Cleanup 
 
 We will not use this playbook any more so let's do a quick cleanup :
