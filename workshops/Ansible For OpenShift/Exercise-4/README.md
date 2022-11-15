@@ -1,6 +1,6 @@
 # Task 4 - Running on OpenShift
 
-For this task we will take everything we build so far and create a deployment that will deploy a Pod , A service and a route. 
+For this task we will take everything we build so far and create A Pod , A service and a route. 
 Test if the route responses and delete all the resource.
 
 The modules which we are going to use are :
