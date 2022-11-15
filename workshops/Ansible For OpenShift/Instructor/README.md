@@ -21,7 +21,12 @@ To enable Ansible with Kubernetes
 ```bash
 # dnf install -y http://mirror.centos.org/centos/8-stream/AppStream/x86_64/os/Packages/ansible-core-2.12.2-3.el8.x86_64.rpm \
   http://mirror.centos.org/centos/8-stream/AppStream/x86_64/os/Packages/python38-resolvelib-0.5.4-5.el8.noarch.rpm
-# dnf intall -y python3-openshift.noarch ansible.noarch
+# dnf intall -y ansible.noarch
+```
+
+Install the Kubernetes module :
+```bash
+# pip3 install kubernetes==12.0.1
 ```
 
 ### Users Management
@@ -65,6 +70,14 @@ bind -n C-Down select-pane -D
 bind C-Y set-window-option synchronize-panes
 EOF
 chown user${num}:user${num} /home/user${num}/.tmux.conf
+done
+```
+
+Now make sure the users are admin on thier namespace :
+```bash
+# for num in {1..20};do
+oc new-project user${num}-project
+oc adm policy add-role-to-user admin user${num} -n user${num}-project
 done
 ```
 

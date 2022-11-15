@@ -194,11 +194,11 @@ Up until now we worked with a Pod definition , now let's change it to deployment
 
 Create a new file for deployment
 ```bash
-$ cat > role/monkey-app/template/monkey-app-deployment.yml.j2 << EOF
+$ cat > roles/monkey-app/templates/deployment.yaml.j2 << EOF
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: monkey-app
+  name: monkeyapp
 spec:
   template:
     metadata:
@@ -223,7 +223,7 @@ And replace the Pod referance with the deployment referance :
 - name: set hello-go deployment to {{ state }}
   kubernetes.core.k8s:
     state: "{{ state }}"
-    definition: "{{ lookup('template', 'monkey-app-deployment.yml.j2') | from_yaml }}"
+    definition: "{{ lookup('template', 'deployment.yaml.j2') | from_yaml }}"
     namespace: ${USER}-project
 ```
 
@@ -250,4 +250,4 @@ $ oc get all
 ```
 
 That is it,
-You can move 
+You can move to the next Exercise
