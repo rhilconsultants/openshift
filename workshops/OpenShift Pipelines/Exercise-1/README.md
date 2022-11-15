@@ -1,6 +1,6 @@
 # Exercise - 1 (Intro + Basics)
 
-## Welcome to the Pipeline (Intro)
+## Welcome to the Pipeline (Introduction)
 
 OpenShift Pipelines is a cloud-native, continuous integration and continuous delivery (CI/CD) solution based on Kubernetes resources.
 It uses Tekton building blocks to automate deployments across multiple platforms by abstracting away the underlying implementation details.   Tekton introduces a number of standard Custom Resource Definitions (CRDs) for defining CI/CD pipelines that are portable across Kubernetes distributions.
@@ -8,39 +8,35 @@ OpenShift Pipelines provide a set of standard Custom Resource Definitions (CRDs)
 
 ### Key Features
 
-  - OpenShift Pipelines is a serverless CI/CD system that runs Pipelines with all the required dependencies in isolated containers.
+  - OpenShift Pipelines is a serverless CI/CD system that runs `Pipelines` with all the required dependencies in isolated containers.
   - OpenShift Pipelines are designed for decentralized teams that work on microservice-based architecture.
   - OpenShift Pipelines use standard CI/CD pipeline definitions that are easy to extend and integrate with the existing Kubernetes tools, enabling you to scale on-demand.
   - You can use OpenShift Pipelines to build images with Kubernetes tools such as Source-to-Image (S2I), Buildah, Buildpacks, and Kaniko that are portable across any Kubernetes platform.
   - You can use the OpenShift Container Platform Developer Console to create Tekton resources, view logs of Pipeline runs, and manage pipelines in your OpenShift Container Platform namespaces.
 
-### OpenShift Pipelines Concepts
+## OpenShift Pipelines Concepts
 
-#### Task
-A `Task` is the smallest configurable unit in a Pipeline. It is essentially a function of inputs and outputs that form the Pipeline build. It can run individually or as a part of a Pipeline. A Pipeline includes one or more Tasks, where each Task consists of one or more Steps. Steps are a series of commands that are sequentially executed by the Task.
+### Task
+A `Task` is the smallest configurable unit in a `Pipeline`. It is essentially a function of inputs and outputs that form the Pipeline build. It can run individually or as a part of a Pipeline. A `Pipeline` includes one or more `Tasks`, where each `Task` consists of one or more `Steps`. `Steps` are a series of commands that are sequentially executed by the `Task`.
 
-#### TaskRun
-A `TaskRun` is automatically created by a PipelineRun for each Task in a Pipeline. It is the result of running an instance of a Task in a Pipeline. It can also be manually created if a Task runs outside of a Pipeline.
+### TaskRun
+A `TaskRun` is automatically created by a `PipelineRun` for each `Task` in a `Pipeline`. It is the result of running an instance of a `Task` in a `Pipeline`. It can also be manually created if a `Task` runs outside of a `Pipeline`.
 
-#### Pipeline
-A `Pipeline` consists of a series of Tasks that are executed to construct complex workflows that automate the build, deployment, and delivery of applications. It is a collection of PipelineResources, parameters, and one or more Tasks. A Pipeline interacts with the outside world by using PipelineResources, which are added to Tasks as inputs and outputs.
+### Pipeline
+A `Pipeline` consists of a series of `Tasks` that are executed to construct complex workflows that automate the build, deployment, and delivery of applications. It is a collection of parameters and one or more `Tasks`.
 
-#### PipelineRun
-A `PipelineRun` is the running instance of a Pipeline. A PipelineRun initiates a Pipeline and manages the creation of a TaskRun for each Task being executed in the Pipeline.
+### PipelineRun
+A `PipelineRun` is the running instance of a `Pipeline`. A `PipelineRun` initiates a `Pipeline` and manages the creation of a `TaskRun` for each `Task` being executed in the `Pipeline`.
 
-#### Workspace
-A `Workspace` is a storage volume that a Task requires at runtime to receive input or provide output. A Task or Pipeline declares the Workspace, and a TaskRun or PipelineRun provides the actual location of the storage volume, which mounts on the declared Workspace. This makes the Task flexible, reusable, and allows the Workspaces to be shared across multiple Tasks.
+### Workspace
+A `Workspace` is a storage volume that a `Task` requires at runtime to receive input or provide output. A `Task` or `Pipeline` declares the `Workspace`, and a `TaskRun` or `PipelineRun` provides the actual location of the storage volume, which mounts on the declared `Workspace`. This makes the `Task` flexible, reusable, and allows the `Workspaces` to be shared across multiple Tasks.
 
-#### Trigger
-A `Trigger` captures an external event, such as a Git pull request and processes the event payload to extract key pieces of information. This extracted information is then mapped to a set of predefined parameters, which trigger a series of tasks that may involve creation and deployment of Kubernetes resources. You can use Triggers along with Pipelines to create full-fledged CI/CD systems where the execution is defined entirely through Kubernetes resources.
-
-#### Condition
-A `Condition` refers to a validation or check, which is executed before a Task is run in your Pipeline. Conditions are like if statements which perform logical tests, with a return value of True or False. A Task is executed if all Conditions return True, but if any of the Conditions fail, the Task and all subsequent Tasks are skipped. You can use Conditions in your Pipeline to create complex workflows covering multiple scenarios.
-
+### Trigger
+A `Trigger` captures an external event, such as a Git pull request and processes the event payload to extract key pieces of information. This extracted information is then mapped to a set of predefined parameters, which trigger a series of tasks that may involve creation and deployment of Kubernetes resources. You can use `Triggers` along with `Pipelines` to create full-fledged CI/CD systems where the execution is defined entirely through Kubernetes resources.
 
 ## Using Pipelines - the Basics
 Now that we understand (or at the very least familiarized) with all the concepts we can start by making sure that OpenShift Pipeline is install on our system.
-We can do that by quering for `Pipeline` objects:
+We can do that by quering for `Pipeline` resource:
 ```bash
 oc get pipelines
 ```
@@ -57,14 +53,9 @@ Then OpenShift Pipelines has been installed.
 
 
 ### Basic usage
-Now that we see the pipeline service account we can start by creating a simple task:
-Create a cirectory and navigate to it:
-
 First let's create a directory for this exercise:
 
     mkdir ~/Tekton
-    mkdir -p ~/Tekton/Ex1 && cd ~/Tekton/Ex1
-
 
 Now let's create our first `Task` by copying the following to a file named `echo-hello-world.yaml`:
 
@@ -72,26 +63,25 @@ Now let's create our first `Task` by copying the following to a file named `echo
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-    name: echo-hello-world
+  name: echo-hello-world
 spec:
-    steps:
+  steps:
     - name: echo
-        image: registry.access.redhat.com/ubi8-minimal
-        command:
+      image: registry.access.redhat.com/ubi8-minimal
+      command:
         - echo
-        args:
+      args:
         - "Hello World"
 ```
 
-Take a few seconds to view the task. It is pretty straightforward when we look at it ...
-All we are asking the task to do is to obtain our image module (YES, the images that the task is using are actually the modules for our pipeline) and then it runs the echo command with the "Hello World" arguments.
+Take a few seconds to review the `Task`. It is pretty straightforward when we look at it.
+All we are asking the `Task` to do is to obtain our image module (the images that the task is using are actually the modules for our pipeline) and then it runs the echo command with the "Hello World" arguments.
 
-Sense it is a Kubernetes Object, we will go ahead and use the oc command to create it:
-echo-hello-world
+Since a `Task` is a Kubernetes Custom Resource, we will go ahead and use the `oc` command to create it:
 
     oc create -f echo-hello-world.yaml
 
-We can also use the command to list the task:
+We can also use the `tkn` command to list the task:
 
     tkn task list
 
@@ -100,16 +90,16 @@ The output will be of the form:
     NAME               DESCRIPTION   AGE
     echo-hello-world                 X seconds ago
 
-Now, In order to run the command we need to create a `TaskRun` object. We can create it with a YAML file or by using the `tkn` command.
+Now, In order to run the command we need to create a `TaskRun` custom resource. We can create it with a YAML file or by using the `tkn` command.
 
 In order to create a YAML file, copy the following to a file named `tr-echo-hello-world.yaml`:
 ```yaml
 apiVersion: tekton.dev/v1beta1
 kind: TaskRun
 metadata:
-    name: taskrun-echo-hello-world
+  name: taskrun-echo-hello-world
 spec:
-    taskRef:
+  taskRef:
     name: echo-hello-world
 ```
 
@@ -121,12 +111,15 @@ Now that we created a the `TaskRun` for our `Task` we can view it using the CLI:
 
     tkn taskrun list
 
-to view the output of the `TaskRun` we can use the `tkn` tool:
+To view the output of the `TaskRun` we can use the `tkn` tool:
 
     tkn taskrun logs taskrun-echo-hello-world
-    [echo] Hello World
 
-In case the `Task` takes a long time to finish we can look at the pods and their status:
+The output should be of the form:
+
+<span style="color:green">[echo]</span> Hello World
+
+In case the `Task` takes a long time to finish, we can look at the `pods` and their status:
 
     oc get pods
 
@@ -197,21 +190,21 @@ and then attach it to the pull operation:
 
 Delete the taskrun and recreate it, that should solve the issue.
 -->
-### Pasing Parameters to Tasks
-Now that we created a `Task` and a `TaskRun` we can go ahead and expand our task by adding parameters to our task. `params` enable us to use the same `Task` for more than one resources which can be both the input and the output of a task.
+### Passing Parameters to Tasks
+Now that we created a `Task` and a `TaskRun` we can go ahead and expand our `Task` by adding parameters to our task. `params` enable us to use the same `Task` for more than one resources which can be both the input and the output of a task.
 
 Copy the following to a file named `task-hello-params.yaml`:
 ```yaml
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-    name: echo-hello-person
+  name: echo-hello-person
 spec:
-    params:
+  params:
     - name: person
       description: Person to greet
       default: bob
-    steps:
+  steps:
     - name: echo
       image: registry.redhat.io/ubi8/ubi-minimal
       script: |
@@ -223,7 +216,7 @@ Let's go ahead and run it:
 
     oc create -f task-hello-params.yaml
 
-Now that the `Task` has been created, we run it by creating a `TaskRun` object as follows:
+Now that the `Task` has been created, we run it by creating a `TaskRun` resource using the `tkn` command as follows:
 
     tkn task start --use-param-defaults echo-hello-person
 
@@ -259,13 +252,13 @@ The last way is preferred. We are going to create a `TaskRun` where we will defi
 apiVersion: tekton.dev/v1beta1
 kind: TaskRun
 metadata:
-    name: echo-hello-person-task-run-override
+  name: echo-hello-person-task-run-override
 spec:
-    taskRef:
+  taskRef:
     name: echo-hello-person
-    params:
+  params:
     - name: person
-        value: sally
+      value: sally
 ```
 
 And create the `TaskRun`:
@@ -278,9 +271,9 @@ Now we can look at the logs and see the output we wanted:
 
 If you see "Hello sally" then we are good to go.
 
-## Extra task
+## Bonus Task
 
-Try sending the `param` using the `tkn` command ...
+Try sending the `param` value using the `tkn` command.
 
 After you haved completed all the tasks it is time for a cleanup:
 
