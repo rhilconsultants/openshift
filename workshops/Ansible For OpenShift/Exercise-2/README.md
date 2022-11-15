@@ -160,7 +160,7 @@ $ oc get pods,svc,route
 Now test our results let's greb the route and run an API query with curl to see if everything is in place :
 
 ```bash
-$ ROUTE=$(echo -n 'http://' && oc get route monkey-app -o jsonpath='{ .spec.host }'
+$ ROUTE=$(echo -n 'http://' && oc get route monkey-app -o jsonpath='{ .spec.host }')
 $ curl -H "Content-Type: application/json" ${ROUTE}/api/?says=banana
 ```
 
