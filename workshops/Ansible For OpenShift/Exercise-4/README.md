@@ -48,6 +48,12 @@ and recreate the ose-ansible image :
 $ buildah bud -f Dockerfile -t ${REGISTRY}/${USER}-project/ose-ansible && buildah push ${REGISTRY}/${USER}-project/ose-ansible
 ```
 
+Now update your registry to use the internal registry :
+
+```bash
+$ export REGISTRY="image-registry.openshift-image-registry.svc:5000"
+```
+
 Here is how the cronjob should look like.  
 (we have already created the rest of the components)
 
@@ -68,7 +74,7 @@ spec:
           serviceAccountName: health-check
           containers:
           - name: health-check
-            image: ${REGISTRY}/${USER}-project/ose-openshift
+            image: ${REGISTRY}/${USER}-project/ose-ansible
             env: 
             - name: OPTS 
               value: "-vv"
