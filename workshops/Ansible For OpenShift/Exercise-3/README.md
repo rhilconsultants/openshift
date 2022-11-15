@@ -54,7 +54,7 @@ if [[ -z $"$PLAYBOOK_FILE" ]]; then
   echo "No Playbook file provided... exiting"
   exit 1
 else
-   ansible-playbook $OPTS $PLAYBOOK_FILE
+   ansible-playbook $OPTS $PLAYBOOK_FILE -i $INVENTORY
 fi' > run-ansible.sh
 ```
 
@@ -155,7 +155,9 @@ First update the inventory file for our internal connection :
 ```bash
 $ cat > inventory << EOF
 [localhost]
-127.0.0.1 ansible_connection=local ansible_host=localhost ansible_python_interpreter=/usr/bin/python3
+127.0.0.1 ansible_connection=local ansible_host=localhost ansible_python_interpreter=/usr/bin/python3.8
+[localhost:vars]
+namespace=${USER}-project
 EOF
 ```
 
