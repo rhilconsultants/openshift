@@ -1,6 +1,6 @@
 # Task 4 - Running on OpenShift
 
-For this task we will take everything we build so far and create a deployment that will deploy a Pod , A service and a route. 
+For this task we will take everything we build so far and create A Pod , A service and a route. 
 Test if the route responses and delete all the resource.
 
 The modules which we are going to use are :
@@ -35,6 +35,8 @@ else
 fi
 ```
 
+**Restore the role to work with "pod" and remove "deployment"**
+
 And Copy the roles to the image file 
 With your favorite editor (VIM obviously) copy/paste the following line to your Dockerfile (at line 7) :
 
@@ -52,6 +54,66 @@ Now update your registry to use the internal registry :
 
 ```bash
 $ export REGISTRY="image-registry.openshift-image-registry.svc:5000"
+```
+
+### ServiceAccount
+
+We want to control the permissions of the Ansible Playbook in regards to what resources can it create,list and delete so we need to create a new service account and then create a role and a rolebinding to give it the need permissions:
+
+```bash
+$ $ oc create sa health-check
+```
+
+Now for the we will create the role that will allow the playbook to create a pod , a service and a route so the role should look as such :
+
+Create a new Directory named “YAML”
+
+```bash
+$ mkdir YAML
+```
+
+With your favorite editor create a new file named “YAML/role.yaml” and add the following content :
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: health-check
+rules:
+- apiGroups: [""] 
+  resources: ["pods"]
+  verbs: ["create","get", "watch", "list", "update", "patch"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["create","get", "watch", "list", "update", "patch"]
+- apiGroups: [""]
+  resources: ["routes"]
+  verbs: ["create","get", "watch", "list", "update", "patch"]
+```
+
+Same step for the rolebinding :
+
+With your favorite editor create a new file named “YAML/rolebinding.yaml” and add the following content :
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: health-check
+  namespace: health-check
+subjects:
+- kind: ServiceAccount
+  name: health-check
+  namespace: health-check
+roleRef:
+  kind: Role 
+  name: health-check
+  apiGroup: rbac.authorization.k8s.io
+```
+
+Let’s create all the resources :
+```bash
+$ oc create -f YAML/role.yaml -f YAML/rolebinding.yaml
 ```
 
 Here is how the cronjob should look like.  
