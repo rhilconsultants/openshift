@@ -5,58 +5,57 @@ Welcome to Exercise 4 in our workshop. In this part we will talk about Webhooks 
 
 ## Concepts
 
-First we will go over a few very important concepts that will help us understand the process much better.  Once we understand all the concepts  we will build a Lister and a Web hook to monitor for changes in our GIT server and deploy an new changes that may be (after commit)
+First we will go over a few very important concepts that will help us understand the process much better.  Once we understand all the concepts  we will build an Event Listener and configure a Web hook to monitor for changes in our GIT server and deploy the latest changes.
 
 ### IAC
 
-BY Definition :  
-"Infrastructure as code (IaC) is the process of managing and provisioning computer data centers through   machine-readable definition files, rather than physical hardware configuration or interactive configuration tools. The IT infrastructure managed by this process comprises both physical equipment, such as  bare-metal servers, as well as virtual machines, and associated configuration resources. The definitions may be in a version control system (GIT). It can use either scripts or declarative definitions, rather than manual processes, but the term is more often used to promote declarative approaches."  
+By definition :
 
-#### We can't talk about IAC without DevOps
+> *Infrastructure as code (IaC) is the process of managing and provisioning computer data centers through   machine-readable definition files, rather than physical hardware configuration or interactive configuration tools. The IT infrastructure managed by this process comprises both physical equipment, such as  bare-metal servers, as well as virtual machines, and associated configuration resources. The definitions may be in a version control system (GIT). It can use either scripts or declarative definitions, rather than manual processes, but the term is more often used to promote declarative approaches.*
+
 
 ### DevOps
 
-DevOps is a set of practices that combines software development (Dev) and IT operations (Ops). It aims to shorten the systems development life cycle and provide continuous delivery with high software quality.  DevOps is complementary with Agile software development; several DevOps aspects came from Agile methodology. 
+DevOps is a set of practices that combines software development (Dev) and IT operations (Ops). It aims to shorten the systems development life cycle and provide continuous delivery with high software quality.  DevOps is complementary with Agile software development; several DevOps aspects came from Agile methodology.
 
-#### IAC and DevOps Relationship
+### IAC and DevOps Relationship
 
 IaC can be a key attribute of enabling best practices in DevOps – Developers become more involved in defining configuration and **Ops teams get involved earlier in the development process**.
 
-Automation in general aims to take the confusion and error-prone aspect of manual processes and make it more efficient, and productive  
+Automation in general aims to take the confusion and error-prone aspect of manual processes and make it more efficient, and productive
 
-While building an Application we are getting:
+While building an Application we are benefitting from:
 
-  - Automation
-  - flexibility 
+  - automation
+  - flexibility
   - less downtime
   - overall cost effective
   - reduce the complexity
   - collaboration
 
-#### to work in a complete automation way we need to work with API/Webhook
 
-### API 
+### API
 
-An application programming interface (API) is a computing interface which defines interactions between multiple software intermediaries. It defines the kinds of calls or requests that can be made, how to make them, the data formats that should be used, the conventions to follow, etc.  
-It can also provide extension mechanisms so that users can extend existing functionality in various ways and to varying degrees.[1] An API can be entirely custom, specific to a component, or it can be designed based on an industry-standard to ensure interoperability. Through information hiding, APIs enable modular programming, which allows users to use the interface independently of the implementation.  
+An application programming interface (API) is a computing interface which defines interactions between multiple software intermediaries. It defines the kinds of calls or requests that can be made, how to make them, the data formats that should be used, the conventions to follow, etc.
+It can also provide extension mechanisms so that users can extend existing functionality in various ways and to varying degrees.[1] An API can be entirely custom, specific to a component, or it can be designed based on an industry-standard to ensure interoperability. Through information hiding, APIs enable modular programming, which allows users to use the interface independently of the implementation.
 
 ### WebHook
 
 A webhook in web development is a method of augmenting or altering the behavior of a web page or web application with custom callbacks. These callbacks may be maintained, modified, and managed by third-party users and developers who may not necessarily be affiliated with the originating website or application. The term "webhook" was coined by Jeff Lindsay in 2007 from the computer programming term hook.[1]
 
-The format is usually JSON. The request is done as an HTTP POST request. 
+The format is usually JSON. The request is done as an HTTP POST request.
 
 ### TDD
 
-Test-driven development (TDD) is a software development process that relies on the repetition of a very short development cycle: requirements are turned into very specific test cases, then the code is improved so that the tests pass. This is opposed to software development that allows code to be added that is not proven to meet requirements.  
+Test-driven development (TDD) is a software development process that relies on the repetition of a very short development cycle: requirements are turned into very specific test cases, then the code is improved so that the tests pass. This is opposed to software development that allows code to be added that is not proven to meet requirements.
 
-When working with the TDD process the main focus is on the testing and then on the software build , which makes the CI process to much more reliable.  
+When working with the TDD process the main focus is on the testing and then on the software build, which makes the CI process to much more reliable.
 
 ## Tekton Triggers
 
 <img align="center" alt="Tekton-triggers" src="tekton-triggers.png" width="25%" height="25%">
 
-Up until this point we talked about concepts and methods. Now we will get down to business and talk about how Tekton can help use utilize those concepts in a CI/CD process.  
+Up until this point we talked about concepts and methods. Now we will get down to business and talk about how Tekton can help use utilize those concepts in a CI/CD process.
 Before getting started, let’s discuss some of the features of Tekton Triggers. In a nutshell, Tekton Triggers allows users to create resource templates that get instantiated when an event is received. Additionally, fields from event payloads can be injected into these resource templates as runtime information. This enables users to automatically create template PipelineRun or TaskRun resources when an event is received.
 
   1. **Trigger Template**
@@ -79,9 +78,9 @@ An EventListener creates a Deployment and Service that listen for events. When t
 
 
 ## Events Generated by Git
-Each implementation of Git, GitHub, GitLab, BitBucket, AzureDevops to name a few allows you to create a Webhook (http URL) and specify an event, for example push to repository. When the event occurs, the URL will be invoked with a POST and will include data in JSON format regarding the event. The data may include the Git hash (before and after), the branch, the committing user and additional information.
+Each implementation of Git, GitHub, GitLab, BitBucket, AzureDevops to name a few allows you to create a Webhook (http URL) and specify an event, for example push to repository. When the event occurs, the URL will be invoked with ah HTTP POST and will include data in JSON format regarding the event. The data may include the Git hash (before and after), the branch, the committing user and additional information.
 
-In order to view a sample JSON file from our Gitea server, we will create a Webhook in our source code and send it to the HTTPserver application that we started in Exercise-3.
+In order to view a sample JSON file from our Gitea server, we will create a webhook in our source code repository and send the JSON data to the HTTPserver application that we started in Exercise-3.
 
 On the Gitea web console, on the `httpserver` home page press on `Settings` and then press `Webhooks`. Press `Add Webhook` and select `Gitea`.
 
@@ -119,7 +118,7 @@ The log from the `httpserver` application should display data in JSON format. A 
     }
   ],
   "repository": {
-    "html_url": "http://gitea-http-gitea.apps.cluster-5bgbn.5bgbn.sandbox2714.opentlc.com/cdeveloper/httpserver",
+    "html_url": "http://gitea-http-gitea.apps.hitech.com/cdeveloper/httpserver",
   },
 }
 ```
@@ -127,9 +126,9 @@ The log from the `httpserver` application should display data in JSON format. A 
 
 Save the JSON data from your `httpserver` log in order to refer to it when building the `TriggerBinding` in the next section.
 
-## Getting dirty
+## Configuring an Event Listener
 
-Now that we are familier  with the important concepts , let's create a trigger that will start the `Pipeline` when there is a change in the git master branch.  
+Now that we are familier  with the important concepts, let's create a trigger that will start the `Pipeline` when there is a change in the git master branch.
 We will use our pipelines and tasks that we used up until this point and create a trigger for them.
 
 
@@ -233,7 +232,7 @@ spec:
 
 As you can see, the TriggerTemplate, is very similar to the `PipelineRun` object created in the previous exercise. The only difference is that instead of hardcoding everything, there are a few parameters defined that specify information by a TriggerBinding at runtime. You can create multiple resources from the `TriggerTemplate`, but you only need to create one `PipelineRun` the `Pipeline`.
 
-Why is a `generateName` required here?
+QUESTION: Why is a `generateName` required here?
 
 Now we will create the objects:
 ```bash
@@ -279,4 +278,4 @@ If the pipeline does not start:
 1. Check `events` in the `namespace`: oc get events --sort-by="{.metadata.creationTimestamp}"
 1. If you change any of the objects above, restart the event listener: oc delete $(oc get pods -o name | grep el-gitea-eventlistener)
 
-Now that everything is ready you can move on to [Exercise 5](../Exercise-5/READNE.md)
+Now that everything is ready you can move on to [Exercise 5](../Exercise-5/READNE.md).

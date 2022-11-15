@@ -53,9 +53,10 @@ Then OpenShift Pipelines has been installed.
 
 
 ### Basic usage
-First let's create a directory for this exercise:
+First let's create a directory for this exercise and set it as the current working directory:
 
     mkdir ~/Tekton
+    cd ~/Tekton
 
 Now let's create our first `Task` by copying the following to a file named `echo-hello-world.yaml`:
 
@@ -103,7 +104,7 @@ spec:
     name: echo-hello-world
 ```
 
-And Create it
+Now create the `TaskRun`:
 
     oc create -f tr-echo-hello-world.yaml
 
@@ -261,7 +262,7 @@ spec:
       value: sally
 ```
 
-And create the `TaskRun`:
+Now create the `TaskRun`:
 
     oc create -f taskrun-hello-person-param-override.yaml
 
@@ -279,4 +280,4 @@ After you haved completed all the tasks it is time for a cleanup:
 
     oc get taskrun -o name | xargs oc delete
 
-We will wait for the rest of the class to complete the exercise and move on to [Exercise 2](../Exercise-2/README.md)
+We will wait for the rest of the class to complete the exercise and move on to [Exercise 2](../Exercise-2/README.md).

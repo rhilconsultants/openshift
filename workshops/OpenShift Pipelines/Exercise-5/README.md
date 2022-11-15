@@ -115,6 +115,6 @@ oc create -f ci-pipeline-run-no-deploy.yaml
 After the build has completed, watch the `CURRENT SYNC STATUS` of the application in the ArgoCD web console. The `To HEAD` git has should change and the application should be updated with the latest image tag that was built.
 
 
-# Congratulations ...
+# Congratulations
 
 You have now completed the OpenShift Pipelines Workshop!

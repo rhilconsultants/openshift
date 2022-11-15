@@ -10,15 +10,16 @@ The WorkShop is divided into the following exercises:
     * TaskRun
     * Parameters
     * `tkn` CLI
-    * ClusterTasks
 2. [Building a Pipeline](Exercise-2/README.md)
     * Pipelines
     * PipelineRuns
+    * ClusterTasks
     * Sequential/Parallel Tasks
     * Finally Task
 3. [CI Pipeline](Exercise-3/README.md)
     * CI Pipeline
     * Workspaces
+    * Conditional Tasks
     * IDE Plugins
 4. [Triggers and Webhooks](Exercise-4/README.md)
     * Tekton Templates
