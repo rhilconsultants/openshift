@@ -45,7 +45,7 @@ COPY roles /opt/app-root/
 and recreate the ose-ansible image :
 
 ```bash
-$ buildah bud -f Dockerfile -t ${REGISTRY}/ose-ansible && buildah push ${REGISTRY}/ose-ansible
+$ buildah bud -f Dockerfile -t ${REGISTRY}/${USER}-project/ose-ansible && buildah push ${REGISTRY}/${USER}-project/ose-ansible
 ```
 
 Here is how the cronjob should look like.  
