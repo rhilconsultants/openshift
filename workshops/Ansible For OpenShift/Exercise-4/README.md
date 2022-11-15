@@ -35,6 +35,8 @@ else
 fi
 ```
 
+**Restore the role to work with "pod" and remove "deployment"**
+
 And Copy the roles to the image file 
 With your favorite editor (VIM obviously) copy/paste the following line to your Dockerfile (at line 7) :
 
