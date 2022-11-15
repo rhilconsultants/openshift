@@ -31,7 +31,7 @@ spec:
           serviceAccountName: health-check
           containers:
           - name: health-check
-            image: ${REGISTRY}/ose-ansible
+            image: ${REGISTRY}/${USER}-project/ose-openshift
             env: 
             - name: OPTS 
               value: "-vv"
@@ -69,5 +69,10 @@ EOF
 ```
 
 recreate the image and the relevant ConfigMap files so the cronjob will work !!!
+
+Once everything is set go ahead and apply it :
+```bash
+$ oc apply -f cronjob.yaml
+```
 
 Good Luck 

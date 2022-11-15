@@ -52,7 +52,7 @@ The task also registers the returned value (and some other metadata) into a new 
 Let’s add just one more task that will print the date we saved. 
 
 The playbook can be created by running the following command:
-```yaml
+```bash
 $ cat > main.yaml << EOF
 ---
 - hosts: localhost
@@ -98,3 +98,17 @@ $ ansible-playbook -i inventory main.yaml
 #### Open Task (third playbook)
 
 take the playbook we have just created and turn into an Ansible role!
+
+**HINT**
+first create the role by running the following command :
+
+```bash
+$ ansible-galaxy init --init-path roles time-date
+```
+
+#### Cleanup 
+
+We will not use this playbook any more so let's do a quick cleanup :
+```bash
+$ rm -f *
+```

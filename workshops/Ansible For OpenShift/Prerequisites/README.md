@@ -14,8 +14,9 @@ In order to start working with OpenShift pipeline you Need to have the following
 
 ```bash
 $ export UUID="" # ask the Instructor
-$ export SANDBOX="" # ask the Instructor  
-$ ssh bastion.$UUID.${SANDBOX}
+$ export SANDBOX="" # ask the Instructor
+USER #   ask the Instructor
+$ ssh USER@bastion.$UUID.${SANDBOX}
 ```
 ### tmux
 

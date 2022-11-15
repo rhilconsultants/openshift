@@ -224,7 +224,7 @@ As you can see the state referce to a status variable. Under the defaults direct
 
 Let's modify the main.yml file :
 ```bash
-$ cat >> roles/monkey-app/defaults/main.yaml << EOF
+$ cat >> roles/monkey-app/defaults/main.yml << EOF
 status: present
 EOF
 ```
