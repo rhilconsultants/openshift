@@ -207,6 +207,8 @@ spec:
     type: string
   - name: namespace
     type: string
+  - name: deploy
+    type: string
   tasks:
   - name: clone-sources
     taskRef:
@@ -245,6 +247,10 @@ spec:
     runAfter:
       - build-and-push
   - name: deploy-application
+    when:
+      - input: "$(params.deploy)"
+        operator: in
+        values: ["true"]
     taskRef:
       kind: ClusterTask
       name: helm-upgrade-from-source
@@ -293,6 +299,8 @@ spec:
       value: httpserver
     - name: namespace
       value: $(oc whoami)
+    - name: deploy
+      value: true
   workspaces:
     - name: shared-data
       volumeClaimTemplate:

@@ -9,388 +9,113 @@ The Object of the Exercise is to show how simple it is to create a new image mod
 
 In this case we will create a Custom image which we will use as our module image. In our case we will use the tools we had downloaded in our prerequisites section in order to create and deploy a simple application (the monkey-app) with a listener to our Monkey git repository which we will eventually are creating a full CI/CD for our Monkey application 
 
-## building an Image
-  
-Let's build a container image which holds the 2 tools and we are going to use the container to run a pod and connect to is so we will be able to use the tools from it 
+## Creating an ArgoCD Instance
+From the OpenShift web console, in the `Administrator` tab, select `Installed Operators` from the `Operators` drop down and then press `All instances`. On the `Create new` drop down select `Argo CD`:
+<img alt="create new ArgoCD Instance" src="create-new-argocd.jpg" width="100%" height="100%">
 
-### the Dockerfile
+Scroll down to the `Rbac` section and set the `Policy` as follows:
+ <img alt="ArgoCD Rbac policy" src="argocd-rbac-policy.jpg" width="100%" height="100%">
 
-First let's create the directory
+Note that on your work cluster, you should create a role for users that can create ArgoCD `Applications`.
 
-    # mkdir ~/Tekton/ubi-pipeline
-    # cd ~/Tekton/ubi-pipeline
+Scroll to the bottom and press the `Create` button.
 
-Copy the 2 binaries we need to our new directory
+Wait for the `Status` to show `Phase Available`.
 
-    # cp ~/bin/oc ~/bin/tkn .
+Find the `Route` to Argo CD buy running the following command on the CLI:
+```bash
+oc get route argocd-server
+```
 
-Now we will craete a simple endless command to run in the background so the image will not fail.
+Browse to the address in your browser using the `https` protocol. You should see the following:
+<img alt="ArgoCD login screen" src="argocd-login-screen.jpg" width="100%" height="100%">
 
-    # cat > run.sh << EOF
-    #!/bin/bash
-    tail -f /dev/null
-    EOF
+Press the `LOG IN VIA OPENSHIFT` button and log in with your assigned OpenShift account and password.
 
-and we will make it executable 
+### ArgoCD Application
 
-    # chmod a+x run.sh
+Let's create an ArgoCD application that will periodically check our deployment repository, compare it with the deployment running in the cluster and update the cluster instance if necessary.
 
-Now create a Dockerfile and copy the binaries to the new image
+Run the following command to create a file named `application.yaml`:
+```bash
+cat <<EOF > application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: httpserver
+spec:
+  project: default
+  destination:
+    namespace: $(oc whoami)
+    server: 'https://kubernetes.default.svc'
+  source:
+    path: .
+    repoURL: 'http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-ci-cd-demo.git'
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+EOF
+```
 
-    # cat > Dockerfile << EOF
-    FROM ubi8/ubi-minimal
-    ENV KUBECONFIG=/opt/root-app/kubeconfig
-    USER root
-    COPY run.sh kubeconfig /opt/root-app/
-    COPY tkn oc /usr/bin
-    USER 1001
-    ENTRYPOINT ["/opt/root-app/run.sh"]
-    EOF
+Review the file `application.yaml`. What values will you need to change for your work environment?
 
-### Creating a Service Account and kubeconfig
+Create the ArgoCD application by running:
+```bash
+oc create -f application.yaml
+```
 
-In order to provide the right permissions for our automation in Openshift we need to create a service account for authentication provide it the expected permissions and create an authentication file (kubeconfig).
+Now let's make a change in our Exercise-3 application. In the file `src/main/java/demo/HTTPServerDemo.java` add the following before the line `server.start();`:
+```
+System.out.println("Starting the webserver!");
+```
+Save the changes, commit them to git and push them to the repository.
 
-Let's make our working directory 
-
-    # mkdir ~/Tekton/Ex4 && cd ~/Tekton/Ex4
-
-#### Service account
-
-Now let's create a service account in our namespace :
-
-    # cat >> ubi-pipeline-sa.yaml << EOF
-    apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      name: ubi-tekton
-    EOF
-
-And create it :
-
-    # oc create -f ubi-pipeline-sa.yaml
-
-#### Permissions 
-
-To make things easy we will give the service account admin permissions on our namespace :
-
-    # oc adm policy add-role-to-user admin system:serviceaccount:project-${USER}:ubi-tekton -n project-${USER}
-
-#### Generate Kubeconfig
-
-Fetch the name of the secrets used by the service account. This can be found by running the following command:
-
-    # oc describe serviceAccounts ubi-tekton
-
-Fetch the token from the secret.  
-
-    # TOKEN_NAME=$(oc describe serviceAccounts ubi-tekton | grep Tokens | awk '{print $2}')
-
-Using the Mountable secrets value, you can get the token used by the service account. Run the following command to extract this information:
-
-    # oc describe secrets ${TOKEN_NAME}
-
-and save the token to a variable :
-
-    # TOKEN=$(oc describe secrets ${TOKEN_NAME} | grep 'token:' | awk '{print $2}')
-
-To make things easy we are going to generate the kubeconfig for our user and change it to fit the service account.  
-Let's first create the base file:
-
-    # cd ~/Tekton/ubi-pipeline
-    # oc config view --flatten --minify > kubeconfig
-
-A Quick look at the file shows how the kubeconfig file looks like :
-
-    # cat kubeconfig
-    apiVersion: v1
-    clusters:
-    - cluster:
-        insecure-skip-tls-verify: true
-        server: https://api.ocp4.infra.local:6443
-      name: api-ocp4-infra-local:6443
-    contexts:
-    - context:
-        cluster: api-ocp4-infra-local:6443
-        namespace: project-${USER}
-        user: ${USER}
-      name: project-${USER}/api-ocp4-infra-local:6443/${USER}
-    current-context: project-${USER}/api-ocp4-infra-local:6443/${USER}
-    kind: Config
-    preferences: {}
-    users:
-    - name: ${USER}
-      user:
-        token: < user token >
-
-
-And let's modify it to fit our new service account :
-
-    # cat > kubeconfig << EOF
-    apiVersion: v1
-    clusters:
-    - cluster:
-        insecure-skip-tls-verify: true
-        server: https://api.ocp4.infra.local:6443
-      name: api-ocp4-infra-local:6443
-    contexts:
-    - context:
-        cluster: api-ocp4-infra-local:6443
-        namespace: project-${USER}
-        user: ubi-tekton
-      name: ubi-tekton
-    current-context: ubi-tekton
-    kind: Config
-    preferences: {}
-    users:
-    - name: ubi-tekton
-      user:
-        token: $TOKEN
-    EOF
-
-Test the new file by setting the environment variable and point to it :
-
-    # export KUBECONFIG="/home/${USER}/Tekton/ubi-pipeline/kubeconfig"
-
-And Run oc command to see all the pods :
-
-    # oc get pods
-
-if you see all your running pipelines and the event listener pods ... you are good to go.  
-
-now unset the kubeconfig
-
-    # unset KUBECONFIG
-
-### Creating the Image
-
-Now that we have a kubeconfig we can copy it to our image and use it with our oc command to create object in our cluster.  
-Once we've done that we can go ahead and create our image :
-
-    # buildah bud -f Dockerfile -t ubi-pipeline .
-
-### Pushing to the Registry
-
-set your OpenShift cluster Prefix and you current namespace:
-
-    # export CLUSTER="ocp4.infra.local"
-    # export NAMESPACE=$(oc project -q)
-
-Now that we have our image we need to TAG it and push it to our registry
-
-    # podman tag localhost/ubi-pipeline default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
-
-    # podman push default-route-openshift-image-registry.apps.${CLUSTER}/${NAMESPACE}/ubi-pipeline
-    (You may need to login before you can push)
-You can see how did we logged in in [Exercise 1](../Exercise-1/Exercise-1.md)
-
-### Deploying on Openshift 
-
-Now that the image is ready let's create a working directory and deploy it :
-
-    # cd ~/Tekton/Ex4/
-
-All that is left is to create a deployment for our image :
-
-    # cat > deployment.yaml << EOF
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: ubi-pipeline
-    spec:
-      selector:
-        matchLabels:
-          app: ubi-pipeline
-      replicas: 1
-      template:
-        metadata:
-          labels:
-            app: ubi-pipeline
+If you have not completed Exercise-4 manully create the `PipelineRun` that starts the build. This time, we will not enable the deployment in the `Pipeline`:
+```bash
+cat > ci-pipeline-run-no-deploy.yaml <<EOF
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: ci-pipeline-run
+spec:
+  # serviceAccountName: build-bot
+  pipelineRef:
+    name: ci-pipeline
+  params:
+    - name: git-source-url
+      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-ci-demo.git
+    - name: git-cd-url
+      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-ci-cd-demo.git
+    - name: image
+      value: image-registry.openshift-image-registry.svc:5000/$(oc whoami)/httpserver
+    - name: release-name
+      value: httpserver
+    - name: namespace
+      value: $(oc whoami)
+    - name: deploy
+      value: false
+  workspaces:
+    - name: shared-data
+      volumeClaimTemplate:
         spec:
-          containers:
-            - name: ubi-pipeline
-              image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/ubi-pipeline
-    EOF
-
-And deploy it :
-
-    # oc create -f deployment.yaml
-
-and look if the pod is running successfully :
-
-    # oc get pods | grep ubi
-
-After the deployment we can use the web console to login or use the oc command to get the pod terminal access
-
-    # POD_ID=$(oc get pods -n $NAMESPACE -o name | grep ubi-pipeline | awk -F \/ '{print $2}')
-    # oc rsh ${POD_ID}
-
-Run get pod  (oc get pods) command to see that it's working and continue to the next section.
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 5Gi
+EOF
+```
+Start the `PipelineRun` as follows:
+```bash
+oc create -f ci-pipeline-run-no-deploy.yaml
+```
 
 
-## The IAC Pipeline
-
-Now that we have everything ready we can build the pipeline with the following tasks :
-
-  1. PipelineResource : our git Repository
-  2. task for deploying all of the YAML files in the deployment directory (App + Service)
-  3. create a task for TDD 
-  3. creating the listener
+After the build has completed, watch the `CURRENT SYNC STATUS` of the application in the ArgoCD web console. The `To HEAD` git has should change and the application should be updated with the latest image tag that was built.
 
 
-Create the deployment fie in the git repository :
-
-    # mkdir ~/Tekton/monkey-app/deploy
-    # cat > ~/Tekton/monkey-app/deploy/deployment.yaml << EOF
-    kind: Deployment
-    apiVersion: apps/v1
-    metadata:
-      name: monkey-app
-      namespace: project-${USER}
-    spec:
-      template:
-        metadata:
-          labels:
-            app: monkey-app
-        spec:
-          containers:
-            - name: monkey-app
-              image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/monkey-app:latest
-              ports:
-              - containerPort: 8080
-      replicas: 1
-      selector:
-        matchLabels:
-          app: monkey-app
-    EOF
-
-
-Create the service YAML file
-
-    # cat > ~/Tekton/monkey-app/deploy/service.yaml << EOF
-    apiVersion: v1
-    kind: Service
-    metadata:
-      name: monkey-app
-      namespace: project-${USER}
-    spec:
-      selector:
-        app: monkey-app
-      ports:
-        - protocol: TCP
-          port: 8080
-          targetPort: 8080
-    EOF
-
-Create the route YAML file
-
-    # cat > ~/Tekton/monkey-app/deploy/route.yaml << EOF
-    apiVersion: route.openshift.io/v1
-    kind: Route
-    metadata:
-      name: monkey-app
-      namespace: project-${USER}
-    spec:
-      port:
-        targetPort: 8080
-      to:
-        kind: Service
-        name: monkey-app
-        weight: 100
-      wildcardPolicy: None
-    EOF
-
-Add a task which uses our new Image for their run and deploy everything
-
-    # cd ~/Tekton/Ex4/
-    # cat > monkey-deploy-task.yaml << EOF
-    apiVersion: tekton.dev/v1alpha1
-    kind: Task
-    metadata:
-      name: monkey-deploy-task
-    spec:
-      resources:
-        inputs:
-          - name: source
-            type: git
-        outputs:
-          - name: image
-            type: image
-      steps:
-        - name: deploy
-          image: image-registry.openshift-image-registry.svc:5000/${NAMESPACE}/ubi-pipeline
-          workingDir: /workspace/source/
-          
-          command: ["/bin/bash" ,"-c"]
-          args:
-            - |-
-              oc apply -f deploy/deployment.yaml
-              oc apply -f deploy/service.yaml
-              oc apply -f deploy/route.yaml
-      workspaces:
-      - name: pipeline-ws1
-        description: the location of the containers
-        mountPath: /var/lib/containers
-    EOF
-
-Create the new Task :
-
-    # oc create -f monkey-deploy-task.yaml
-
-Update the pipeline with our new task :
-
-    # cp ../Ex2/pipeline-build-monkey-ws.yaml .
-
-And Add the lines :
-
-    - name: monkey-deploy
-        taskRef:
-          name: monkey-deploy-task
-        runAfter: 
-          - monkey-build-task
-        resources:
-          inputs:
-          - name: source
-            resource: source
-          outputs:
-          - name: image
-            resource: image
-        workspaces:
-        - name: pipeline-ws1
-          workspace: pipeline-ws1
-
-Apply the update
-
-    # oc apply -f pipeline-build-monkey-ws.yaml
-
-now let's push our new files to our git and see what is happening :
-
-    # cd ~/Tekton/monkey-app/
-    # git add -A
-    # git commit -a -m "Adding IAC"
-    # git push origin master
-
-If you see any errors you can always Test the Task is working :
-
-    # tkn task start monkey-deploy-task
-
-Watch for new pipeline runs and monitor their logs.
-
-If every went as expected your IAC process is set.
-
-### Testing 
-
-you can see the monkey-app running by checking the pods :
-
-    # oc get pod | grep monkey-app
-    monkey-app-cdb855978-v2hqd            1/1     Running     0          2m6s
-
-and you can even test the application with a Get command ( a good place to start building another task for testing ... )
-
-    # MONKEY_ROUTE=$(oc get route | grep monkey-app | awk '{print "http://"$2}')
-    # curl -X GET ${MONKEY_ROUTE}/test
-    Hello, you requested: /test
- 
 # Congratulations ...
 
-You have now completed the OpenShift Pipeline Workshop
+You have now completed the OpenShift Pipelines Workshop

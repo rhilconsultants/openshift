@@ -11,19 +11,18 @@ The WorkShop is divided into 4 exercises:
     * Parameters
     * `tkn` CLI
     * ClusterTasks
-2. [Building a Pipeline](Exercise-2/Exercise-2.md).
+2. [Building a Pipeline](Exercise-2/Exercise-2.md)
     * Pipelines
     * PipelineRuns
-    * Workspaces
     * Sequential/Parallel Tasks
     * Finally Task
 3. [CI Pipeline](Exercise-3/Exercise-3.md)
     * CI Pipeline
+    * Workspaces
     * IDE Plugins
 4. [Triggers and Webhooks](Exercise-4/Exercise-4.md)
     * Tekton Templates
     * Tekton Bindings
     * Webhooks
 5. [Introduction to GitOps](Exercise-5/Exercise-5.md)
-    * Tekton Templates
     * ArgoCD Automated Deployment
