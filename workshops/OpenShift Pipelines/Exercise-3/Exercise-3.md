@@ -38,7 +38,7 @@ Log into `gitea` as the assigned user.
 
 1. For the `Migrate / Clone From URL` field enter: https://github.com/magreenberg/httpserver-ci-demo.git
 
-1. Click on an empty field. The `Repository Name` field will be filled in automatically.
+1. For `Repository Name` enter: httpserver
 
 1. Press the `Migrate Repository` button.
 
@@ -49,7 +49,7 @@ Log into `gitea` as the assigned user.
 
 1. For the `Migrate / Clone From URL` field enter: https://github.com/magreenberg/httpserver-ci-cd-demo.git
 
-1. Click on an empty field. The `Repository Name` field will be filled in automatically.
+1. For `Repository Name` enter: httpserver-cd
 
 1. Press the `Migrate Repository` button.
 
@@ -285,14 +285,13 @@ kind: PipelineRun
 metadata:
   name: ci-pipeline-run
 spec:
-  # serviceAccountName: build-bot
   pipelineRef:
     name: ci-pipeline
   params:
     - name: git-source-url
-      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-ci-demo.git
+      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver.git
     - name: git-cd-url
-      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-ci-cd-demo.git
+      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-cd.git
     - name: image
       value: image-registry.openshift-image-registry.svc:5000/$(oc whoami)/httpserver
     - name: release-name

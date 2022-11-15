@@ -50,7 +50,7 @@ spec:
     server: 'https://kubernetes.default.svc'
   source:
     path: .
-    repoURL: 'http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-ci-cd-demo.git'
+    repoURL: 'http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-cd.git'
     targetRevision: HEAD
   syncPolicy:
     automated:
@@ -80,14 +80,13 @@ kind: PipelineRun
 metadata:
   name: ci-pipeline-run
 spec:
-  # serviceAccountName: build-bot
   pipelineRef:
     name: ci-pipeline
   params:
     - name: git-source-url
-      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-ci-demo.git
+      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver.git
     - name: git-cd-url
-      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-ci-cd-demo.git
+      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-cd.git
     - name: image
       value: image-registry.openshift-image-registry.svc:5000/$(oc whoami)/httpserver
     - name: release-name
@@ -118,4 +117,4 @@ After the build has completed, watch the `CURRENT SYNC STATUS` of the applicatio
 
 # Congratulations ...
 
-You have now completed the OpenShift Pipelines Workshop
+You have now completed the OpenShift Pipelines Workshop!
