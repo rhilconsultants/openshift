@@ -276,6 +276,8 @@ If you see "Hello sally" then we are good to go.
 
 Try sending the `param` value using the `tkn` command.
 
+## Cleanup
+
 After you haved completed all the tasks it is time for a cleanup:
 
     oc get taskrun -o name | xargs oc delete
