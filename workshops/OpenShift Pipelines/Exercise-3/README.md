@@ -59,7 +59,7 @@ metadata:
 type: kubernetes.io/basic-auth
 stringData:
   username: $(oc whoami)
-  password: $(oc whoami)
+  password: 123456
 EOF
 ```
 The output should be:
