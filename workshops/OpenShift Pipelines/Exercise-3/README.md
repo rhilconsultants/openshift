@@ -43,10 +43,8 @@ Log into `gitea` as the assigned user.
 
 ### Working With Git
 
-In order to work with Git, we need to provide authentication to our account. The following will create a `Secret` with our account information. First create an environment variable with the assigned password:
-```bash
-PASSWORD=<assigned-password>
-```
+In order to work with Git, we need to provide authentication to our account. The following will create a `Secret` with our account information. 
+
 Run the following to create the `Secret`:
 ```bash
 oc create -f - <<EOF
