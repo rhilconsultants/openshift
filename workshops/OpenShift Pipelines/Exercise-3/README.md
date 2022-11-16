@@ -25,7 +25,7 @@ Log into `gitea` as the assigned user.
 
 1. For the `Migrate / Clone From URL` field enter: https://github.com/magreenberg/httpserver-ci-demo.git
 
-1. For `Repository Name` enter: httpserver
+1. For `Repository Name` enter: **httpserver**
 
 1. Press the `Migrate Repository` button.
 
@@ -36,7 +36,7 @@ Log into `gitea` as the assigned user.
 
 1. For the `Migrate / Clone From URL` field enter: https://github.com/magreenberg/httpserver-ci-cd-demo.git
 
-1. For `Repository Name` enter: httpserver-cd
+1. For `Repository Name` enter: **httpserver-cd**
 
 1. Press the `Migrate Repository` button.
 
