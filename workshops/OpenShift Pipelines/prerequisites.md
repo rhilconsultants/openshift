@@ -5,6 +5,7 @@ In order to start working with OpenShift pipeline you Need to have the following
 1. Ability to view/edit YAML files
 1. Basic understanding of OpenShift and OpenShift objects (CRDs)
 1. Linux shell (on Windows install Git Bash https://gitforwindows.org/)
+1. Browser (ideally Google Chrome)
 
 
 ## OpenShift Cluster
@@ -133,5 +134,5 @@ When all pods are in the `Running` status, browse the the URL displayed above an
 * user: gitea_admin
 * password: r8sA8CPHD9!bt6d
 
-In `gitea` press the pull-down icon at the top right and select `Site Administration`. In the `User Accounts` tab press `Create User Account` and create a user named `demo` with password `demodemo`. Deselect `Require user to change password`.
+In `gitea` press the pull-down icon at the top right and select `Site Administration`. In the `User Accounts` tab press `Create User Account` and create a user named `demo` with password `demodemo`. Deselect `Require user to change password`. Set the password to: 123456
 

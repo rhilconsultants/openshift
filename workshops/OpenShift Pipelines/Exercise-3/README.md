@@ -8,6 +8,7 @@ A continuous integration (CI) pipeline should automate all steps needed to creat
 * compile the code
 * run unit tests
 * package the code in a container
+* security scan the container image
 * push the container to a registry
 * deploy the application (can be performed by other tools) to the DEV environment
 * run integration tests
