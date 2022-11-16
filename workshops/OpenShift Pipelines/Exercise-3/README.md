@@ -9,7 +9,10 @@ A continuous integration (CI) pipeline should automate all steps needed to creat
 * run unit tests
 * package the code in a container
 * push the container to a registry
-* deploy the application (can be performed by other tools)
+* deploy the application (can be performed by other tools) to the DEV environment
+* run integration tests
+* promote the image and deploy on the PRE-PROD (STAGING) environment
+* promote the image to the PRODUCTION environment
 
 ## Preparing the Respositories
 Log into `gitea` as the assigned user.

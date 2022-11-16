@@ -126,6 +126,8 @@ The log from the `httpserver` application should display data in JSON format. A 
 
 Save the JSON data from your `httpserver` log in order to refer to it when building the `TriggerBinding` in the next section.
 
+QUESTION: What would the JSON data look like if muliple commit in muliple branches were pushed to Git (git push -u)?
+
 ## Configuring an Event Listener
 
 Now that we are familier  with the important concepts, let's create a trigger that will start the `Pipeline` when there is a change in the git master branch.

@@ -4,6 +4,7 @@ In order to start working with OpenShift pipeline you Need to have the following
 
 1. Ability to view/edit YAML files
 1. Basic understanding of OpenShift and OpenShift objects (CRDs)
+1. Linux shell (on Windows install Git Bash https://gitforwindows.org/)
 
 
 ## OpenShift Cluster
