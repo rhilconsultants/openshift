@@ -45,7 +45,7 @@ Log into `gitea` as the assigned user.
 
 In order to work with Git, we need to provide authentication to our account. The following will create a `Secret` with our account information. 
 
-Run the following to create the `Secret`:
+Run the following in a `Bash` shell to create the `Secret`:
 ```bash
 oc create -f - <<EOF
 apiVersion: v1
@@ -81,6 +81,8 @@ We will now build a Continuous Integration `Pipeline` with the following steps:
   * Build the `Dockerfile` and push the resulting image to an image repository
   * Update the deployment files with the image tag of the newly built image
   * Deploy the application to OpenShift
+
+<img alt="Basic Pipeline" src="basic-pipeline.png" width="100%" height="100%">
 
 
 Create a `Pipeline` by copying the following to a file named `ci-pipeline.yaml`:
@@ -176,7 +178,7 @@ Note that this `Pipeline` uses `workspaces`. These are used to pass information 
 
 The `Pipeline` also uses a conditional `Task`. 
 
-We will now create a `PipelineRun` to run the `Pipeline`. Run the following to create a file named `ci-pipeline-run`.yaml:
+We will now create a `PipelineRun` to run the `Pipeline`. Run the following in a `Bash` shell to create a file named `ci-pipeline-run`.yaml:
 ```bash
 cat > ci-pipeline-run.yaml <<EOF
 apiVersion: tekton.dev/v1beta1

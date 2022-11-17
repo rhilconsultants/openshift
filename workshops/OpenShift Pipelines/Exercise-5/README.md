@@ -36,7 +36,7 @@ Press the `LOG IN VIA OPENSHIFT` button and log in with your assigned OpenShift 
 
 Let's create an ArgoCD application that will periodically check our deployment repository, compare it with the deployment running in the cluster and update the cluster instance if necessary.
 
-Run the following command to create a file named `application.yaml`:
+Run the following command in a `Bash` shell to create a file named `application.yaml`:
 ```bash
 cat <<EOF > application.yaml
 apiVersion: argoproj.io/v1alpha1
@@ -72,7 +72,7 @@ System.out.println("Starting the webserver!");
 ```
 Save the changes, commit them to git and push them to the repository.
 
-If you have not completed Exercise-4 manully create the `PipelineRun` that starts the build. This time, we will not enable the deployment in the `Pipeline`:
+If you have not completed Exercise-4 manully create the `PipelineRun` that starts the build. This time, we will not enable the deployment in the `Pipeline`. Run the following in a `Bash` shell:
 ```bash
 cat > ci-pipeline-run-no-deploy.yaml <<EOF
 apiVersion: tekton.dev/v1beta1
