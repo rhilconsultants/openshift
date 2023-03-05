@@ -1,6 +1,6 @@
 # Prerequisites
 
-In order to start working with OpenShift pipeline you Need to have the following basic skills:
+In order to start working with OpenShift pipeline you need to have the following basic skills:
 
 1. Ability to view/edit YAML files
 1. Basic understanding of OpenShift and OpenShift objects (CRDs)
@@ -8,71 +8,76 @@ In order to start working with OpenShift pipeline you Need to have the following
 1. Browser (ideally Google Chrome)
 
 
-## OpenShift Cluster
+# OpenShift CLI Tools
 
-## OpenShift Pipeline tools
-
-Before we start we need to download the right tools in order to work with Tekton.
-The 2 tools are
+Before we start we need to download the right tools in order to work with OpenShift Pipelines (Tekton).
+The 2 tools are:
   - oc - used to to login to the cluster
   - tkn - the Tekton CLI tool which is used to create objects related to Openshift pipelines
 
 
-### Downloads
+## Downloads the OpenShift CLI Tools
 
-First create the ${HOME}/bin Directory
+Browse to the OpenShift Web Console and press on the question mark at the top right of the window:
+
+![help text with list of download](images/openshift-help.png)
+
+From the menu displayed, select `Command line tools`:
+
+![helm menu command line tools](images/openshift-help-menu.png)
+
+Download the `oc` and `tkn` commands for your development environment:
+
+![oc and tkn download links](images/openshift-command-line-tools.png)
+
+## Put the CLI Tools in a $PATH Directory
+Create a directory ${HOME}/bin if it does not exist.
 ```bash
 mkdir ${HOME}/bin
 export PATH="${HOME}/bin:${PATH}"
 echo 'export PATH="${HOME}/bin:${PATH}"' >> ~/.bashrc
 ```
-To download `oc` we need to do is to download the latest `oc` binary with the following command:
+Untar/Unzip the downloaded CLI tools bundle and place the binary files (`oc` and `tkn`) in your `${HOME}/bin` directory.
+
+## oc Auto Completion (optional)
+
+In order to utilize the `bash` shell auto completion in our environment we need to run a few simple commands which are part of the package itself.
+
+On a Linux host, you may need to install the `bash-completion` package as the root user:
 ```bash
-export OCP_RELEASE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt \
-    | grep 'Name:' | awk '{print $NF}')
-wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-${OCP_RELEASE}.tar.gz
-tar -xzf openshift-client-linux-${OCP_RELEASE}.tar.gz -C ~/bin/
+sudo yum -y install bash-completion
 ```
-Now download the `tkn` tool in a similar manner:
-```bash
-wget https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/latest/tkn-linux-amd64.tar.gz
-tar -zxvf tkn-linux-amd64.tar.gz -C ~/bin/
-```
-(For Apple computers replace `linux` with `mac` or `mac-arm64`.)
-Now that we have the tools that we need let's start using them.
 
-### Auth Complete
-
-In order to utilize the bash auto completion in our environment we need to run a few simple commands which are part of the package itself.
-
-to generate it just run the following command:
+To generate the completion file, run the following command:
 ```bash
 oc completion bash > ~/.bash_completion
 tkn completion bash >> ~/.bash_completion
 echo "source ~/.bash_completion" >> ~/.bashrc
 ```
-** Now logout, login and test the command with the TAB key **
 
-### Cluster login
+Now logout, login and test the commands with the TAB key.
 
-The Instractor will provide the Cluster details
+# Cluster login
+
+The Instractor will provide the Cluster details:
+
 ```bash
 export OCP_DOMAIN="????"
 export OCP_CLUSTER="???"
-oc login api.$OCP_CLUSTER.$OCP_DOMAIN:6443
+oc login --insecure-skip-tls-verify=true api.${OCP_CLUSTER}.${OCP_DOMAIN}:6443
 ```
 
 Create a project with your username:
 ```bash
 oc new-project $(oc whoami)
 ```
-### tmux
+# tmux (optional)
 
-`tmux` in a very powerful tool which allows us to run terminal manipulation in various forms. In our case we would want to slip the screen to 3 parts (vertical middle and 2 horizontal on the top side) to enable us better monitoring on all the process.
+`tmux` in a powerful tool which allows us to run terminal manipulation in various forms. In our case we would want to split the screen into 3 parts (vertical middle and 2 horizontal on the top side) to enable us better monitoring on all the process.
 
 Here is how we do it:
 
-First modify the tmux configuration file as follows:
+First modify the `tmux` configuration file as follows:
 ```bash
 cat > ~/.tmux.conf << EOF
 unbind C-b
@@ -83,20 +88,21 @@ bind -n C-Up select-pane -U
 bind -n C-Down select-pane -D
 EOF
 ```
-Now start a tmux session:
+Now start a `tmux` session:
+
 ```bash
 tmux new-session -s tkn
 ```
-#### Spliting the screen (NOT Mandatory)
+## Spliting the screen (optional)
 
 Next we will split the screen by clicking on CTRL+a then '"'.
 Now we will Navigate to the top bar by CTRL+UP (the ARROW UP)
 and create another slip horizontally by running CTRL+a then "%"
 To navigate between them you can run CTRL+ARROW and the arrows.
 
-Now you are ready for work :)
+Now you are ready for work.
 
-#### Suggestion
+## Suggestion for tmux Windows
 
 In Exercise 1, on the top left run watch for `taskrun` and on the right run watch for `tasks`:
 ```bash
@@ -107,32 +113,3 @@ In the rest of the exercises watch `pipelinerun` instead of `tasks`:
 ```bash
 watch -n 1 "oc get pipelinerun"
 ```
-
-# Gitea
-`gitea` is used as the `git` repository for this demo. Install it by running the following commands in a `bash` shell:
-Create a project/namespace for `gitea`:
-```bash
-oc new-project gitea
-```
-Add privileges for `gitea` (not recommended for production systems):
-```bash
-oc adm policy add-scc-to-user privileged -z default
-oc adm policy add-scc-to-user nonroot -z gitea-memcached
-```
-Use `helm` to install `gitea`:
-```bash
-helm repo add gitea-charts https://dl.gitea.io/charts/
-helm repo update
-helm install gitea gitea-charts/gitea --set ingress.hosts[0].host=gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//") --set gitea.config.webhook.ALLOWED_HOST_LIST='*' --set gitea.config.webhook.SKIP_TLS_VERIFY=true --set image.pullPolicy=IfNotPresent
-```
-Create a `route` for `gitea`:
-```bash
-oc expose service gitea-http
-oc get route gitea-http -o jsonpath='{"http://"}{.status.ingress[0].host}{"\n"}'
-```
-When all pods are in the `Running` status, browse the the URL displayed above and sign into `gitea` using the following credentials:
-* user: gitea_admin
-* password: r8sA8CPHD9!bt6d
-
-In `gitea` press the pull-down icon at the top right and select `Site Administration`. In the `User Accounts` tab press `Create User Account` and create a user named `demo` with password `demodemo`. Deselect `Require user to change password`. Set the password to: 123456
-
