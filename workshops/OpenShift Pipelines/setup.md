@@ -25,4 +25,49 @@ When all pods are in the `Running` status, browse the the URL displayed above an
 * password: r8sA8CPHD9!bt6d
 
 In `gitea` press the pull-down icon at the top right and select `Site Administration`. In the `User Accounts` tab press `Create User Account` and create a user named `demo` with password `demodemo`. Deselect `Require user to change password`. Set the password to: 123456
+# OpenShift Pipelines
+This workshop is currently based on OpenShift Pipelines 1.8.2 running on OpenShift Container Platform version 4.10.x.
 
+Install OpenShift Pipelines from the built-in Operator Hub.
+
+Create a new `project`: oc new-project junk
+Check whether a ServiceAccount named `pipelines` was created. If it was not created, then follow this procedure for each new `project`.
+
+```bash
+oc create -f - <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pipeline
+EOF
+
+oc create -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openshift-pipelines-edit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+- kind: ServiceAccount
+  name: pipeline
+  namespace: $(oc project -q)
+EOF
+
+oc create -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pipelines-scc-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pipelines-scc-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: pipeline
+  namespace: $(oc project -q)
+EOF
+```
