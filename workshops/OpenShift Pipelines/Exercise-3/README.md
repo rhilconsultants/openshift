@@ -16,7 +16,11 @@ A continuous integration (CI) pipeline should automate all steps needed to creat
 * promote the image to the PRODUCTION environment
 
 ## Preparing the Respositories
-Log into `gitea` as the assigned user.
+Find the `gitea` URL by running:
+```bash
+echo http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")
+```
+Log into `gitea` as the assigned user. The password is: `123456`
 
 ### Create the Source Code Repository
 1. Press the `plus` sign drop down at the top right of the window and select `New Migration`.
