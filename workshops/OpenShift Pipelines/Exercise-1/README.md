@@ -34,6 +34,12 @@ A `Workspace` is a storage volume that a `Task` requires at runtime to receive i
 ### Trigger
 A `Trigger` captures an external event, such as a Git pull request and processes the event payload to extract key pieces of information. This extracted information is then mapped to a set of predefined parameters, which trigger a series of tasks that may involve creation and deployment of Kubernetes resources. You can use `Triggers` along with `Pipelines` to create full-fledged CI/CD systems where the execution is defined entirely through Kubernetes resources.
 
+## Create an OpenShift Project
+Run the following command to create an OpenShift project:
+```bash
+oc new-project $(oc whoami)
+```
+
 ## Using Pipelines - the Basics
 Now that we understand (or at the very least familiarized) with all the concepts we can start by making sure that OpenShift Pipeline is install on our system.
 We can do that by quering for `Pipeline` resource:
