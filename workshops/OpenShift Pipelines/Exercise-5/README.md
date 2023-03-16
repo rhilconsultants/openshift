@@ -13,10 +13,12 @@ In this case we will create a Custom image which we will use as our module image
 From the OpenShift web console, in the `Administrator` tab, select `Installed Operators` from the `Operators` drop down and then press `All instances`. On the `Create new` drop down select `Argo CD`:
 <img alt="create new ArgoCD Instance" src="create-new-argocd.jpg" width="100%" height="100%">
 
-Scroll down to the `Rbac` section and set the `Policy` as follows:
+Scroll down to the `Rbac` section and set the `Policy` to `g,system:authenticated,role:admin` as follows:
  <img alt="ArgoCD Rbac policy" src="argocd-rbac-policy.jpg" width="100%" height="100%">
 
+<!--
 Note that on your work cluster, you should create a role for users that can create ArgoCD `Applications`.
+-->
 
 Scroll to the bottom and press the `Create` button.
 
