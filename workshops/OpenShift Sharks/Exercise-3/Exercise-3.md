@@ -112,8 +112,9 @@ Now let’s create an image for our Pod to use. We will start with the Container
 
 ```bash
 $ cat > Containerfile.loop << EOF
-FROM ubi8/ubi-minimal
+FROM ubi9/ubi-minimal
 
+RUN microdnf install -y tar rsync
 COPY run.sh /opt/app-root/ 
 RUN chmod a+x /opt/app-root/run.sh
 
