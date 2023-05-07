@@ -33,7 +33,7 @@ FROM quay.io/centos/centos:stream
 MAINTAINER Red Hat Israel "Back to ROOT!!!!"
 USER root
 
-RUN dnf install -y iputils curl tcpdump nmap-ncat wireshark-cli && dnf clean all
+RUN dnf install -y iproute iputils curl tcpdump nmap-ncat wireshark-cli && dnf clean all
 WORKDIR /opt/app-root/
 COPY run.sh .
 RUN useradd -u 1001 -g wireshark user

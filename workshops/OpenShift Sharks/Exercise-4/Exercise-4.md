@@ -1,242 +1,100 @@
 Debugging latency issues
 
-# Network Latency
-In this Exercise We will deploy our carinfo application but the application development complains about latency issues and they are convinced that the latency is originated from OpenShift.
+# Curl with TLS
+In this Exercise We will use our curl image from our previous exercise and run Curl with an https connection.
+during the run we will use a SSL key log file to save the key session. During the run we will create a network capture and use the SSH key log file in wireshark the see the capture in clear text.
 
-We are going to prove them wrong!!!
+## Modifying the deployment
 
-# Clear old deployments 
+in order to tell curl to save the SSL key log file we will setup an environment variable to save the key and where to save it.
+as implied the variable name is SSLKEYLOGFILE and the value is the destination file.
 
-First let's delete the deployments from the last exercise :
-```bash
-# oc delete deployment loop-curl-statistics
-# oc delete deployment ubi-minimal
-```
+In our deployment we will add those to the 'env' section :
 
-# deploying the application
-
-Our application is composed of 3 tears.
-* The database layer
-* The backend layer (A.K.A dbapi)
-* The front end layer (A.K.A frontend)
-
-Let’s first deploy the database layer. The application is using MariaDB as its database.
-The MariaDB uses persistent storage and we will provide it through a PVC.
-
-```bash
-# cat << EOF | oc apply -f -
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mariadb-pv-claim
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 2Gi
-EOF
-```
-
-Next we will deploy the mariadb 
-```bash
-# cat << EOF | oc apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mariadb
-spec:
-  selector:
-    matchLabels:
-      app: mariadb
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: mariadb
-    spec:
-      containers:
-      - image: mariadb:latest
-        name: mariadb
-        env:
-        - name: MARIADB_ROOT_PASSWORD
-          value: password
-        - name: MARIADB_USER
-          value: carinfo
-        - name: MARIADB_PASSWORD
-          value: CarInfoPass
-        - name: MARIADB_DATABASE
-          value: carinfo
-        ports:
-        - containerPort: 3306
-          name: mariadb
-        volumeMounts:
-        - name: mariadb-persistent-storage
-          mountPath: /var/lib/mysql
-      volumes:
-      - name: mariadb-persistent-storage
-        persistentVolumeClaim:
-          claimName: mariadb-pv-claim
-EOF
-```
-
-And the service to access the database 
-
-```bash
-# cat << EOF | oc apply -f -
-apiVersion: v1
-kind: Service
-metadata:
-  name: mariadb
-spec:
-  ports:
-  - port: 3306
-  selector:
-    app: mariadb
-EOF
-```
-
-At this point we have deployed the database layer and now we will move on the backend layer :
-
-First deploy the dbapi :
-
-```bash
-# cat << EOF | oc apply -f -
-apiVersion: apps/v1
+```YAML
+apiVersion: apps/v1 
 kind: Deployment
 metadata:
   labels:
-    app: dbapi
-  name: dbapi
+    app: loop-curl-statistics
+  name: loop-curl-statistics
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: dbapi
-  template:
-    metadata:
-      labels:
-        app: dbapi
+  ...
     spec:
       containers:
-      - image: quay.io/two.oes/carinfo-dbapi:latest
-        name: dbapi
-        serviceAccount: default
-        serviceAccountName: default
-        ports:
-        - containerPort: 8080
-        env:
-        - name: DB_NAME
-          value: carinfo
-        - name: DB_USER
-          value: carinfo
-        - name: DB_PASSWORD
-          value: CarInfoPass
-        - name: SET_DELAY
-          value: "yes"
-        - name: DB_HOST
-          value: mariadb
-EOF
+      - env:
+        - name: DESTINATION_URL
+          value: 'https://www.google.com/'
+        - name: TIME_INTERVAL
+          value: '5' 
+        - name: SSLKEYLOGFILE
+          value: '/tmp/curlssl.key'
+          ...
 ```
 
-And the dbapi service :
-```bash
-# cat << EOF | oc apply -f -
-apiVersion: v1
-kind: Service
-metadata:
-  name: dbapi
-spec:
-  ports:
-  - port: 8080
-  selector:
-    app: dbapi
-EOF
-```
-
-Now what is left is to deploy the frontend application , its service and route :
+let's run the "oc edit" command to modify the YAML file :
 
 ```bash
-# cat << EOF | oc apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app: frontend
-  name: frontend
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: frontend
-  template:
-    metadata:
-      creationTimestamp: null
-      labels:
-        app: frontend
-    spec:
-      containers:
-      - image: quay.io/two.oes/carinfo-frontend:latest
-        name: carinfo-frontend
-        ports:
-        - containerPort: 8080
-EOF
+$ oc get deployment | grep curl | cut -d " " -f 1 | xargs oc edit deployment
+``` 
+
+## Tapping
+
+We will now use the ksniff module to create a PCAP file in regards to our curl container:
+```bash
+# oc sniff $(oc get pods | grep curl | awk '{print $1}') -f 'port 443' -p --image=$REGISTRY/admin-tools -o ~/pcap/google-ssl.pcap
 ```
-And the service :
+Let's give it 10 seconds and stop the "oc sniff" command. (and kill the pod)
 
 ```bash
-# cat << EOF | oc apply -f -
-apiVersion: v1
-kind: Service
-metadata:
-  name: frontend
-  labels:
-    app: frontend
-spec:
-  ports:
-  - name: frontend
-    port: 8080
-    targetPort: 8080
-  - name: frontend-ssl
-    port: 8443
-    targetPort: 8443
-  selector:
-    app: frontend
-EOF
-```
-Now let’s create the route and test the application
-```bash
-# oc create route edge --service=frontend --port=8080 --insecure-policy=Redirect --dry-run=client -o yaml
+$ oc get pod | grep ksniff | cut -d " " -f 1 | xargs oc delete pod
 ```
 
-If you approve the way the route is shown then go ahead and create it 
+## Traffic Analysis
+
+### Load the SSL Log Key
+
+First we need to copy the curlssl.key file from the container using "oc rsync"
+
+### On OpenShift
+
+#### rsync must be installed
+
+The oc rsync command uses the local rsync tool if present on the client machine and the remote container.
+
+If rsync is not found locally or in the remote container, a tar archive is created locally and sent to the container where the tar utility is used to extract the files. If tar is not available in the remote container, the copy will fail.
+
+The tar copy method does not provide the same functionality as oc rsync. For example, oc rsync creates the destination directory if it does not exist and only sends files that are different between the source and the destination.
+ 
+
+On WireShark go the preferences and in the Protocol Section search for SSL (TLS in a the new versions)
+and set the SSL key log file : 
+
+First let's get the pod name into a variable :
 ```bash
-# oc create route edge --service=frontend --port=8080 --insecure-policy=Redirect
+$ POD_NAME=$(oc get pods | grep curl | cut -d " " -f 1)
 ```
 
-## Testing.
-The deployment team gave use a way to test the application so let’s go ahead and run the following command :
-```bash
-# ROUTE=$(echo -n 'https://' && oc get route frontend -o jsonpath='{.spec.host}')
-# curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
-```
-
-Rememeber the statistics file from the previus exercise ... let's run the same command with it :
+Now we will use the "oc rsync" to copy the ssl key we have create earlier :
 
 ```bash
-# cd ~/curl-statistics
-# curl -w "@loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
+$ oc rsync ${POD_NAME}:/tmp/curlssl.key ~/pcap/ 
 ```
-Use the tools we talked about today (oc sniff) to find out where is the issue.
 
-let's generate a pcap file and analyze the pcap file with wireshark.  
-Open 3 more session and run the ksniff for each of the pods
-  - for the frontend filter port 8080
-  - for the dbapi filter port 8080
-  - for the database filter port 3306
+## Local Desktop
 
-build a bash script that will run all the commands together to 3 diffrent files.
-Now run the curl command again and copy them to wireshark (with scp/winscp)
+Copy the 2 files to your local machine.
 
-Good luck 
+Now that we have the PCAP we can go ahead to wireshark and open it.
+
+```
+wireshark --> File --> Open (Select the google-ssl.pcap file)
+```
+
+And Set the SSL key with the following steps :
+
+```
+wireshark --> Edit/File/Option --> Preferences --> Protocol --> TLS/SSL
+```
+
+Now you should see the traffic in clear text.
