@@ -59,6 +59,13 @@ $ oc sniff $(oc get pods | grep minimal | awk '{print $1}') -f 'port 443' -p \
 
 In case we want to save the capture to a file all we need to do is change the "-o -" to "-o filename.pcap"
 
+First we will create a directory and change to it :
+```bash
+$ mkdir ~/pcap && cd ~/pcap/
+```
+
+Now let's run the save command with sniff but this time we will save it to a file :
+
 ```bash
 $ oc sniff $(oc get pods | grep minimal | awk '{print $1}') -f 'port 443' -p --image=$REGISTRY/admin-tools -o google.pcap 
 ```
@@ -72,7 +79,12 @@ $ curl https://www.google.com
 ```
 
 If you see the google.pcap is bigger the zero then you are good to go (exit the debug and kill the sniff Pod)
+(CTRL+C)
 
+And kill the pod
+```bash
+$ oc get pod | grep ksniff | cut -d " " -f 1 | xargs oc delete pod 
+```
 Copy the file to your workstation (scp/winscp)
 
 Open it with wireshark
