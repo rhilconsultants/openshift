@@ -50,9 +50,17 @@ By default ksniff will attempt to start a local instance of the Wireshark GUI. Y
 Example using tshark:
 
 ```bash
-$ oc sniff $(oc get pods | grep minimal | awk '{print $1}') -f 'port 443' -p \
+$ oc sniff $(oc get pods | grep minimal | grep debug | awk '{print $1}') -f 'port 443' -p \
    --tcpdump-image=$REGISTRY/admin-tools --image=$REGISTRY/admin-tools -o - | tshark -r -
 ```
+
+Run the command in oc debug
+```bash
+$ oc debug $(oc get pod -o name | grep minimal) --image=${HOST}/${NAMESPACE}/admin-tools
+$ curl https://www.google.com
+```
+
+Run 
 (quit and kill the snifff Pod)
 
 ### Save the output to a file
@@ -67,7 +75,7 @@ $ mkdir ~/pcap && cd ~/pcap/
 Now let's run the save command with sniff but this time we will save it to a file :
 
 ```bash
-$ oc sniff $(oc get pods | grep minimal | awk '{print $1}') -f 'port 443' -p --image=$REGISTRY/admin-tools -o google.pcap 
+$ oc sniff $(oc get pods | grep minimal | grep debug | awk '{print $1}') -f 'port 443' -p --image=$REGISTRY/admin-tools -o google.pcap 
 ```
 
 One a new session (use tmux).
