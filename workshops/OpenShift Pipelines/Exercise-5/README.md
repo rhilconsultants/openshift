@@ -86,9 +86,9 @@ spec:
     name: ci-pipeline
   params:
     - name: git-source-url
-      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver.git
+      value: https://gitea-tekton-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver.git
     - name: git-cd-url
-      value: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-cd.git
+      value: https://gitea-tekton-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-cd.git
     - name: image
       value: image-registry.openshift-image-registry.svc:5000/$(oc whoami)/httpserver
     - name: release-name
