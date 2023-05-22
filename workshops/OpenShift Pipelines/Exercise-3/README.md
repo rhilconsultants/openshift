@@ -194,7 +194,7 @@ spec:
     name: ci-pipeline
   params:
     - name: git-source-url
-      value: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com/$(oc whoami)/httpserver.git
+      value: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com/$(oc whoami)/httpserver-ci-demo.git
     - name: git-cd-url
       value: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com/$(oc whoami)/httpserver-cd.git
     - name: image
