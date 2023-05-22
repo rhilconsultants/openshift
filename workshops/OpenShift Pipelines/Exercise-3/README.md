@@ -57,11 +57,11 @@ kind: Secret
 metadata:
   name: gitea-credentials
   annotations:
-    tekton.dev/git-0: http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")
+    tekton.dev/git-0: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com
 type: kubernetes.io/basic-auth
 stringData:
   username: $(oc whoami)
-  password: '123456'
+  password: 'openshift'
 EOF
 ```
 The output should be:
