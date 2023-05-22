@@ -33,7 +33,7 @@ Log into `gitea` as the assigned user. The password is: `123456`
 
 1. Press the `Migrate Repository` button.
 
-### Create the Deployment Repository
+### Create the Deployment Repository - Skip this part
 1. Press the `plus` sign drop down at the top right of the window and select `New Migration`.
 
 1. Press on the `GitHub` icon.
