@@ -196,7 +196,7 @@ spec:
     - name: git-source-url
       value: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com/$(oc whoami)/httpserver.git
     - name: git-cd-url
-      value: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com//$(oc whoami)/httpserver-cd.git
+      value: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com/$(oc whoami)/httpserver-cd.git
     - name: image
       value: image-registry.openshift-image-registry.svc:5000/$(oc whoami)/httpserver
     - name: release-name
