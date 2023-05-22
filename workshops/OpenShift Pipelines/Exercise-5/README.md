@@ -52,7 +52,7 @@ spec:
     server: 'https://kubernetes.default.svc'
   source:
     path: .
-    repoURL: 'http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-cd.git'
+    repoURL: 'https://gitea-tekton-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")/$(oc whoami)/httpserver-cd.git'
     targetRevision: HEAD
   syncPolicy:
     automated:
