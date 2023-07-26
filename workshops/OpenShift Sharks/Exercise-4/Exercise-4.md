@@ -26,7 +26,7 @@ spec:
         - name: DESTINATION_URL
           value: 'https://www.google.com/'
         - name: TIME_INTERVAL
-          value: '5' 
+          value: '30' 
         - name: SSLKEYLOGFILE
           value: '/tmp/curlssl.key'
           ...
@@ -44,7 +44,11 @@ We will now use the ksniff module to create a PCAP file in regards to our curl c
 ```bash
 # oc sniff $(oc get pods | grep curl | awk '{print $1}') -f 'port 443' -p --image=$REGISTRY/admin-tools -o ~/pcap/google-ssl.pcap
 ```
-Let's give it 10 seconds and stop the "oc sniff" command. (and kill the pod)
+
+***HINT***
+Use tmux to split the screen and watch for the pcap file to increase it's size. once the file size is bigger then when we started the sniff you can go ahead and delete the ksniff pod  
+Another option is to give it 40 seconds from when we modified the deployment and stop the "oc sniff" command.   
+(and kill the pod)
 
 ```bash
 $ oc get pod | grep ksniff | cut -d " " -f 1 | xargs oc delete pod
@@ -80,6 +84,16 @@ Now we will use the "oc rsync" to copy the ssl key we have create earlier :
 ```bash
 $ oc rsync ${POD_NAME}:/tmp/curlssl.key ~/pcap/ 
 ```
+
+Before we moved it to our local desktop let's make sure everything is working as expected.  
+On the terminal run the following command :
+
+```bash
+$ tshark -nr ~/pcap/google-ssl.pcap -o ssl.keylog_file:$HOME/pcap/curlssl.key
+```
+
+If you read the google request in clear text then you are good to go.
+
 
 ## Local Desktop
 
