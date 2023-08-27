@@ -219,6 +219,7 @@ If you approve the way the route is shown then go ahead and create it
 The deployment team gave use a way to test the application so let’s go ahead and run the following command :
 ```bash
 # ROUTE=$(echo -n 'https://' && oc get route frontend -o jsonpath='{.spec.host}')
+# echo "export ROUTE=${ROUTE}" >> ~/.bashrc
 # curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
 ```
 
