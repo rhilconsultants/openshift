@@ -119,7 +119,21 @@ And apply it
 $ oc create deployment ubi-minimal --image=${REGISTRY}/ubi-minimal 
 ``` 
 
-Now we can run the debug with our new image :
+Before we move on to the debug let's see if we can run the "ip addr" command from the container.  
+Let's run rsh to the container
+```bash
+$ oc rsh $(oc get pods -o name | grep ubi-minimal)
+```
+
+Now run the command :
+```bash
+$ ip addr 
+$ exit
+```
+
+If you are getting an error (and you are) then that means that it can't find the ip binary in the container (because there is none)
+
+Now let's try running the command in debug mode with our new image :
 
 ```bash
 $ oc debug $(oc get pod -o name | grep minimal) --image=${HOST}/${NAMESPACE}/admin-tools
