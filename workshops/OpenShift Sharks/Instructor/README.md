@@ -41,5 +41,5 @@ $ for i in {1..40} ; do oc adm policy add-cluster-role-to-user cluster-admin use
 
 Install the following tools on the bastion server 
 ```bash
-$ dnf install -y wireshark-cli tcpdump telnet nmap ftp tftp podman skopeo buildah 
+$ dnf install -y wireshark-cli tcpdump telnet nmap ftp tftp podman skopeo buildah rsync
 ```
