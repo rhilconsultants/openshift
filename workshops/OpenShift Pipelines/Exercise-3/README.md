@@ -20,7 +20,7 @@ Find the `gitea` URL by running:
 ```bash
 echo http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")
 ```
-Log into `gitea` as the assigned user. The password is: `123456`
+Log into `gitea` as the assigned user. The password is: `openshift`
 
 ### Create the Source Code Repository - Skip this Part
 1. Press the `plus` sign drop down at the top right of the window and select `New Migration`.
@@ -57,7 +57,7 @@ kind: Secret
 metadata:
   name: gitea-credentials
   annotations:
-    tekton.dev/git-0: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com
+    tekton.dev/git-0: https://$(oc get route -n gitea gitea-demo -o jsonpath='{.status.ingress[0].host}')
 type: kubernetes.io/basic-auth
 stringData:
   username: $(oc whoami)
@@ -75,6 +75,7 @@ oc get secret gitea-credentials -o yaml | grep "git-0:"
 ```
 This hostname must match the hostname of the Git repository.
 
+Provide Git repository access to the `ServiceAccount` that will run the `Pipeleine`:
 ```bash
 oc patch serviceaccount pipeline -p '{"secrets": [{"name": "gitea-credentials"}]}'
 ```
@@ -92,7 +93,7 @@ We will now build a Continuous Integration `Pipeline` with the following steps:
 Create a `Pipeline` by copying the following to a file named `ci-pipeline.yaml`:
 
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: ci-pipeline
@@ -118,6 +119,8 @@ spec:
       kind: ClusterTask
       name: git-clone
     params:
+      - name: sslVerify
+        value: "false"
       - name: url
         value: $(params.git-source-url)
     workspaces:
@@ -143,7 +146,7 @@ spec:
       - name: GIT_USER_NAME
         value: pipelinetask
       - name: GIT_SCRIPT
-        value: "set -x; GIT_TRACE=2 GIT_CURL_VERBOSE=2 git clone $(params.git-cd-url) cd-repo;cd cd-repo;sed -i \"s@repositoryandtag:.*@repositoryandtag: $(params.image):$(tasks.clone-sources.results.commit)@\" values.yaml;git commit -a -m \"updated image tag\" --allow-empty;GIT_TRACE=2 GIT_CURL_VERBOSE=2 git push"
+        value: "set -x;git clone -c http.sslVerify=false $(params.git-cd-url) cd-repo;cd cd-repo;sed -i \"s@repositoryandtag:.*@repositoryandtag: $(params.image):$(tasks.clone-sources.results.commit)@\" values.yaml;git commit -a -m \"updated image tag\" --allow-empty;git -c http.sslVerify=false push"
     workspaces:
       - name: source
         workspace: shared-data
@@ -185,7 +188,7 @@ The `Pipeline` also uses a conditional `Task`.
 We will now create a `PipelineRun` to run the `Pipeline`. Run the following in a `Bash` shell to create a file named `ci-pipeline-run`.yaml:
 ```bash
 cat > ci-pipeline-run.yaml <<EOF
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   name: ci-pipeline-run
@@ -194,9 +197,9 @@ spec:
     name: ci-pipeline
   params:
     - name: git-source-url
-      value: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com/$(oc whoami)/httpserver-ci-demo.git
+      value: https://$(oc get route -n gitea gitea-demo -o jsonpath='{.status.ingress[0].host}')/$(oc whoami)/httpserver.git
     - name: git-cd-url
-      value: https://gitea-tekton-gitea.apps.cluster-qk2tp.qk2tp.sandbox3082.opentlc.com/$(oc whoami)/httpserver-cd.git
+      value: https://$(oc get route -n gitea gitea-demo -o jsonpath='{.status.ingress[0].host}')/$(oc whoami)/httpserver-cd.git
     - name: image
       value: image-registry.openshift-image-registry.svc:5000/$(oc whoami)/httpserver
     - name: release-name

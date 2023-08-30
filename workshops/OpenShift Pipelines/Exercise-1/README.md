@@ -67,7 +67,7 @@ First let's create a directory for this exercise and set it as the current worki
 Now let's create our first `Task` by copying the following to a file named `echo-hello-world.yaml`:
 
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: echo-hello-world
@@ -101,7 +101,7 @@ Now, In order to run the command we need to create a `TaskRun` custom resource. 
 
 In order to create a YAML file, copy the following to a file named `tr-echo-hello-world.yaml`:
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: TaskRun
 metadata:
   name: taskrun-echo-hello-world
@@ -120,17 +120,13 @@ Now that we created a the `TaskRun` for our `Task` we can view it using the CLI:
 
 To view the output of the `TaskRun` we can use the `tkn` tool:
 
-    tkn taskrun logs taskrun-echo-hello-world
+      tkn taskrun logs
 
 The output should be of the form:
 
 <span style="color:green">[echo]</span> Hello World
 
-In case the `Task` takes a long time to finish, we can look at the `pods` and their status:
-
-    oc get pods
-
-The output will be of the form:
+In case the `Task` takes a long time to finish, the log output will be of the form:
 
     NAME                       STARTED         DURATION   STATUS
     taskrun-echo-hello-world   7 seconds ago   ---        Running(Pending)
@@ -202,7 +198,7 @@ Now that we created a `Task` and a `TaskRun` we can go ahead and expand our `Tas
 
 Copy the following to a file named `task-hello-params.yaml`:
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: echo-hello-person
@@ -219,7 +215,7 @@ spec:
 ```
 In our example we have configured a parameter named `person` and added it as one of our arguments.
 
-Let's go ahead and run it:
+Let's go ahead and run it using `oc`:
 
     oc create -f task-hello-params.yaml
 
@@ -250,13 +246,13 @@ Question: Why was "apply" used here instead of "create"?
 
 The second way to change the name is even more simple. Run the following command to open an editor with the current contents of the `Task` object:
 
-    oc get tasks -o name | grep person | xargs oc edit
+    oc get tasks -o name | grep echo-hello-person | xargs oc edit
 
-Edit the name in the task. Once you save and exit the changes will take effect. Rerun the task.
+Edit the default name parameter in the task. Once you save and exit the changes will take effect. Rerun the task.
 
 The last way is preferred. We are going to create a `TaskRun` where we will define the param's new value in it. Copy the following to a file named `taskrun-hello-person-param-override.yaml`:
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: TaskRun
 metadata:
   name: echo-hello-person-task-run-override
