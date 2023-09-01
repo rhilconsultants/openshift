@@ -118,7 +118,7 @@ The log from the `httpserver` application should display data in JSON format. A 
     }
   ],
   "repository": {
-    "html_url": "http://gitea-http-gitea.apps.hitech.com/cdeveloper/httpserver",
+    "html_url": "http://gitea-demo-gitea.apps.hitech.com/cdeveloper/httpserver",
   },
 }
 ```
@@ -264,7 +264,7 @@ Now get the route to the event listener by running:
 oc get route el-gitea-eventlistener -o jsonpath='{"http://"}{.spec.host}{"\n"}'
 ```
 
-Now in the Gitea web console in the `httpserver` repository, press on the `Settings` button and then `Webhooks`. Edit the existing webhook and replace the address of the `httpserver` application with the address of the event listener from above.
+Now in the Gitea web console in the `httpserver` repository, press on the `Settings` button and then `Webhooks`. Edit the existing webhook and replace the address of the `httpserver` application with the address of the event listener from above. Press `Update Webhook`.
 
 You can press the `Test Delivery` button.
 
@@ -273,11 +273,11 @@ Watch the el-gitea-eventlistener log during this test.
 
 Update the `httpserver` application source code either by making a change and performing a Git command and push, or by editing the source code in the Gitea web console and pressing `Commit Changes`.
 
-Watch for the `PipelineRun` to start.
+Watch for the `PipelineRun` to start in the OpenShift console.
 
 If the pipeline does not start:
 1. Check the event listener log
 1. Check `events` in the `namespace`: oc get events --sort-by="{.metadata.creationTimestamp}"
 1. If you change any of the objects above, restart the event listener: oc delete $(oc get pods -o name | grep el-gitea-eventlistener)
 
-Now that everything is ready you can move on to [Exercise 5](../Exercise-5/READNE.md).
+Now that everything is ready you can move on to [Exercise 5](../Exercise-5/README.md).
