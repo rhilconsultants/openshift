@@ -125,7 +125,7 @@ oc create -f application.yaml
 The `Application` should appear in the OpenShift GitOps (ArgoCD) web console.
 
 Now let's make a change in our Exercise-3 application. In the file `src/main/java/demo/HTTPServerDemo.java` add the following before the line `server.start();`:
-```
+```java
 System.out.println("Starting the webserver!");
 ```
 Save the changes, commit them to git and push them to the repository.

@@ -133,6 +133,8 @@ spec:
     params:
       - name: IMAGE
         value: $(params.image):$(tasks.clone-sources.results.commit)
+      - name: BUILD_EXTRA_ARGS
+        value: "--annotation org.opencontainers.image.source=$(params.git-source-url) --annotation org.opencontainers.image.revision=$(tasks.clone-sources.results.commit) --annotation org.opencontainers.image.created=$(date -u --iso-8601=seconds)"
     workspaces:
       - name: source
         workspace: shared-data
