@@ -18,16 +18,20 @@ A continuous integration (CI) pipeline should automate all steps needed to creat
 ## Preparing the Respositories - Skip this part, the URL is in the Workshop Portal
 Find the `gitea` URL by running:
 ```bash
-echo http://gitea-http-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")
+echo https://gitea-demo-gitea$(oc whoami --show-console | sed "s/.*console-openshift-console//")
 ```
-Log into `gitea` as the assigned user. The password is: `openshift`
+Log into `gitea` as the assigned user. The password is: `openshift`.
 
-### Create the Source Code Repository - Skip this Part
+If the repositories exist, skip the next 2 sections:
+* httpserver
+* httpserver-cd
+
+### Create the Source Code Repository
 1. Press the `plus` sign drop down at the top right of the window and select `New Migration`.
 
 1. Press on the `GitHub` icon.
 
-1. For the `Migrate / Clone From URL` field enter: https://github.com/magreenberg/httpserver-ci-demo.git
+1. For the `Migrate / Clone From URL` field enter: https://github.com/magreenberg/httpserver.git
 
 1. For `Repository Name` enter: **httpserver**
 
@@ -38,7 +42,7 @@ Log into `gitea` as the assigned user. The password is: `openshift`
 
 1. Press on the `GitHub` icon.
 
-1. For the `Migrate / Clone From URL` field enter: https://github.com/magreenberg/httpserver-ci-cd-demo.git
+1. For the `Migrate / Clone From URL` field enter: https://github.com/magreenberg/httpserver-cd.git
 
 1. For `Repository Name` enter: **httpserver-cd**
 
