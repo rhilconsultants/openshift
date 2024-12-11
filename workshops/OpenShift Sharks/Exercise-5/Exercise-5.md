@@ -181,6 +181,11 @@ spec:
         name: carinfo-frontend
         ports:
         - containerPort: 8080
+        env:
+         - name: DBAPI_URL
+           value: "http://dbapi:8080/query"
+         - name: PORT
+           value: 8080
 EOF
 ```
 And the service :
