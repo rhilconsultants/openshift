@@ -182,10 +182,10 @@ spec:
         ports:
         - containerPort: 8080
         env:
-         - name: DBAPI_URL
-           value: "http://dbapi:8080/query"
-         - name: PORT
-           value: 8080
+        - name: DBAPI_URL
+          value: "http://dbapi:8080/query"
+        - name: PORT
+          value: 8080
 EOF
 ```
 And the service :
@@ -225,14 +225,14 @@ The deployment team gave use a way to test the application so let’s go ahead a
 ```bash
 # ROUTE=$(echo -n 'https://' && oc get route frontend -o jsonpath='{.spec.host}')
 # echo "export ROUTE=${ROUTE}" >> ~/.bashrc
-# curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
+# curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/v1 | jq
 ```
 
 Rememeber the statistics file from the previus exercise ... let's run the same command with it :
 
 ```bash
 # cd ~/curl-statistics
-# curl -w "@loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
+# curl -w "@loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/v1 | jq
 ```
 Use the tools we talked about today (oc sniff) to find out where is the issue.
 
