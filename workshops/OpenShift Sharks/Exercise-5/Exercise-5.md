@@ -57,7 +57,7 @@ spec:
         app: mariadb
     spec:
       containers:
-      - image: mariadb:latest
+      - image: registry.redhat.io/rhel9/mariadb-105:9.5-1734527112
         name: mariadb
         env:
         - name: MARIADB_ROOT_PASSWORD
@@ -120,7 +120,7 @@ spec:
         app: dbapi
     spec:
       containers:
-      - image: quay.io/two.oes/carinfo-dbapi:latest
+      - image: quay.io/ooichman/carinfo/dbapi:latest
         name: dbapi
         serviceAccount: default
         serviceAccountName: default
@@ -177,7 +177,7 @@ spec:
         app: frontend
     spec:
       containers:
-      - image: quay.io/two.oes/carinfo-frontend:latest
+      - image: quay.io/ooichman/carinfo/frontend:latest
         name: carinfo-frontend
         ports:
         - containerPort: 8080
