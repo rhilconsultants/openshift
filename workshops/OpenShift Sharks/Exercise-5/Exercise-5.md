@@ -57,7 +57,7 @@ spec:
         app: mariadb
     spec:
       containers:
-      - image: registry.redhat.io/rhel9/mariadb-105:9.5-1734527112
+      - image: docker.io/library/mariadb:latest
         name: mariadb
         env:
         - name: MARIADB_ROOT_PASSWORD
@@ -183,9 +183,9 @@ spec:
         - containerPort: 8080
         env:
         - name: DBAPI_URL
-          value: "http://dbapi:8080/query"
+          value: 'http://dbapi:8080/query'
         - name: PORT
-          value: 8080
+          value: "8080"
 EOF
 ```
 And the service :
