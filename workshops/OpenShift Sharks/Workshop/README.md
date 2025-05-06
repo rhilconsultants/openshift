@@ -6,6 +6,7 @@ This OpenShift Sharks workshop is tailored for advanced OpenShift users seeking 
 
 Welcome to OpenShift Sharks workshop.  
 Before you begin I suggest you go over the prerequisites at [prerequisites page](../prerequisites.md)
+
 the WorkShop will be divided into 6 Exercises
  
   1. Build the network admin tool image [Here](../Exercise-1/Exercise-1.md)
