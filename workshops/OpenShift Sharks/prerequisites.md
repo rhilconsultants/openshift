@@ -6,9 +6,6 @@ In order to start working with OpenShift you Need to have the following basic sk
 1. Basic understanding of OpenShift and OpenShift objects (CRDs)
 
 
-## OpenShift Cluster
-
-Login to our LAB bastion server using your SSH client (the username will be provided by the instracture)
 
 ## OpenShift tools   
 
@@ -49,17 +46,6 @@ $ oc completion bash > ~/.bash_completion
 ```
 
 **Now logout, login and test the command with the TAB key**
-
-### Cluster login
-
-> NOTE: The Instractor will provide the Cluster details, the userX stand for the number provided by the instructor
-
-```bash
-# export OCP_DOMAIN="????" ( example : sandbox661.opentlc.com )
-# echo 'OCP_DOMAIN="???"' >> ~/.bashrc
-# oc login --username=userX --password=openshift --server=https://api.cluster-${GUID}.${GUID}.$OCP_DOMAIN:6443
-# oc project userX
-```
 
 ### tmux
 
@@ -115,5 +101,5 @@ In Exercise 1, on the top left run watch for `taskrun` and on the right run watc
 
 ```bash
 $ watch -n 1 "oc get pods"
-$ watch -n 1 "oc get events"
+$ oc get events -f
 ```
