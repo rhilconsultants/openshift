@@ -6,6 +6,7 @@ This OpenShift Sharks workshop is tailored for advanced OpenShift users seeking 
 
 Welcome to OpenShift Sharks workshop.  
 Before you begin I suggest you go over the prerequisites at [prerequisites page](../prerequisites.md)
+
 the WorkShop will be divided into 6 Exercises
  
   1. Build the network admin tool image [Here](../Exercise-1/Exercise-1.md)
@@ -14,3 +15,7 @@ the WorkShop will be divided into 6 Exercises
   4. Generate curl statistics output [Here](../Exercise-4/Exercise-4.md)
   5. Tapping to CURL TLS session [Here](../Exercise-5/Exercise-5.md)
   6. Deploy the application for Network Latency [Here](../Exercise-6/Exercise-6.md)
+
+## Extra
+
+  1. deploy and use the port checking tools for low connectivity testing [Here](Extra/extra.md)
