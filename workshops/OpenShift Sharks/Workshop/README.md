@@ -18,4 +18,4 @@ the WorkShop will be divided into 6 Exercises
 
 ## Extra
 
-  1. deploy and use the port checking tools for low connectivity testing [Here](Extra/extra.md)
+  1. deploy and use the port checking tools for low connectivity testing [Here](../Extra/extra.md)
