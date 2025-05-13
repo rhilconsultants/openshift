@@ -49,7 +49,7 @@ By default ksniff will attempt to start a local instance of the Wireshark GUI. Y
 Example using tshark:
 
 ```bash
-$ oc sniff $(oc get pods | grep minimal | grep debug | awk '{print $1}') -f 'port 443' -p \
+$ oc sniff $(oc get pods | grep minimal | awk '{print $1}') -f 'port 443' -p \
    --tcpdump-image=$REGISTRY/admin-tools --image=$REGISTRY/admin-tools -o - | tshark -r -
 ```
 
@@ -67,6 +67,7 @@ Run
 In case we want to save the capture to a file all we need to do is change the "-o -" to "-o filename.pcap"
 
 First we will create a directory and change to it :
+
 ```bash
 $ mkdir ~/pcap && cd ~/pcap/
 ```

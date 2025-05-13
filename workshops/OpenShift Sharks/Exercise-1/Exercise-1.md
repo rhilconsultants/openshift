@@ -6,10 +6,12 @@ first we need to build a small daemon to run in the background when the pod is r
 
 If you haven't already , make sure you configure the OCP_DOMAIN environment Variable is set
 (from the workshop page Copy/Paste the Bastion Domain)
+
 ```bash
 $ export OCP_DOMAIN="sandboxXXX.opentlc.com"
+```
 
-## From the Base Image
+## Building the Images
 
 ```bash
 $ mkdir ~/admin-tools
