@@ -1,7 +1,7 @@
 Debugging latency issues
 
 # Network Latency
-In this Exercise We will deploy our carinfo application but the application development complains about latency issues and they are convinced that the latency is originated from OpenShift.
+In this Exercise We will deploy our carinfo application but the application developers are complaining about latency issues and they are convinced that the latency is originated from OpenShift.
 
 We are going to prove them wrong!!!
 
@@ -11,6 +11,11 @@ First let's delete the deployments from the last exercise :
 ```bash
 # oc delete deployment loop-curl-statistics
 # oc delete deployment ubi-minimal
+```
+OR
+if you are working from a workshop , create the namespace "latency"
+```bash
+$ oc new-project latency
 ```
 
 # deploying the application
