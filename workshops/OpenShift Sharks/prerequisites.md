@@ -47,6 +47,16 @@ $ oc completion bash > ~/.bash_completion
 
 **Now logout, login and test the command with the TAB key**
 
+### Cluster Login
+(For Workshop environment)
+if you are working from a workshop make sure you are logged in with username/password 
+(Details can be found on the workshop page)
+
+Make sure the registry is exposed :
+```bash
+$ oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+```
+
 ### tmux
 
 For those of you who don't know tmux in a very powerful tool which allows us to run terminal manipulation in various forms. In our case we would want to slip the screen to 3 parts (vertical middle and 2 horizontal on the top side) to enable us better monitoring on all the process.

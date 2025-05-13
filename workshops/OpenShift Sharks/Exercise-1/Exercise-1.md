@@ -4,6 +4,11 @@ I like to be prepared and have all the tools I need with me when I am debugging 
 image and install some CLI tools (even if some of them do not make sense).
 first we need to build a small daemon to run in the background when the pod is running.
 
+If you haven't already , make sure you configure the OCP_DOMAIN environment Variable is set
+(from the workshop page Copy/Paste the Bastion Domain)
+```bash
+$ export OCP_DOMAIN="sandboxXXX.opentlc.com"
+
 ## From the Base Image
 
 ```bash
@@ -28,12 +33,12 @@ $ chmod a+x run.sh
 And now we need to build the image With A Dockerfile should look like this :
 ```bash
 $ cat > Containerfile << EOF
-FROM quay.io/centos/centos:stream
+FROM quay.io/centos/centos:stream9
 
 MAINTAINER Red Hat Israel "Back to ROOT!!!!"
 USER root
 
-RUN dnf install -y iproute iputils curl tcpdump nmap-ncat wireshark-cli && dnf clean all
+RUN dnf install -y iproute iputils tcpdump nmap-ncat wireshark-cli && dnf clean all
 WORKDIR /opt/app-root/
 COPY run.sh .
 RUN useradd -u 1001 -g wireshark user
@@ -52,6 +57,11 @@ $ buildah bud -f Containerfile -t admin-tools
 # Option 2:
 $ podman build -f Containerfile -t admin-tools
 
+```
+
+Create a new namespace:
+```bash
+$ oc new-project admin-tools
 ```
 
 Obtain your namespace
@@ -95,7 +105,7 @@ We will build a very small image to run as a Pod :
 ```bash
 
 $ cat > Containerfile.minimal << EOF
-FROM ubi8/ubi-minimal
+FROM ubi9/ubi-minimal
 
 WORKDIR /opt/app-root/
 COPY run.sh /opt/app-root/run.sh
