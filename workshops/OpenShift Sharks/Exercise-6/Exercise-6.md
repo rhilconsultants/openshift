@@ -250,4 +250,16 @@ Open 3 more session and run the ksniff for each of the pods
 build a bash script that will run all the commands together to 3 diffrent files.
 Now run the curl command again and copy them to wireshark (with scp/winscp)
 
+## Merging Capture Files
+
+Sometimes you need to merge several capture files into one. For example, this can be useful if you have captured simultaneously from multiple interfaces at once (e.g., using multiple instances of Wireshark).
+
+There are three ways to merge capture files using Wireshark:
+
+- Use the File → Merge menu to open the “Merge” dialog. See Section 5.4.1, “The “Merge With Capture File” Dialog Box” for details. This menu item will be disabled unless you have loaded a capture file.
+    
+- Use drag and drop to drop multiple files on the main window. Wireshark will try to merge the packets in chronological order from the dropped files into a newly created temporary file. If you drop a single file, it will simply replace the existing capture.
+
+- Use the mergecap tool from the command line to merge capture files. This tool provides the most options to merge capture files
+
 Good luck 
